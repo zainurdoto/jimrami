@@ -1,3 +1,6 @@
+import {
+  type ScoreTransitionData,
+} from './ScoreTransition'
 import { useState } from 'react'
 import {
   db,
@@ -11,7 +14,10 @@ type Props = {
   sessionPlayers: SessionPlayer[]
   players: Player[]
   onBack: () => void
-  onComplete: () => void
+
+  onComplete: (
+    data: ScoreTransitionData
+  ) => void
 }
 
 type Phase =
@@ -307,7 +313,41 @@ export default function JimRound({
     )
 
     setSaving(false)
-    onComplete()
+
+onComplete({
+  roundNumber:
+    session.roundNumber,
+
+  before:
+    sessionPlayers.map(
+      (player) => ({
+        ...player,
+      })
+    ),
+
+  after:
+    updated.map(
+      (player) => ({
+        ...player,
+      })
+    ),
+
+  changes: [
+    {
+      sessionPlayerId:
+        jimPlayer.id,
+
+      amount: -3,
+    },
+
+    {
+      sessionPlayerId:
+        catcher.id,
+
+      amount: 1,
+    },
+  ],
+})
   }
 
   async function finishWin() {
@@ -431,7 +471,34 @@ export default function JimRound({
     )
 
     setSaving(false)
-    onComplete()
+
+onComplete({
+  roundNumber:
+    session.roundNumber,
+
+  before:
+    sessionPlayers.map(
+      (player) => ({
+        ...player,
+      })
+    ),
+
+  after:
+    updated.map(
+      (player) => ({
+        ...player,
+      })
+    ),
+
+  changes: [
+    {
+      sessionPlayerId:
+        jimPlayer.id,
+
+      amount: 7,
+    },
+  ],
+})
   }
 
   return (

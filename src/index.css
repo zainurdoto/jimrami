@@ -1446,3 +1446,158 @@ button {
   }
 }
 
+/* ==============================
+   SCORE TRANSITION
+================================ */
+
+.scoreTransitionPage {
+  max-width: 1100px;
+}
+
+.transitionHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: flex-end;
+
+  gap: 12px;
+  margin-bottom: 22px;
+}
+
+.transitionHeader span {
+  color: #8994a2;
+
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+
+.transitionHeader strong {
+  font-size: 58px;
+  line-height: 1;
+}
+
+.transitionScoreboard {
+  display: grid;
+  gap: 12px;
+}
+
+.transitionPlayer {
+  display: grid;
+  grid-template-columns:
+    64px minmax(0, 1fr) auto;
+
+  align-items: center;
+
+  min-height: 112px;
+  padding: 18px 24px;
+
+  border: 1px solid #282f39;
+  border-radius: 18px;
+
+  background: #171c24;
+}
+
+.transitionRank {
+  color: #747f8e;
+
+  font-size: 30px;
+  font-weight: 850;
+}
+
+.transitionIdentity {
+  min-width: 0;
+}
+
+.transitionNameRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.transitionNameRow h2 {
+  margin: 0;
+
+  font-size: 27px;
+}
+
+.transitionIdentity p {
+  margin: 6px 0 0;
+
+  color: #8994a2;
+
+  font-size: 14px;
+}
+
+.pointDelta {
+  display: inline-grid;
+  place-items: center;
+
+  min-width: 42px;
+  height: 30px;
+
+  padding: 0 9px;
+
+  border-radius: 10px;
+
+  font-size: 16px;
+  font-weight: 950;
+}
+
+.pointDelta.positive {
+  background: #20372a;
+  color: #81d499;
+}
+
+.pointDelta.negative {
+  background: #432428;
+  color: #ee8993;
+}
+
+.transitionPoints {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+}
+
+.transitionPoints strong {
+  font-size: 52px;
+  line-height: 1;
+}
+
+.transitionPoints span {
+  color: #8994a2;
+
+  font-size: 12px;
+  font-weight: 900;
+}
+
+/*
+  Make the normal main scoreboard
+  ROUND indicator easier to read
+  across the table.
+*/
+
+.gameRound {
+  font-size: 17px;
+}
+
+.gameHeader h1 {
+  font-size: 48px;
+}
+
+@media (max-width: 600px) {
+  .transitionPlayer {
+    grid-template-columns:
+      42px minmax(0, 1fr) auto;
+
+    padding: 16px;
+  }
+
+  .transitionNameRow h2 {
+    font-size: 22px;
+  }
+
+  .transitionPoints strong {
+    font-size: 40px;
+  }
+}

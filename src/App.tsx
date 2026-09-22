@@ -1,3 +1,6 @@
+import ScoreTransition, {
+  type ScoreTransitionData,
+} from './ScoreTransition'
 import TitleRace from './TitleRace'
 import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
@@ -45,7 +48,9 @@ useState<
   'scoreboard' |
   'standard' |
   'jim' |
-  'race'
+  'race' |
+  'history' |
+  'transition'
 >('scoreboard')
 
   const [
@@ -62,6 +67,14 @@ useState<
     showDataTools,
     setShowDataTools,
   ] = useState(false)
+
+  const [
+  transitionData,
+  setTransitionData,
+] =
+  useState<
+    ScoreTransitionData | null
+  >(null)
 
   async function addPlayer() {
     const name =
@@ -240,12 +253,10 @@ useState<
               'scoreboard'
             )
           }
-          onComplete={() =>
-            setScreen(
-              'scoreboard'
-            )
-          }
-          
+          onComplete={(data) => {
+          setTransitionData(data)
+          setScreen('transition')
+        }}
         />
       )
     }
@@ -259,9 +270,10 @@ useState<
       onBack={() =>
         setScreen('scoreboard')
       }
-      onComplete={() =>
-        setScreen('scoreboard')
-      }
+       onComplete={(data) => {
+      setTransitionData(data)
+      setScreen('transition')
+  }}
     />
   )
 }
@@ -275,6 +287,22 @@ if (screen === 'race') {
       onBack={() =>
         setScreen('scoreboard')
       }
+    />
+  )
+}
+
+if (
+  screen === 'transition' &&
+  transitionData
+) {
+  return (
+    <ScoreTransition
+      data={transitionData}
+      players={players}
+      onDone={() => {
+        setTransitionData(null)
+        setScreen('scoreboard')
+      }}
     />
   )
 }

@@ -1,3 +1,6 @@
+import {
+  type ScoreTransitionData,
+} from './ScoreTransition'
 import { useState } from 'react'
 import {
   db,
@@ -11,7 +14,10 @@ type Props = {
   sessionPlayers: SessionPlayer[]
   players: Player[]
   onBack: () => void
-  onComplete: () => void
+
+  onComplete: (
+    data: ScoreTransitionData
+  ) => void
 }
 
 type Scores = Record<number, string>
@@ -344,12 +350,17 @@ export default function StandardRound({
     })
 
     const ties =
-      Object.values(
-        scoreGroups
-      ).filter(
-        (group) =>
-          group.length > 1
-      )
+          Object.entries(
+            scoreGroups
+          )
+            .filter(
+              ([score, group]) =>
+                group.length > 1 &&
+                score !== '0'
+            )
+            .map(
+              ([, group]) => group
+            )
 
     if (ties.length > 0) {
       setTieGroups(ties)
@@ -454,7 +465,15 @@ export default function StandardRound({
       )
     })
 
-  const awardedPoints = [3, 2, 1, 0]
+  const zeroBottomTie =
+  results.length === 4 &&
+  results[2].cardScore === 0 &&
+  results[3].cardScore === 0
+
+  const awardedPoints =
+  zeroBottomTie
+    ? [3, 2, 0, 0]
+    : [3, 2, 1, 0]
 
   /*
     First calculate everybody's
@@ -613,7 +632,37 @@ export default function StandardRound({
     }
   )
 
-  onComplete()
+  const changes =
+  results.map(
+    (result, index) => ({
+      sessionPlayerId:
+        result.id,
+
+      amount:
+        awardedPoints[index],
+    })
+  )
+
+onComplete({
+  roundNumber:
+    session.roundNumber,
+
+  before:
+    sessionPlayers.map(
+      (player) => ({
+        ...player,
+      })
+    ),
+
+  after:
+    updatedSessionPlayers.map(
+      (player) => ({
+        ...player,
+      })
+    ),
+
+  changes,
+})
 }
 
   const currentTie =
