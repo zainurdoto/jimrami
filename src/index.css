@@ -1105,3 +1105,180 @@ button {
     grid-template-columns: 1fr;
   }
 }
+
+/* ==============================
+   TITLE RACE
+================================ */
+
+.gameActions {
+  grid-template-columns:
+    repeat(3, 1fr);
+}
+
+.raceAction {
+  background: #2d3541 !important;
+  color: #f5f7fa !important;
+}
+
+.racePage {
+  max-width: 1200px;
+}
+
+.raceHeader {
+  display: grid;
+  grid-template-columns:
+    auto 1fr auto;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 22px;
+}
+
+.raceHeader > div > span {
+  color: #7e8998;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.11em;
+}
+
+.raceHeader h1 {
+  margin: 3px 0 0;
+  font-size: 34px;
+}
+
+.racePlay {
+  min-width: 110px;
+  min-height: 52px;
+
+  border: 0;
+  border-radius: 14px;
+
+  background: #f2f4f6;
+  color: #101419;
+
+  font-weight: 850;
+}
+
+.racePlay:disabled {
+  opacity: 0.35;
+}
+
+.raceChart {
+  padding: 18px 8px 4px;
+
+  border: 1px solid #282f39;
+  border-radius: 20px;
+
+  background: #141920;
+}
+
+.raceControls {
+  display: grid;
+  grid-template-columns:
+    1fr auto;
+  align-items: center;
+  gap: 20px;
+
+  margin-top: 18px;
+}
+
+.raceControls input {
+  width: 100%;
+  accent-color: #f2f4f6;
+}
+
+.raceRoundCount {
+  min-width: 105px;
+  color: #8994a2;
+  font-size: 13px;
+  font-weight: 800;
+  text-align: right;
+}
+
+.raceStandings {
+  display: grid;
+  gap: 8px;
+
+  margin-top: 20px;
+}
+
+.raceStanding {
+  display: grid;
+  grid-template-columns:
+    40px 1fr auto;
+  align-items: center;
+
+  min-height: 52px;
+  padding: 0 16px;
+
+  border-radius: 12px;
+  background: #171c24;
+}
+
+.raceStanding > span {
+  color: #788391;
+  font-weight: 900;
+}
+
+.raceStanding strong {
+  font-size: 16px;
+}
+
+.raceStanding b {
+  font-size: 20px;
+}
+
+.raceEmpty {
+  padding: 60px 20px;
+
+  border: 1px dashed #303844;
+  border-radius: 18px;
+
+  color: #7f8997;
+  text-align: center;
+}
+
+@media (max-width: 600px) {
+  .gameActions {
+    grid-template-columns: 1fr;
+  }
+
+  .raceChart {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .raceControls {
+    grid-template-columns: 1fr;
+  }
+
+  .raceRoundCount {
+    text-align: center;
+  }
+}
+
+.raceStanding {
+  will-change: transform;
+}
+
+.raceHeaderActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.raceSpeed {
+  min-width: 66px;
+  min-height: 52px;
+
+  border: 1px solid #303844;
+  border-radius: 14px;
+
+  background: #171c24;
+  color: #f5f7fa;
+
+  font-weight: 850;
+}
+
+.raceSpeed:active {
+  background: #252d39;
+}

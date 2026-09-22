@@ -1,3 +1,4 @@
+import TitleRace from './TitleRace'
 import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from './db'
@@ -38,8 +39,11 @@ function App() {
   )
 
   const [screen, setScreen] =
-    useState<
-  'scoreboard' | 'standard' | 'jim'
+useState<
+  'scoreboard' |
+  'standard' |
+  'jim' |
+  'race'
 >('scoreboard')
 
   const [
@@ -255,6 +259,19 @@ function App() {
   )
 }
 
+if (screen === 'race') {
+  return (
+    <TitleRace
+      session={activeSession}
+      sessionPlayers={sessionPlayers}
+      players={players}
+      onBack={() =>
+        setScreen('scoreboard')
+      }
+    />
+  )
+}
+
     const playing =
       sessionPlayers.filter(
         (player) =>
@@ -404,6 +421,17 @@ function App() {
 >
               ★ Jim Round
           </button>
+
+          <button
+             className="raceAction"
+             onClick={() =>
+             setScreen('race')
+            }
+>
+  Title Race
+</button>
+
+
         </footer>
       </main>
     )
