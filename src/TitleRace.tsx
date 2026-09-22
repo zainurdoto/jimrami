@@ -145,6 +145,15 @@ export default function TitleRace({
     [session.id]
   )
 
+  const penaltyResults =
+  useLiveQuery(
+    () =>
+      db.penaltyResults
+        .where('sessionId')
+        .equals(session.id)
+        .toArray(),
+    [session.id]
+  )
   /*
     playhead can contain decimals internally.
 
@@ -180,9 +189,10 @@ export default function TitleRace({
   */
   const timeline = useMemo(() => {
     if (
-      !rounds ||
-      !standardResults ||
-      !jimResults
+  !rounds ||
+  !standardResults ||
+  !jimResults ||
+  !penaltyResults
     ) {
       return []
     }
@@ -223,7 +233,23 @@ export default function TitleRace({
       Everyone begins at zero.
     */
     data.push(makeRow(0))
+            const penaltiesAtZero =
+            penaltyResults.filter(
+                (penalty) =>
+                penalty.roundNumber === 0
+            )
 
+            penaltiesAtZero.forEach(
+            (penalty) => {
+                totals[
+                penalty.playerId
+                ] =
+                (totals[
+                    penalty.playerId
+                ] ?? 0) +
+                penalty.pointsAwarded
+            }
+            )
     rounds.forEach((round) => {
       /*
         STANDARD ROUND
@@ -294,7 +320,24 @@ export default function TitleRace({
           }
         }
       }
+                const penalties =
+                penaltyResults.filter(
+                    (penalty) =>
+                    penalty.roundNumber ===
+                    round.roundNumber
+                )
 
+                penalties.forEach(
+                (penalty) => {
+                    totals[
+                    penalty.playerId
+                    ] =
+                    (totals[
+                        penalty.playerId
+                    ] ?? 0) +
+                    penalty.pointsAwarded
+                }
+                )
       data.push(
         makeRow(
           round.roundNumber
@@ -307,6 +350,7 @@ export default function TitleRace({
     rounds,
     standardResults,
     jimResults,
+    penaltyResults,
     sessionPlayers,
   ])
 
@@ -837,10 +881,11 @@ export default function TitleRace({
     )
   }
 
-  if (
-    !rounds ||
-    !standardResults ||
-    !jimResults
+if (
+  !rounds ||
+  !standardResults ||
+  !jimResults ||
+  !penaltyResults
   ) {
     return (
       <main className="app">

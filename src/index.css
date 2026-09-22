@@ -272,14 +272,14 @@ button {
 
 .gameHeader h1 {
   margin: 0 0 8px;
-  font-size: 44px;
+  font-size: 48px;
   line-height: 1;
   letter-spacing: -0.04em;
 }
 
 .gameRound {
   color: #808b99;
-  font-size: 13px;
+  font-size: 17px;
   font-weight: 900;
   letter-spacing: 0.1em;
 }
@@ -386,7 +386,7 @@ button {
 
 .gameActions {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, 1fr);
   gap: 14px;
   margin-top: 22px;
 }
@@ -462,6 +462,33 @@ button {
   font-size: 12px;
   font-weight: 900;
   letter-spacing: 0.1em;
+}
+
+
+/* SHARED ROUND / ACTION HEADER */
+
+.roundHeader {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 28px;
+}
+
+.roundHeader > div {
+  min-width: 0;
+}
+
+.roundHeader > div > span {
+  color: #7f8997;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.roundHeader h1 {
+  margin: 3px 0 0;
+  font-size: 34px;
 }
 
 .roundBack {
@@ -764,356 +791,8 @@ button {
 }
 
 /* ==============================
-   JIM ROUND
-================================ */
-
-.jimRoundHeader {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  margin-bottom: 30px;
-}
-
-.jimRoundHeader h1 {
-  margin: 3px 0 0;
-  font-size: 34px;
-}
-
-.jimRoundHeader > div > span {
-  color: #7f8997;
-  font-size: 12px;
-  font-weight: 900;
-  letter-spacing: 0.1em;
-}
-
-.jimSectionTitle {
-  margin: 22px 0 12px;
-}
-
-.jimSectionTitle span {
-  color: #8994a2;
-  font-size: 12px;
-  font-weight: 900;
-  letter-spacing: 0.11em;
-}
-
-/* CHOOSE JIM */
-
-.jimPlayerGrid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-
-.jimPlayerChoice {
-  min-height: 125px;
-
-  border: 2px solid #303844;
-  border-radius: 18px;
-
-  background: #171c24;
-  color: white;
-
-  font-size: 25px;
-  font-weight: 850;
-}
-
-.jimPlayerChoice:active {
-  background: #252d39;
-}
-
-/* ACTIVE JIM ATTEMPT */
-
-.jimRunCard {
-  padding: 30px;
-
-  border: 1px solid #37352c;
-  border-radius: 22px;
-
-  background: #181a1d;
-
-  text-align: center;
-}
-
-.jimSmallLabel {
-  color: #d9ae4b;
-  font-size: 12px;
-  font-weight: 900;
-  letter-spacing: 0.14em;
-}
-
-.jimRunCard h2 {
-  margin: 8px 0 28px;
-  font-size: 38px;
-}
-
-.survivalTrack {
-  display: grid;
-  grid-template-columns:
-    repeat(6, 1fr);
-
-  gap: 10px;
-  max-width: 650px;
-
-  margin: 0 auto;
-}
-
-.survivalStep {
-  display: grid;
-  aspect-ratio: 1;
-  place-items: center;
-
-  border: 2px solid #343c46;
-  border-radius: 50%;
-
-  background: #20252c;
-  color: #727d8b;
-
-  font-size: 20px;
-  font-weight: 900;
-}
-
-.survivalStep.complete {
-  border-color: #d9ae4b;
-  background: #d9ae4b;
-  color: #151515;
-}
-
-.survivalCount {
-  display: flex;
-  align-items: baseline;
-  justify-content: center;
-
-  gap: 7px;
-  margin-top: 24px;
-}
-
-.survivalCount strong {
-  font-size: 42px;
-}
-
-.survivalCount span {
-  color: #8994a2;
-}
-
-.jimRunActions {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 12px;
-
-  margin-top: 26px;
-}
-
-.jimRunActions button {
-  min-height: 78px;
-
-  border: 0;
-  border-radius: 17px;
-
-  font-size: 18px;
-  font-weight: 850;
-}
-
-.jimSurviveButton {
-  background: #f2f4f6;
-  color: #111419;
-}
-
-.jimCaughtButton {
-  background: #632c32;
-  color: #f4dfe1;
-}
-
-/* RESULT / RESOLUTION */
-
-.jimResolution {
-  max-width: 720px;
-  margin: 0 auto;
-
-  padding: 28px;
-
-  border: 1px solid #303844;
-  border-radius: 22px;
-
-  background: #171c24;
-}
-
-.jimResolution h2 {
-  margin: 7px 0 4px;
-  font-size: 36px;
-}
-
-.jimResolution > p {
-  color: #919dab;
-}
-
-.jimResultLoss {
-  color: #dc8089;
-  font-size: 12px;
-  font-weight: 900;
-  letter-spacing: 0.12em;
-}
-
-.jimResultWin {
-  color: #d9ae4b;
-  font-size: 12px;
-  font-weight: 900;
-  letter-spacing: 0.12em;
-}
-
-.jimScoringPreview {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-
-  margin: 22px 0;
-  padding: 18px;
-
-  border-radius: 14px;
-  background: #12161c;
-}
-
-.jimScoringPreview span {
-  color: #df7b85;
-  font-size: 28px;
-  font-weight: 900;
-}
-
-.jimWinScore {
-  margin: 18px 0 28px;
-
-  color: #d9ae4b;
-
-  font-size: 58px;
-  font-weight: 900;
-}
-
-.jimChoiceList {
-  display: grid;
-  gap: 10px;
-}
-
-.jimChoiceList button {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-
-  min-height: 66px;
-  padding: 0 20px;
-
-  border: 2px solid #303844;
-  border-radius: 15px;
-
-  background: #202731;
-  color: white;
-
-  font-size: 18px;
-}
-
-.jimChoiceList button.selected {
-  border-color: #d9ae4b;
-  background: #2d2a21;
-}
-
-.jimChoiceList button span {
-  color: #9aa5b3;
-  font-size: 13px;
-  font-weight: 900;
-}
-
-.jimRotationNote {
-  margin-top: 18px !important;
-  padding: 14px 16px;
-
-  border-radius: 12px;
-
-  background: #11151b;
-
-  color: #8994a2 !important;
-  font-size: 14px;
-}
-
-.jimResolutionActions {
-  display: grid;
-  grid-template-columns: 1fr 2fr;
-  gap: 12px;
-
-  margin-top: 20px;
-}
-
-.jimResolutionActions button,
-.jimWinConfirm {
-  min-height: 66px;
-
-  border: 0;
-  border-radius: 15px;
-
-  font-weight: 850;
-}
-
-.jimCancel {
-  background: #292f38;
-  color: white;
-}
-
-.jimConfirm {
-  background: #f2f4f6;
-  color: #111419;
-}
-
-.jimConfirm:disabled {
-  background: #292f38;
-  color: #626d79;
-}
-
-.jimWinConfirm {
-  width: 100%;
-  margin-top: 20px;
-}
-
-.jimWaiting {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-
-  margin-top: 18px;
-  padding: 18px 20px;
-
-  border: 1px solid #282f39;
-  border-radius: 15px;
-
-  background: #13171d;
-}
-
-.jimWaiting span {
-  color: #7e8998;
-  font-size: 11px;
-  font-weight: 900;
-  letter-spacing: 0.1em;
-}
-
-@media (max-width: 600px) {
-  .jimPlayerGrid {
-    grid-template-columns: 1fr;
-  }
-
-  .survivalTrack {
-    gap: 6px;
-  }
-
-  .jimRunActions {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* ==============================
    TITLE RACE
 ================================ */
-
-.gameActions {
-  grid-template-columns:
-    repeat(3, 1fr);
-}
 
 .raceAction {
   background: #2d3541 !important;
@@ -1212,6 +891,8 @@ button {
 
   border-radius: 12px;
   background: #171c24;
+
+  will-change: transform;
 }
 
 .raceStanding > span {
@@ -1254,10 +935,6 @@ button {
   .raceRoundCount {
     text-align: center;
   }
-}
-
-.raceStanding {
-  will-change: transform;
 }
 
 .raceHeaderActions {
@@ -1571,20 +1248,6 @@ button {
   font-weight: 900;
 }
 
-/*
-  Make the normal main scoreboard
-  ROUND indicator easier to read
-  across the table.
-*/
-
-.gameRound {
-  font-size: 17px;
-}
-
-.gameHeader h1 {
-  font-size: 48px;
-}
-
 @media (max-width: 600px) {
   .transitionPlayer {
     grid-template-columns:
@@ -1599,5 +1262,531 @@ button {
 
   .transitionPoints strong {
     font-size: 40px;
+  }
+}
+
+/* ==============================
+   PENALTY
+================================ */
+
+.penaltyPanel {
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+.penaltyPrompt {
+  margin: 10px 0 16px;
+
+  color: #8994a2;
+
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.penaltyPlayers {
+  display: grid;
+  gap: 10px;
+}
+
+.penaltyPlayer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  min-height: 84px;
+  padding: 15px 20px;
+
+  border: 1px solid #303844;
+  border-radius: 16px;
+
+  background: #171c24;
+  color: white;
+
+  text-align: left;
+}
+
+.penaltyPlayer > div {
+  display: grid;
+  gap: 5px;
+}
+
+.penaltyPlayer strong {
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.penaltyPlayer span {
+  color: #858f9c;
+
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.penaltyPlayer b {
+  font-size: 30px;
+}
+
+.penaltyPlayer:active {
+  transform: scale(0.985);
+}
+
+.penaltyAction {
+  background: #47272b !important;
+  color: #f1a0a7 !important;
+}
+
+
+/* ==============================
+   JIM ROUND
+================================ */
+
+.jimRoundPage {
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.jimPanel {
+  width: 100%;
+  max-width: 760px;
+  margin: 0 auto;
+
+  display: grid;
+  gap: 24px;
+}
+
+/* ---------- HEADINGS ---------- */
+
+.jimSectionTitle,
+.jimCurrentPlayer,
+.jimWinTitle {
+  display: grid;
+  gap: 5px;
+}
+
+.jimSectionTitle span,
+.jimCurrentPlayer span,
+.jimWinTitle > span {
+  color: #8290a2;
+
+  font-size: 11px;
+  font-weight: 700;
+
+  letter-spacing: 0.08em;
+}
+
+.jimSectionTitle h2,
+.jimCurrentPlayer h2,
+.jimWinTitle h2 {
+  margin: 0;
+
+  color: #f5f7fa;
+
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+
+/* ---------- PLAYER CHOICES ---------- */
+
+.jimPlayerChoices {
+  width: 100%;
+
+  display: grid !important;
+
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr)) !important;
+
+  gap: 12px !important;
+}
+
+.jimPlayerChoice {
+  width: 100% !important;
+  min-width: 0 !important;
+
+  min-height: 82px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 14px 18px;
+
+  border: 1px solid #303946 !important;
+  border-radius: 16px !important;
+
+  background: #171d25 !important;
+  color: #f5f7fa !important;
+
+  font: inherit;
+  font-size: 22px !important;
+  font-weight: 700 !important;
+
+  text-align: center;
+
+  cursor: pointer;
+}
+
+.jimPlayerChoice:hover {
+  background: #1d242e !important;
+}
+
+.jimPlayerChoice:active {
+  transform: scale(0.985);
+}
+
+.jimPlayerChoice.selected {
+  border-color: #d5ad53 !important;
+
+  background: #332c1f !important;
+  color: #f3ce77 !important;
+}
+
+/* ---------- PROGRESS ---------- */
+
+.jimProgress {
+  width: 100%;
+
+  padding: 24px 20px 22px;
+
+  border: 1px solid #2b333e;
+  border-radius: 22px;
+
+  background: #151a21;
+}
+
+.jimProgressTop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  gap: 8px;
+  margin-bottom: 22px;
+
+  text-align: center;
+}
+
+.jimProgressTop span {
+  color: #8290a2;
+
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.jimProgressTop strong {
+  color: #f5f7fa;
+
+  font-size: 38px;
+  line-height: 1;
+}
+
+/* ---------- SIX JIM STAGES ---------- */
+
+.jimStages {
+  width: 100%;
+
+  display: grid !important;
+
+  grid-template-columns:
+    repeat(6, minmax(0, 1fr)) !important;
+
+  gap: 12px !important;
+
+  justify-items: center;
+  align-items: start;
+  padding-bottom: 20px;
+}
+
+.jimStage {
+  position: relative;
+
+  width: 72px;
+  height: 72px;
+  min-width: 72px;
+  min-height: 72px;
+
+  display: grid;
+  place-items: center;
+
+  border: 2px solid #303946;
+  border-radius: 999px;
+
+  background: #10151b;
+  color: #697585;
+
+  font-size: 22px;
+  font-weight: 700;
+
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,0.02);
+}
+
+.jimStage.survived {
+  border-color: #315940;
+
+  background: #1e3828;
+  color: #8fd6a3;
+}
+
+.jimStage.current {
+  border-color: #d6ae55;
+
+  background: #2b2417;
+  color: #f1cc74;
+}
+
+.jimStage.hidden {
+  border-color: #9171c1;
+
+  background: #302640;
+  color: #caadf0;
+}
+
+.jimStage small {
+  position: absolute;
+
+  left: 50%;
+  bottom: -18px;
+
+  transform: translateX(-50%);
+
+  padding: 2px 6px;
+
+  border-radius: 999px;
+
+  background: #5a4680;
+  color: #f1e9ff;
+
+  text-align: center;
+
+  font-size: 8px;
+  font-weight: 900;
+  line-height: 1;
+
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+/* ---------- HIDE ---------- */
+
+.jimHideArea {
+  width: 100%;
+}
+
+.jimHideButton {
+  width: 100% !important;
+
+  min-height: 68px;
+
+  border: 1px solid #8867b7 !important;
+  border-radius: 15px !important;
+
+  background: #2c233c !important;
+  color: #cbb0ef !important;
+
+  font: inherit;
+  font-size: 17px !important;
+  font-weight: 700 !important;
+
+  letter-spacing: 0.04em;
+}
+
+.jimHideButton:disabled {
+  border-color: #2b333e !important;
+
+  background: #171c23 !important;
+  color: #606c7b !important;
+}
+
+.jimHideUsed {
+  width: 100%;
+  min-height: 68px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 0 20px;
+
+  border: 1px solid #8867b7;
+  border-radius: 15px;
+
+  background: #2c233c;
+  color: #cbb0ef;
+}
+
+.jimHideUsed span {
+  font-size: 11px;
+  font-weight: 900;
+
+  letter-spacing: 0.1em;
+}
+
+.jimHideUsed strong {
+  font-size: 21px;
+}
+
+/* ---------- MAIN JIM BUTTONS ---------- */
+
+.jimMainActions {
+  width: 100%;
+
+  display: grid !important;
+
+  grid-template-columns:
+    2fr 1fr !important;
+
+  gap: 12px !important;
+}
+
+.jimSurvivedButton,
+.jimCaughtButton,
+.jimConfirmButton {
+  width: 100% !important;
+
+  min-height: 70px;
+
+  border: 0 !important;
+  border-radius: 15px !important;
+
+  font: inherit;
+  font-size: 17px !important;
+  font-weight: 700 !important;
+
+  cursor: pointer;
+}
+
+.jimSurvivedButton {
+  background: #f0f2f5 !important;
+  color: #101318 !important;
+}
+
+.jimCaughtButton {
+  background: #47272c !important;
+  color: #f1a0a8 !important;
+}
+
+/* ---------- RESULT SUMMARY ---------- */
+
+.jimOutcomeSummary {
+  width: 100%;
+
+  display: grid !important;
+
+  grid-template-columns:
+    repeat(4, minmax(0, 1fr)) !important;
+
+  gap: 10px !important;
+}
+
+.jimOutcomeSummary > div {
+  min-width: 0;
+
+  padding: 16px;
+
+  border: 1px solid #29313b;
+  border-radius: 14px;
+
+  background: #151a21;
+}
+
+.jimOutcomeSummary span {
+  display: block;
+
+  margin-bottom: 6px;
+
+  color: #7f8b9a;
+
+  font-size: 9px;
+  font-weight: 900;
+
+  letter-spacing: 0.09em;
+}
+
+.jimOutcomeSummary strong {
+  display: block;
+
+  color: #f5f7fa;
+
+  font-size: 22px;
+}
+
+/* ---------- CONFIRM ---------- */
+
+.jimConfirmButton {
+  background: #eef1f5 !important;
+  color: #101318 !important;
+}
+
+.jimConfirmButton:disabled {
+  opacity: 0.4;
+}
+
+.jimWinConfirm {
+  background: #d2ab50 !important;
+  color: #17130b !important;
+}
+
+/* ---------- WIN ---------- */
+
+.jimWinTitle > strong {
+  margin-top: 4px;
+
+  color: #d8b45d;
+
+  font-size: 48px;
+  line-height: 1;
+}
+
+/* ---------- ROTATION NOTE ---------- */
+
+.jimRotationNote {
+  margin: 0;
+
+  color: #909ba8;
+
+  font-size: 15px;
+}
+
+/* ---------- SMALLER SCREENS ---------- */
+
+@media (max-width: 600px) {
+  .jimPanel {
+    gap: 18px;
+  }
+
+  .jimPlayerChoices {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .jimPlayerChoice {
+    min-height: 72px;
+
+    font-size: 19px !important;
+  }
+
+  .jimStages {
+    gap: 5px !important;
+  }
+
+.jimStage {
+  width: 56px;
+  height: 56px;
+  min-width: 56px;
+  min-height: 56px;
+
+  font-size: 18px;
+}
+  .jimOutcomeSummary {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .jimMainActions {
+    grid-template-columns: 1fr !important;
   }
 }

@@ -9,6 +9,7 @@ import StandardRound from './StandardRound'
 import JimRound from './JimRound'
 import './index.css'
 import DataTools from './DataTools'
+import Penalty from './Penalty'
 
 function App() {
   const players = useLiveQuery(
@@ -50,7 +51,8 @@ useState<
   'jim' |
   'race' |
   'history' |
-  'transition'
+  'transition' |
+  'penalty'
 >('scoreboard')
 
   const [
@@ -307,6 +309,37 @@ if (
   )
 }
 
+if (
+  screen === 'penalty' &&
+  activeSession &&
+  sessionPlayers &&
+  players
+) {
+  return (
+    <Penalty
+      session={activeSession}
+      sessionPlayers={
+        sessionPlayers
+      }
+      players={players}
+      onBack={() =>
+        setScreen(
+          'scoreboard'
+        )
+      }
+      onComplete={(data) => {
+        setTransitionData(
+          data
+        )
+
+        setScreen(
+          'transition'
+        )
+      }}
+    />
+  )
+}
+
     const playing =
       sessionPlayers.filter(
         (player) =>
@@ -477,6 +510,14 @@ if (
   Title Race
 </button>
 
+<button
+  className="penaltyAction"
+  onClick={() =>
+    setScreen('penalty')
+  }
+>
+  Penalty -1
+</button>
 
         </footer>
         {showDataTools && (

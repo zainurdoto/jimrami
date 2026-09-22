@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useRef,
   useState,
 } from 'react'
 
@@ -16,9 +17,20 @@ export type ScoreChange = {
 }
 
 export type ScoreTransitionData = {
+  /*
+    Optional for compatibility with
+    the transitions we already built.
+
+    Existing Standard and Jim rounds
+    do not need to be changed.
+  */
+  type?: 'round' | 'penalty'
+
   roundNumber: number
+
   before: SessionPlayer[]
   after: SessionPlayer[]
+
   changes: ScoreChange[]
 }
 
@@ -28,6 +40,12 @@ type Props = {
   onDone: () => void
 }
 
+const UPDATE_DELAY = 3200
+
+const ROUND_FINISH_DELAY = 10000
+
+const PENALTY_FINISH_DELAY = 6500
+
 export default function ScoreTransition({
   data,
   players,
@@ -36,16 +54,54 @@ export default function ScoreTransition({
   const [updated, setUpdated] =
     useState(false)
 
+  /*
+    Keep the latest onDone function
+    without restarting the timers if
+    the parent component rerenders.
+  */
+  const onDoneRef =
+    useRef(onDone)
+
   useEffect(() => {
+    onDoneRef.current =
+      onDone
+  }, [onDone])
+
+  /*
+    Current Penalty.tsx sends exactly
+    one score change of -1.
+
+    This lets the transition recognise
+    penalties immediately without
+    requiring changes elsewhere.
+
+    The explicit `type` field also
+    leaves us a cleaner option later.
+  */
+  const isPenalty =
+    data.type === 'penalty' ||
+    (
+      data.changes.length === 1 &&
+      data.changes[0]?.amount === -1
+    )
+
+  const finishDelay =
+    isPenalty
+      ? PENALTY_FINISH_DELAY
+      : ROUND_FINISH_DELAY
+
+  useEffect(() => {
+    setUpdated(false)
+
     const updateTimer =
       window.setTimeout(() => {
         setUpdated(true)
-      }, 3200)
+      }, UPDATE_DELAY)
 
     const finishTimer =
       window.setTimeout(() => {
-        onDone()
-      }, 10000)
+        onDoneRef.current()
+      }, finishDelay)
 
     return () => {
       window.clearTimeout(
@@ -56,7 +112,10 @@ export default function ScoreTransition({
         finishTimer
       )
     }
-  }, [onDone])
+  }, [
+    data,
+    finishDelay,
+  ])
 
   function getName(
     playerId: number
@@ -81,6 +140,13 @@ export default function ScoreTransition({
     )
   }
 
+  /*
+    Before 3.2 seconds:
+    display old scores/ranking.
+
+    After 3.2 seconds:
+    display new scores/ranking.
+  */
   const source =
     updated
       ? data.after
@@ -97,13 +163,27 @@ export default function ScoreTransition({
   return (
     <main className="app scoreTransitionPage">
       <header className="transitionHeader">
-        <span>
-          ROUND
-        </span>
+        {isPenalty ? (
+          <>
+            <span>
+              PENALTY
+            </span>
 
-        <strong>
-          {data.roundNumber}
-        </strong>
+            <strong>
+              -1
+            </strong>
+          </>
+        ) : (
+          <>
+            <span>
+              ROUND
+            </span>
+
+            <strong>
+              {data.roundNumber}
+            </strong>
+          </>
+        )}
       </header>
 
       <section className="transitionScoreboard">
@@ -204,6 +284,9 @@ export default function ScoreTransition({
                     animate={{
                       opacity: 1,
                       y: 0,
+                    }}
+                    transition={{
+                      duration: 0.35,
                     }}
                   >
                     {

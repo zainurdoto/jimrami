@@ -204,117 +204,63 @@ export default function StandardRound({
     })
   }
 
-  function nextPlayer() {
-    if (!activePlayer) return
+  const filledManualPlayers =
+    playing.filter(
+      (player) =>
+        scores[player.id] !== ''
+    )
 
+  const autoEnteredTotal =
+    filledManualPlayers.reduce(
+      (total, player) =>
+        total +
+        Number(scores[player.id]),
+      0
+    )
+
+  const canAutoCalculate =
+    autoPlayerId === null &&
+    filledManualPlayers.length === 3 &&
+    autoEnteredTotal <= 312
+
+  function calculateAutoScore() {
     setMessage('')
 
-    if (
-      scores[activePlayer.id] === ''
-    ) {
-      setMessage(
-        `Enter ${getName(
-          activePlayer.playerId
-        )}'s score first.`
-      )
-
+    if (!canAutoCalculate) {
       return
     }
 
-    /*
-      Once three players have a score,
-      calculate the fourth automatically.
-    */
-    if (autoPlayerId === null) {
-      const filled =
-        playing.filter(
-          (player) =>
-            scores[player.id] !== ''
-        )
-
-      if (filled.length === 3) {
-        const missing =
-          playing.find(
-            (player) =>
-              scores[player.id] === ''
-          )
-
-        if (missing) {
-          const enteredTotal =
-            filled.reduce(
-              (total, player) =>
-                total +
-                Number(
-                  scores[player.id]
-                ),
-              0
-            )
-
-          const remainder =
-            312 - enteredTotal
-
-          if (remainder < 0) {
-            setMessage(
-              'The entered scores already exceed 312.'
-            )
-
-            return
-          }
-
-          setScores((current) => ({
-            ...current,
-            [missing.id]:
-              String(remainder),
-          }))
-
-          setAutoPlayerId(
-            missing.id
-          )
-
-          setActivePlayerId(
-            missing.id
-          )
-
-          setMessage(
-            `${getName(
-              missing.playerId
-            )} automatically calculated as ${remainder}.`
-          )
-
-          return
-        }
-      }
-    }
-
-    const nextEmpty =
+    const missing =
       playing.find(
         (player) =>
-          player.id !==
-            activePlayer.id &&
           scores[player.id] === ''
       )
 
-    if (nextEmpty) {
-      setActivePlayerId(
-        nextEmpty.id
-      )
-
+    if (!missing) {
       return
     }
 
-    const currentIndex =
-      playing.findIndex(
-        (player) =>
-          player.id ===
-          activePlayer.id
-      )
+    const remainder =
+      312 - autoEnteredTotal
 
-    const nextIndex =
-      (currentIndex + 1) %
-      playing.length
+    setScores((current) => ({
+      ...current,
+      [missing.id]:
+        String(remainder),
+    }))
+
+    setAutoPlayerId(
+      missing.id
+    )
 
     setActivePlayerId(
-      playing[nextIndex].id
+      missing.id
+    )
+
+    setMessage(
+      `${getName(
+        missing.playerId
+      )} automatically calculated as ${remainder}.`
     )
   }
 
@@ -686,13 +632,15 @@ onComplete({
           ←
         </button>
 
-        <div>
-          <span>
-            ROUND {session.roundNumber}
-          </span>
+          <div>
+            <span>
+              STANDARD ROUND
+            </span>
 
-          <h1>Standard Round</h1>
-        </div>
+            <h1>
+              Round {session.roundNumber}
+            </h1>
+          </div>
       </header>
 
       <div className="roundEntryLayout">
@@ -839,9 +787,10 @@ onComplete({
 
           <button
             className="nextScorePlayer"
-            onClick={nextPlayer}
+            disabled={!canAutoCalculate}
+            onClick={calculateAutoScore}
           >
-            Next Player
+            AUTO
           </button>
         </aside>
       </div>

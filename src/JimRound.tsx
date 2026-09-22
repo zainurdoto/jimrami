@@ -1,13 +1,15 @@
-import {
-  type ScoreTransitionData,
-} from './ScoreTransition'
 import { useState } from 'react'
+
 import {
   db,
   type GameSession,
   type Player,
   type SessionPlayer,
 } from './db'
+
+import {
+  type ScoreTransitionData,
+} from './ScoreTransition'
 
 type Props = {
   session: GameSession
@@ -33,47 +35,99 @@ export default function JimRound({
   onBack,
   onComplete,
 }: Props) {
-  const playing = [...sessionPlayers]
-    .filter(
-      (player) =>
-        player.rotationOrder < 4
-    )
-    .sort(
-      (a, b) =>
-        a.rotationOrder -
-        b.rotationOrder
-    )
-
-  const waiting = [...sessionPlayers]
-    .filter(
-      (player) =>
-        player.rotationOrder >= 4
-    )
-    .sort(
-      (a, b) =>
-        a.rotationOrder -
-        b.rotationOrder
-    )
-
   const [phase, setPhase] =
     useState<Phase>('choose')
 
-  const [jimPlayerId, setJimPlayerId] =
+  const [
+    jimSessionPlayerId,
+    setJimSessionPlayerId,
+  ] =
     useState<number | null>(null)
 
-  const [steps, setSteps] =
+  const [
+    catcherSessionPlayerId,
+    setCatcherSessionPlayerId,
+  ] =
+    useState<number | null>(null)
+
+  const [
+    outSessionPlayerId,
+    setOutSessionPlayerId,
+  ] =
+    useState<number | null>(null)
+
+  const [
+    stepsSurvived,
+    setStepsSurvived,
+  ] =
     useState(0)
 
-  const [catcherId, setCatcherId] =
-    useState<number | null>(null)
+  /*
+    null = Jim never used Hide.
 
-  const [outPlayerId, setOutPlayerId] =
+    Otherwise this stores the stage
+    where Hide was used: 2–6.
+  */
+  const [
+    hideStage,
+    setHideStage,
+  ] =
     useState<number | null>(null)
 
   const [saving, setSaving] =
     useState(false)
 
-  function getName(playerId: number) {
+  const playing =
+    [...sessionPlayers]
+      .filter(
+        (player) =>
+          player.rotationOrder < 4
+      )
+      .sort(
+        (a, b) =>
+          a.rotationOrder -
+          b.rotationOrder
+      )
+
+  const waiting =
+    [...sessionPlayers]
+      .filter(
+        (player) =>
+          player.rotationOrder >= 4
+      )
+      .sort(
+        (a, b) =>
+          a.rotationOrder -
+          b.rotationOrder
+      )
+
+  const jimPlayer =
+    jimSessionPlayerId === null
+      ? undefined
+      : sessionPlayers.find(
+          (player) =>
+            player.id ===
+            jimSessionPlayerId
+        )
+
+  /*
+    If 0 stages have been survived,
+    Jim is currently facing Stage 1.
+
+    If 1 has been survived,
+    Jim is currently facing Stage 2.
+
+    etc.
+  */
+  const currentStage =
+    Math.min(
+      stepsSurvived + 1,
+      6
+    )
+
+  function getName(
+    playerId: number
+  ) {
     return (
       players.find(
         (player) =>
@@ -82,61 +136,77 @@ export default function JimRound({
     )
   }
 
-
-  const jimPlayer =
-    playing.find(
-      (player) =>
-        player.id === jimPlayerId
-    )
-
-  const otherPlayers =
-    playing.filter(
-      (player) =>
-        player.id !== jimPlayerId
-    )
-
   function chooseJim(
-    sessionPlayerId: number
+    player: SessionPlayer
   ) {
-    setJimPlayerId(
-      sessionPlayerId
+    setJimSessionPlayerId(
+      player.id
     )
 
-    setSteps(0)
+    setStepsSurvived(0)
+    setHideStage(null)
     setPhase('running')
+  }
+
+  function useHide() {
+        if (
+          phase !== 'running' ||
+          hideStage !== null ||
+          currentStage < 2 ||
+          currentStage > 5
+        ) {
+          return
+        }
+
+    setHideStage(
+      currentStage
+    )
   }
 
   function survivedNext() {
-    const next =
-      Math.min(steps + 1, 6)
-
-    setSteps(next)
-
-    if (next === 6) {
-      setPhase('win')
+    if (phase !== 'running') {
+      return
     }
+
+    /*
+      Surviving Stage 6 means
+      Jim wins.
+    */
+    if (currentStage === 6) {
+      setStepsSurvived(6)
+      setPhase('win')
+
+      return
+    }
+
+    setStepsSurvived(
+      (value) => value + 1
+    )
   }
 
-  function caught() {
-    setCatcherId(null)
-    setPhase('caught')
-  }
+  /*
+    Rotation helper.
 
-  function cancelCaught() {
-    setCatcherId(null)
-    setPhase('running')
-  }
+    If someone is waiting:
+    - selected out player leaves
+    - first waiting player enters
+    - out player goes to back
 
+    If nobody is waiting:
+    nothing rotates.
+  */
   function rotatePlayers(
-    currentPlayers: SessionPlayer[],
-    playerGoingOutId: number
+    updatedPlayers:
+      SessionPlayer[],
+
+    outId: number
   ) {
     if (waiting.length === 0) {
-      return currentPlayers
+      return updatedPlayers
     }
 
     const ordered =
-      [...currentPlayers].sort(
+      [...updatedPlayers].sort(
         (a, b) =>
           a.rotationOrder -
           b.rotationOrder
@@ -154,38 +224,39 @@ export default function JimRound({
           player.rotationOrder >= 4
       )
 
-    const goingOut =
+    const outPlayer =
       currentPlaying.find(
         (player) =>
-          player.id ===
-          playerGoingOutId
-      )
-
-    if (!goingOut) {
-      return currentPlayers
-    }
-
-    const survivors =
-      currentPlaying.filter(
-        (player) =>
-          player.id !==
-          playerGoingOutId
+          player.id === outId
       )
 
     const entering =
       currentWaiting[0]
 
+    if (
+      !outPlayer ||
+      !entering
+    ) {
+      return updatedPlayers
+    }
+
+    const survivors =
+      currentPlaying.filter(
+        (player) =>
+          player.id !== outId
+      )
+
     const remainingWaiting =
       currentWaiting.slice(1)
 
-    const newOrder = [
+    const newRotation = [
       ...survivors,
       entering,
       ...remainingWaiting,
-      goingOut,
+      outPlayer,
     ]
 
-    return newOrder.map(
+    return newRotation.map(
       (player, index) => ({
         ...player,
         rotationOrder: index,
@@ -195,21 +266,33 @@ export default function JimRound({
 
   async function finishLoss() {
     if (
+      saving ||
       !jimPlayer ||
-      catcherId === null
+      catcherSessionPlayerId ===
+        null
     ) {
       return
     }
 
     const catcher =
-      playing.find(
+      sessionPlayers.find(
         (player) =>
-          player.id === catcherId
+          player.id ===
+          catcherSessionPlayerId
       )
 
-    if (!catcher) return
+    if (!catcher) {
+      return
+    }
 
     setSaving(true)
+
+    const before =
+      sessionPlayers.map(
+        (player) => ({
+          ...player,
+        })
+      )
 
     let updated =
       sessionPlayers.map(
@@ -242,21 +325,33 @@ export default function JimRound({
             }
           }
 
-          return { ...player }
+          return {
+            ...player,
+          }
         }
       )
 
-    updated = rotatePlayers(
-      updated,
-      jimPlayer.id
-    )
+    /*
+      Jim himself leaves the table
+      after losing, if somebody is
+      waiting.
+    */
+    updated =
+      rotatePlayers(
+        updated,
+        jimPlayer.id
+      )
 
     await db.transaction(
       'rw',
-      db.rounds,
-      db.jimResults,
-      db.sessionPlayers,
-      db.sessions,
+
+      [
+        db.sessions,
+        db.sessionPlayers,
+        db.rounds,
+        db.jimResults,
+      ],
+
       async () => {
         const roundId =
           await db.rounds.add({
@@ -274,6 +369,7 @@ export default function JimRound({
 
         await db.jimResults.add({
           roundId,
+
           sessionId:
             session.id,
 
@@ -283,18 +379,25 @@ export default function JimRound({
           caughtByPlayerId:
             catcher.playerId,
 
+          /*
+            Jim is the out player
+            after a Jim loss.
+          */
           outPlayerId:
-            waiting.length > 0
-              ? jimPlayer.playerId
-              : undefined,
+            jimPlayer.playerId,
 
           won: false,
 
-          stepsSurvived:
-            steps,
+          stepsSurvived,
+
+          hideStage:
+            hideStage ??
+            undefined,
 
           jimPointsAwarded: -3,
-          catcherPointsAwarded: 1,
+
+          catcherPointsAwarded:
+            1,
         })
 
         await db.sessionPlayers.bulkPut(
@@ -314,111 +417,124 @@ export default function JimRound({
 
     setSaving(false)
 
-onComplete({
-  roundNumber:
-    session.roundNumber,
+    onComplete({
+      type: 'round',
 
-  before:
-    sessionPlayers.map(
-      (player) => ({
-        ...player,
-      })
-    ),
+      roundNumber:
+        session.roundNumber,
 
-  after:
-    updated.map(
-      (player) => ({
-        ...player,
-      })
-    ),
+      before,
 
-  changes: [
-    {
-      sessionPlayerId:
-        jimPlayer.id,
+      after:
+        updated.map(
+          (player) => ({
+            ...player,
+          })
+        ),
 
-      amount: -3,
-    },
+      changes: [
+        {
+          sessionPlayerId:
+            jimPlayer.id,
 
-    {
-      sessionPlayerId:
-        catcher.id,
+          amount: -3,
+        },
 
-      amount: 1,
-    },
-  ],
-})
+        {
+          sessionPlayerId:
+            catcher.id,
+
+          amount: 1,
+        },
+      ],
+    })
   }
 
   async function finishWin() {
-    if (!jimPlayer) return
-
-    /*
-      If somebody is waiting,
-      we need to know which of
-      the other 3 players goes out.
-    */
     if (
-      waiting.length > 0 &&
-      outPlayerId === null
+      saving ||
+      !jimPlayer
     ) {
       return
     }
 
+    /*
+      If someone is waiting,
+      another active player must
+      be chosen to leave.
+    */
+    if (
+      waiting.length > 0 &&
+      outSessionPlayerId === null
+    ) {
+      return
+    }
+
+    const outPlayer =
+      outSessionPlayerId === null
+        ? undefined
+        : sessionPlayers.find(
+            (player) =>
+              player.id ===
+              outSessionPlayerId
+          )
+
     setSaving(true)
+
+    const before =
+      sessionPlayers.map(
+        (player) => ({
+          ...player,
+        })
+      )
 
     let updated =
       sessionPlayers.map(
         (player) => {
           if (
-            player.id ===
+            player.id !==
             jimPlayer.id
           ) {
             return {
               ...player,
-
-              points:
-                player.points + 7,
-
-              jimWins:
-                (player.jimWins ??
-                  0) + 1,
-
-              jimAttempts:
-                (player.jimAttempts ??
-                  0) + 1,
             }
           }
 
-          return { ...player }
+          return {
+            ...player,
+
+            points:
+              player.points + 7,
+
+            jimWins:
+              (player.jimWins ??
+                0) + 1,
+
+            jimAttempts:
+              (player.jimAttempts ??
+                0) + 1,
+          }
         }
       )
 
-    if (
-      waiting.length > 0 &&
-      outPlayerId !== null
-    ) {
-      updated = rotatePlayers(
-        updated,
-        outPlayerId
-      )
+    if (outPlayer) {
+      updated =
+        rotatePlayers(
+          updated,
+          outPlayer.id
+        )
     }
-
-    const playerGoingOut =
-      outPlayerId !== null
-        ? playing.find(
-            (player) =>
-              player.id ===
-              outPlayerId
-          )
-        : undefined
 
     await db.transaction(
       'rw',
-      db.rounds,
-      db.jimResults,
-      db.sessionPlayers,
-      db.sessions,
+
+      [
+        db.sessions,
+        db.sessionPlayers,
+        db.rounds,
+        db.jimResults,
+      ],
+
       async () => {
         const roundId =
           await db.rounds.add({
@@ -436,6 +552,7 @@ onComplete({
 
         await db.jimResults.add({
           roundId,
+
           sessionId:
             session.id,
 
@@ -443,16 +560,20 @@ onComplete({
             jimPlayer.playerId,
 
           outPlayerId:
-            waiting.length > 0
-              ? playerGoingOut?.playerId
-              : undefined,
+            outPlayer?.playerId,
 
           won: true,
 
           stepsSurvived: 6,
 
+          hideStage:
+            hideStage ??
+            undefined,
+
           jimPointsAwarded: 7,
-          catcherPointsAwarded: 0,
+
+          catcherPointsAwarded:
+            0,
         })
 
         await db.sessionPlayers.bulkPut(
@@ -472,61 +593,68 @@ onComplete({
 
     setSaving(false)
 
-onComplete({
-  roundNumber:
-    session.roundNumber,
+    onComplete({
+      type: 'round',
 
-  before:
-    sessionPlayers.map(
-      (player) => ({
-        ...player,
-      })
-    ),
+      roundNumber:
+        session.roundNumber,
 
-  after:
-    updated.map(
-      (player) => ({
-        ...player,
-      })
-    ),
+      before,
 
-  changes: [
-    {
-      sessionPlayerId:
-        jimPlayer.id,
+      after:
+        updated.map(
+          (player) => ({
+            ...player,
+          })
+        ),
 
-      amount: 7,
-    },
-  ],
-})
+      changes: [
+        {
+          sessionPlayerId:
+            jimPlayer.id,
+
+          amount: 7,
+        },
+      ],
+    })
   }
 
   return (
-    <main className="app">
-      <header className="jimRoundHeader">
+    <main className="app jimRoundPage">
+      <header className="roundHeader">
         <button
           className="roundBack"
           onClick={onBack}
+          disabled={saving}
         >
           ←
         </button>
 
         <div>
           <span>
-            ROUND {session.roundNumber}
+            JIM ROUND
           </span>
 
-          <h1>★ Jim Round</h1>
+          <h1>
+            Round{' '}
+            {session.roundNumber}
+          </h1>
         </div>
       </header>
 
       {phase === 'choose' && (
-        <section>
+        <section className="jimPanel">
           <div className="jimSectionTitle">
-            <span>WHO IS JIM?</span>
+            <span>
+              JIM
+            </span>
+
+            <h2>
+              Who called Jim?
+            </h2>
           </div>
 
-          <div className="jimPlayerGrid">
+          <div className="jimPlayerChoices">
             {playing.map(
               (player) => (
                 <button
@@ -534,7 +662,7 @@ onComplete({
                   className="jimPlayerChoice"
                   onClick={() =>
                     chooseJim(
-                      player.id
+                      player
                     )
                   }
                 >
@@ -550,50 +678,143 @@ onComplete({
 
       {phase === 'running' &&
         jimPlayer && (
-          <section className="jimRunCard">
-            <span className="jimSmallLabel">
-              JIM
-            </span>
+          <section className="jimPanel">
+            <div className="jimCurrentPlayer">
+              <span>
+                JIM
+              </span>
 
-            <h2>
-              {getName(
-                jimPlayer.playerId
-              )}
-            </h2>
+              <h2>
+                {getName(
+                  jimPlayer.playerId
+                )}
+              </h2>
+            </div>
 
-            <div className="survivalTrack">
-              {[1, 2, 3, 4, 5, 6].map(
-                (step) => (
-                  <div
-                    key={step}
-                    className={`survivalStep ${
-                      step <= steps
-                        ? 'complete'
-                        : ''
-                    }`}
-                  >
-                    {step}
-                  </div>
-                )
+            <div className="jimProgress">
+              <div className="jimProgressTop">
+                <span>
+                  SURVIVED
+                </span>
+
+                <strong>
+                  {stepsSurvived}
+                  {' / '}
+                  6
+                </strong>
+              </div>
+
+              <div className="jimStages">
+                {[
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                ].map(
+                  (stage) => {
+                    const survived =
+                      stage <=
+                      stepsSurvived
+
+                    const current =
+                      stage ===
+                      currentStage
+
+                    const hidden =
+                      stage ===
+                      hideStage
+
+                    return (
+                      <div
+                        key={stage}
+                        className={[
+                          'jimStage',
+
+                          survived
+                            ? 'survived'
+                            : '',
+
+                          current
+                            ? 'current'
+                            : '',
+
+                          hidden
+                            ? 'hidden'
+                            : '',
+                        ]
+                          .filter(
+                            Boolean
+                          )
+                          .join(' ')}
+                      >
+                        <span>
+                          {stage}
+                        </span>
+
+                        {hidden && (
+                          <small>
+                            HIDE
+                          </small>
+                        )}
+                      </div>
+                    )
+                  }
+                )}
+              </div>
+            </div>
+
+            <div className="jimHideArea">
+              {hideStage !== null ? (
+                <div className="jimHideUsed">
+                  <span>
+                    HIDE USED
+                  </span>
+
+                  <strong>
+                    Stage{' '}
+                    {hideStage}
+                  </strong>
+                </div>
+              ) : (
+                <button
+                  className="jimHideButton"
+                 disabled={
+                  currentStage === 1 ||
+                  currentStage === 6 ||
+                  saving
+                }
+                  onClick={useHide}
+                >
+                  {currentStage === 1
+                    ? 'Hide available from Stage 2'
+                    : currentStage === 6
+                      ? 'Hide unavailable on final stage'
+                      : `HIDE • STAGE ${currentStage}`}
+                </button>
               )}
             </div>
 
-            <div className="survivalCount">
-              <strong>{steps}</strong>
-              <span>/ 6 survived</span>
-            </div>
-
-            <div className="jimRunActions">
+            <div className="jimMainActions">
               <button
-                className="jimSurviveButton"
-                onClick={survivedNext}
+                className="jimSurvivedButton"
+                onClick={
+                  survivedNext
+                }
+                disabled={saving}
               >
                 Survived Next
               </button>
 
               <button
                 className="jimCaughtButton"
-                onClick={caught}
+                onClick={() =>
+                  setPhase(
+                    'caught'
+                  )
+                }
+                disabled={saving}
               >
                 Caught
               </button>
@@ -603,178 +824,238 @@ onComplete({
 
       {phase === 'caught' &&
         jimPlayer && (
-          <section className="jimResolution">
-            <span className="jimResultLoss">
-              JIM CAUGHT
-            </span>
+          <section className="jimPanel">
+            <div className="jimSectionTitle">
+              <span>
+                JIM CAUGHT
+              </span>
 
-            <h2>
-              {getName(
-                jimPlayer.playerId
-              )}
-            </h2>
-
-            <p>
-              Survived {steps} of 6
-            </p>
-
-            <div className="jimScoringPreview">
-              <strong>
+              <h2>
+                Who caught{' '}
                 {getName(
                   jimPlayer.playerId
                 )}
-              </strong>
-
-              <span>-3</span>
+                ?
+              </h2>
             </div>
 
-            <div className="jimSectionTitle">
-              <span>
-                WHO CAUGHT JIM?
-              </span>
-            </div>
-
-            <div className="jimChoiceList">
-              {otherPlayers.map(
-                (player) => (
-                  <button
-                    key={player.id}
-                    className={
-                      catcherId ===
-                      player.id
-                        ? 'selected'
-                        : ''
-                    }
-                    onClick={() =>
-                      setCatcherId(
+            <div className="jimPlayerChoices">
+              {playing
+                .filter(
+                  (player) =>
+                    player.id !==
+                    jimPlayer.id
+                )
+                .map(
+                  (player) => (
+                    <button
+                      key={
                         player.id
-                      )
-                    }
-                  >
-                    <strong>
+                      }
+                      className={
+                        catcherSessionPlayerId ===
+                        player.id
+                          ? 'jimPlayerChoice selected'
+                          : 'jimPlayerChoice'
+                      }
+                      onClick={() =>
+                        setCatcherSessionPlayerId(
+                          player.id
+                        )
+                      }
+                    >
                       {getName(
                         player.playerId
                       )}
-                    </strong>
-
-                    <span>+1</span>
-                  </button>
-                )
-              )}
+                    </button>
+                  )
+                )}
             </div>
 
-            {waiting.length > 0 && (
-              <p className="jimRotationNote">
-                {getName(
-                  jimPlayer.playerId
-                )}{' '}
-                will go to the back of
-                the waiting queue.
-              </p>
-            )}
+            <div className="jimOutcomeSummary">
+              <div>
+                <span>
+                  JIM
+                </span>
 
-            <div className="jimResolutionActions">
-              <button
-                className="jimCancel"
-                onClick={
-                  cancelCaught
-                }
-                disabled={saving}
-              >
-                Back
-              </button>
+                <strong>
+                  -3
+                </strong>
+              </div>
 
-              <button
-                className="jimConfirm"
-                onClick={
-                  finishLoss
-                }
-                disabled={
-                  catcherId ===
-                    null ||
-                  saving
-                }
-              >
-                {saving
-                  ? 'Saving...'
-                  : 'Confirm Jim Loss'}
-              </button>
+              <div>
+                <span>
+                  CATCHER
+                </span>
+
+                <strong>
+                  +1
+                </strong>
+              </div>
+
+              <div>
+                <span>
+                  SURVIVED
+                </span>
+
+                <strong>
+                  {
+                    stepsSurvived
+                  }
+                  /6
+                </strong>
+              </div>
+
+              <div>
+                <span>
+                  HIDE
+                </span>
+
+                <strong>
+                  {hideStage ===
+                  null
+                    ? 'NO'
+                    : `S${hideStage}`}
+                </strong>
+              </div>
             </div>
+
+            <button
+              className="jimConfirmButton"
+              disabled={
+                catcherSessionPlayerId ===
+                  null ||
+                saving
+              }
+              onClick={
+                finishLoss
+              }
+            >
+              {saving
+                ? 'Saving...'
+                : 'Confirm Catch'}
+            </button>
           </section>
         )}
 
       {phase === 'win' &&
         jimPlayer && (
-          <section className="jimResolution">
-            <span className="jimResultWin">
-              JIM SURVIVED
-            </span>
+          <section className="jimPanel">
+            <div className="jimWinTitle">
+              <span>
+                JIM SURVIVED
+              </span>
 
-            <h2>
-              {getName(
-                jimPlayer.playerId
-              )}
-            </h2>
+              <h2>
+                {getName(
+                  jimPlayer.playerId
+                )}
+              </h2>
 
-            <div className="jimWinScore">
-              +7
+              <strong>
+                +7
+              </strong>
             </div>
 
-            {waiting.length > 0 ? (
+            <div className="jimOutcomeSummary">
+              <div>
+                <span>
+                  SURVIVED
+                </span>
+
+                <strong>
+                  6/6
+                </strong>
+              </div>
+
+              <div>
+                <span>
+                  HIDE
+                </span>
+
+                <strong>
+                  {hideStage ===
+                  null
+                    ? 'NO'
+                    : `S${hideStage}`}
+                </strong>
+              </div>
+            </div>
+
+            {waiting.length >
+            0 ? (
               <>
                 <div className="jimSectionTitle">
                   <span>
-                    WHO IS OUT?
+                    ROTATION
                   </span>
+
+                  <h2>
+                    Who is out?
+                  </h2>
                 </div>
 
-                <div className="jimChoiceList">
-                  {otherPlayers.map(
-                    (player) => (
-                      <button
-                        key={
-                          player.id
-                        }
-                        className={
-                          outPlayerId ===
-                          player.id
-                            ? 'selected'
-                            : ''
-                        }
-                        onClick={() =>
-                          setOutPlayerId(
+                <div className="jimPlayerChoices">
+                  {playing
+                    .filter(
+                      (player) =>
+                        player.id !==
+                        jimPlayer.id
+                    )
+                    .map(
+                      (player) => (
+                        <button
+                          key={
                             player.id
-                          )
-                        }
-                      >
-                        <strong>
+                          }
+                          className={
+                            outSessionPlayerId ===
+                            player.id
+                              ? 'jimPlayerChoice selected'
+                              : 'jimPlayerChoice'
+                          }
+                          onClick={() =>
+                            setOutSessionPlayerId(
+                              player.id
+                            )
+                          }
+                        >
                           {getName(
                             player.playerId
                           )}
-                        </strong>
-
-                        <span>OUT</span>
-                      </button>
-                    )
-                  )}
+                        </button>
+                      )
+                    )}
                 </div>
+
+                <p className="jimRotationNote">
+                  {getName(
+                    waiting[0]
+                      .playerId
+                  )}{' '}
+                  will enter.
+                </p>
               </>
             ) : (
               <p className="jimRotationNote">
-                No player is waiting, so
-                the table stays unchanged.
+                No waiting player.
+                No rotation needed.
               </p>
             )}
 
             <button
-              className="jimConfirm jimWinConfirm"
-              onClick={finishWin}
+              className="jimConfirmButton jimWinConfirm"
               disabled={
-                (waiting.length >
-                  0 &&
-                  outPlayerId ===
-                    null) ||
-                saving
+                saving ||
+                (
+                  waiting.length >
+                    0 &&
+                  outSessionPlayerId ===
+                    null
+                )
+              }
+              onClick={
+                finishWin
               }
             >
               {saving
@@ -782,20 +1063,6 @@ onComplete({
                 : 'Confirm Jim Win'}
             </button>
           </section>
-        )}
-
-      {waiting.length > 0 &&
-        phase !== 'caught' &&
-        phase !== 'win' && (
-          <div className="jimWaiting">
-            <span>NEXT IN</span>
-
-            <strong>
-              {getName(
-                waiting[0].playerId
-              )}
-            </strong>
-          </div>
         )}
     </main>
   )

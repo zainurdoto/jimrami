@@ -52,16 +52,23 @@ export type JimResult = {
   id: number
   roundId: number
   sessionId: number
-
   jimPlayerId: number
   caughtByPlayerId?: number
   outPlayerId?: number
-
   won: boolean
   stepsSurvived: number
-
+  hideStage?: number
   jimPointsAwarded: number
   catcherPointsAwarded: number
+}
+
+export type PenaltyResult = {
+  id: number
+  sessionId: number
+  playerId: number
+  roundNumber: number
+  pointsAwarded: number
+  createdAt: Date
 }
 
 export const db = new Dexie('JimDatabase') as Dexie & {
@@ -71,6 +78,8 @@ export const db = new Dexie('JimDatabase') as Dexie & {
   rounds: EntityTable<GameRound, 'id'>
   roundResults: EntityTable<RoundResult, 'id'>
   jimResults: EntityTable<JimResult, 'id'>
+  penaltyResults: EntityTable<PenaltyResult,'id'
+>
 }
 
 db.version(1).stores({
@@ -126,3 +135,26 @@ db.version(4)
         }
       })
   })
+
+  db.version(5).stores({
+  players:
+    '++id, name, createdAt',
+
+  sessions:
+    '++id, status, startedAt',
+
+  sessionPlayers:
+    '++id, sessionId, playerId, rotationOrder',
+
+  rounds:
+    '++id, sessionId, roundNumber, type, createdAt',
+
+  roundResults:
+    '++id, roundId, sessionId, playerId',
+
+  jimResults:
+    '++id, roundId, sessionId, jimPlayerId, won',
+
+  penaltyResults:
+    '++id, sessionId, playerId, roundNumber, createdAt',
+})
