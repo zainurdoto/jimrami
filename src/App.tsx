@@ -5,6 +5,7 @@ import { db } from './db'
 import StandardRound from './StandardRound'
 import JimRound from './JimRound'
 import './index.css'
+import DataTools from './DataTools'
 
 function App() {
   const players = useLiveQuery(
@@ -15,6 +16,7 @@ function App() {
     []
   )
 
+  
   const activeSession = useLiveQuery(
     () =>
       db.sessions
@@ -55,6 +57,11 @@ useState<
     selectedIds,
     setSelectedIds,
   ] = useState<number[]>([])
+
+    const [
+    showDataTools,
+    setShowDataTools,
+  ] = useState(false)
 
   async function addPlayer() {
     const name =
@@ -309,12 +316,23 @@ if (screen === 'race') {
             </span>
           </div>
 
-          <button
-            className="endSession"
-            onClick={endSession}
-          >
-            End Session
-          </button>
+<div className="gameHeaderActions">
+  <button
+    className="dataButton"
+    onClick={() =>
+      setShowDataTools(true)
+    }
+  >
+    Data
+  </button>
+
+  <button
+    className="endSession"
+    onClick={endSession}
+  >
+    End Session
+  </button>
+</div>
         </header>
 
         <section className="gameScoreboard">
@@ -433,6 +451,13 @@ if (screen === 'race') {
 
 
         </footer>
+        {showDataTools && (
+  <DataTools
+    onClose={() =>
+      setShowDataTools(false)
+    }
+  />
+)}
       </main>
     )
   }
@@ -443,13 +468,24 @@ if (screen === 'race') {
 
   return (
     <main className="app">
-      <header className="setupHeader">
-        <h1>JIM</h1>
+     <header className="setupHeader">
+  <h1>JIM</h1>
 
-        <span>
-          New Session
-        </span>
-      </header>
+  <div className="setupHeaderActions">
+    <span>
+      New Session
+    </span>
+
+    <button
+      className="dataButton"
+      onClick={() =>
+        setShowDataTools(true)
+      }
+    >
+      Data
+    </button>
+  </div>
+</header>
 
       <section className="addPlayer">
         <input
@@ -620,6 +656,14 @@ if (screen === 'race') {
             } more`
           : 'Start Session'}
       </button>
+
+      {showDataTools && (
+  <DataTools
+    onClose={() =>
+      setShowDataTools(false)
+    }
+  />
+)}
     </main>
   )
 }

@@ -1282,3 +1282,167 @@ button {
 .raceSpeed:active {
   background: #252d39;
 }
+
+/* ==============================
+   DATA / BACKUP
+================================ */
+
+.gameHeaderActions,
+.setupHeaderActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dataButton {
+  min-height: 48px;
+  padding: 0 18px;
+
+  border: 1px solid #39414c;
+  border-radius: 13px;
+
+  background: #171c24;
+  color: #f2f4f6;
+
+  font-weight: 800;
+}
+
+.dataOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+
+  display: grid;
+  place-items: center;
+
+  padding: 22px;
+
+  background:
+    rgba(4, 6, 9, 0.84);
+}
+
+.dataPanel {
+  width: min(
+    100%,
+    620px
+  );
+
+  padding: 26px;
+
+  border: 1px solid #303844;
+  border-radius: 22px;
+
+  background: #171c24;
+}
+
+.dataHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  margin-bottom: 22px;
+}
+
+.dataHeader span {
+  color: #7f8997;
+
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.11em;
+}
+
+.dataHeader h2 {
+  margin: 3px 0 0;
+  font-size: 30px;
+}
+
+.dataHeader > button {
+  width: 46px;
+  height: 46px;
+
+  border: 1px solid #303844;
+  border-radius: 13px;
+
+  background: #202731;
+  color: white;
+
+  font-size: 24px;
+}
+
+.dataOption {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1fr)
+    auto;
+
+  align-items: center;
+  gap: 20px;
+
+  padding: 20px 0;
+
+  border-top:
+    1px solid #29313b;
+}
+
+.dataOption strong {
+  font-size: 18px;
+}
+
+.dataOption p {
+  margin: 6px 0 0;
+
+  color: #8994a2;
+
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.dataOption > button,
+.dataOption > label {
+  min-width: 100px;
+  min-height: 48px;
+
+  display: grid;
+  place-items: center;
+
+  padding: 0 16px;
+
+  border: 0;
+  border-radius: 13px;
+
+  background: #f2f4f6;
+  color: #101419;
+
+  cursor: pointer;
+
+  font-weight: 850;
+}
+
+.dataOption input {
+  display: none;
+}
+
+.importDisabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.dataWarning {
+  margin: 16px 0 0;
+
+  color: #737f8e;
+
+  font-size: 12px;
+}
+
+@media (max-width: 520px) {
+  .dataOption {
+    grid-template-columns: 1fr;
+  }
+
+  .dataOption > button,
+  .dataOption > label {
+    width: 100%;
+  }
+}
+

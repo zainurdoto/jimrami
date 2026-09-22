@@ -5,18 +5,18 @@ import {
 } from 'react'
 
 import { useLiveQuery } from 'dexie-react-hooks'
-
 import { motion } from 'motion/react'
 
 import {
-  LineChart,
+  CartesianGrid,
+  Label,
   Line,
+  LineChart,
+  ReferenceDot,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  ReferenceDot,
 } from 'recharts'
 
 import {
@@ -33,6 +33,22 @@ type Props = {
   onBack: () => void
 }
 
+type LabelViewBox = {
+  x?: number
+  y?: number
+  width?: number
+  height?: number
+  cx?: number
+  cy?: number
+}
+
+type EndpointLabelProps = {
+  viewBox?: LabelViewBox
+  name: string
+  color: string
+  offsetY: number
+}
+
 const lineColors = [
   '#f2f4f6',
   '#d9ae4b',
@@ -44,9 +60,57 @@ const lineColors = [
   '#77c6c3',
 ]
 
-const PLAYBACK_INTERVAL = 20
 const PLAYBACK_MS_PER_ROUND = 1200
 const PLAYBACK_SPEEDS = [0.5, 1, 2, 4]
+
+const CHART_HEIGHT = 500
+const PLOT_TOP = 25
+const PLOT_BOTTOM = 35
+const PLOT_HEIGHT =
+  CHART_HEIGHT - PLOT_TOP - PLOT_BOTTOM
+
+/*
+  Custom endpoint label.
+
+  Recharts still decides where the real
+  dot belongs.
+
+  We only move the TEXT vertically when
+  names would overlap.
+*/
+function EndpointLabel({
+  viewBox,
+  name,
+  color,
+  offsetY,
+}: EndpointLabelProps) {
+  if (!viewBox) {
+    return null
+  }
+
+  const x =
+    viewBox.cx ??
+    (viewBox.x ?? 0) +
+      (viewBox.width ?? 0) / 2
+
+  const y =
+    viewBox.cy ??
+    (viewBox.y ?? 0) +
+      (viewBox.height ?? 0) / 2
+
+  return (
+    <text
+      x={x + 12}
+      y={y + offsetY}
+      fill={color}
+      fontSize={14}
+      fontWeight={850}
+      dominantBaseline="middle"
+    >
+      {name}
+    </text>
+  )
+}
 
 export default function TitleRace({
   session,
@@ -82,14 +146,13 @@ export default function TitleRace({
   )
 
   /*
-    This is our continuously-moving
-    position through history.
+    playhead can contain decimals internally.
 
-    2.5 means visually halfway
-    between rounds 2 and 3.
+    2.5 means the animation is halfway
+    between Round 2 and Round 3.
 
-    It is ONLY for animation.
-    The user never needs to see 2.5.
+    The user-facing UI still only shows
+    completed whole rounds.
   */
   const [playhead, setPlayhead] =
     useState(0)
@@ -97,8 +160,10 @@ export default function TitleRace({
   const [playing, setPlaying] =
     useState(false)
 
-const [playbackSpeed, setPlaybackSpeed] =
-  useState(1)
+  const [
+    playbackSpeed,
+    setPlaybackSpeed,
+  ] = useState(1)
 
   function getName(playerId: number) {
     return (
@@ -110,7 +175,8 @@ const [playbackSpeed, setPlaybackSpeed] =
   }
 
   /*
-    Build the real historical scores.
+    Build the actual historical
+    cumulative points timeline.
   */
   const timeline = useMemo(() => {
     if (
@@ -124,11 +190,9 @@ const [playbackSpeed, setPlaybackSpeed] =
     const totals:
       Record<number, number> = {}
 
-    sessionPlayers.forEach(
-      (player) => {
-        totals[player.playerId] = 0
-      }
-    )
+    sessionPlayers.forEach((player) => {
+      totals[player.playerId] = 0
+    })
 
     const data:
       Record<string, number>[] = []
@@ -156,11 +220,14 @@ const [playbackSpeed, setPlaybackSpeed] =
     }
 
     /*
-      Starting line.
+      Everyone begins at zero.
     */
     data.push(makeRow(0))
 
     rounds.forEach((round) => {
+      /*
+        STANDARD ROUND
+      */
       if (
         round.type === 'standard'
       ) {
@@ -184,6 +251,9 @@ const [playbackSpeed, setPlaybackSpeed] =
         )
       }
 
+      /*
+        JIM ROUND
+      */
       if (round.type === 'jim') {
         const result =
           jimResults.find(
@@ -193,6 +263,11 @@ const [playbackSpeed, setPlaybackSpeed] =
           )
 
         if (result) {
+          /*
+            Jim:
+            win  = +7
+            loss = -3
+          */
           totals[
             result.jimPlayerId
           ] =
@@ -201,6 +276,10 @@ const [playbackSpeed, setPlaybackSpeed] =
             ] ?? 0) +
             result.jimPointsAwarded
 
+          /*
+            Catcher gets +1
+            if Jim loses.
+          */
           if (
             result.caughtByPlayerId !==
             undefined
@@ -209,11 +288,9 @@ const [playbackSpeed, setPlaybackSpeed] =
               result.caughtByPlayerId
             ] =
               (totals[
-                result
-                  .caughtByPlayerId
+                result.caughtByPlayerId
               ] ?? 0) +
-              result
-                .catcherPointsAwarded
+              result.catcherPointsAwarded
           }
         }
       }
@@ -240,7 +317,8 @@ const [playbackSpeed, setPlaybackSpeed] =
     )
 
   /*
-    Open the page at the latest round.
+    When Title Race is opened,
+    begin at the latest round.
   */
   useEffect(() => {
     if (timeline.length > 0) {
@@ -251,45 +329,77 @@ const [playbackSpeed, setPlaybackSpeed] =
   }, [timeline.length])
 
   /*
-    Smooth playback.
+    Smooth playback using
+    requestAnimationFrame.
+
+    This synchronises the animation
+    with the browser's drawing cycle.
   */
-useEffect(() => {
-  if (!playing) return
+  useEffect(() => {
+    if (!playing) return
 
-  const startingPlayhead = playhead
-  const startingTime = performance.now()
+    const startingPlayhead =
+      playhead
 
-  let animationFrame = 0
+    const startingTime =
+      performance.now()
 
-  function animate(now: number) {
-    const elapsed = now - startingTime
+    let animationFrame = 0
 
-const nextPlayhead = Math.min(
-  startingPlayhead +
-    elapsed /
-      (PLAYBACK_MS_PER_ROUND / playbackSpeed),
-  lastIndex
-)
+    function animate(now: number) {
+      const elapsed =
+        now - startingTime
 
-    setPlayhead(nextPlayhead)
+      const durationPerRound =
+        PLAYBACK_MS_PER_ROUND /
+        playbackSpeed
 
-    if (nextPlayhead < lastIndex) {
-      animationFrame =
-        requestAnimationFrame(animate)
-    } else {
-      setPlaying(false)
+      const nextPlayhead =
+        Math.min(
+          startingPlayhead +
+            elapsed /
+              durationPerRound,
+          lastIndex
+        )
+
+      setPlayhead(nextPlayhead)
+
+      if (
+        nextPlayhead <
+        lastIndex
+      ) {
+        animationFrame =
+          requestAnimationFrame(
+            animate
+          )
+      } else {
+        setPlaying(false)
+      }
     }
-  }
 
-  animationFrame =
-    requestAnimationFrame(animate)
+    animationFrame =
+      requestAnimationFrame(
+        animate
+      )
 
-  return () => {
-    cancelAnimationFrame(animationFrame)
-  }
-}, [playing, lastIndex, playbackSpeed])
+    return () => {
+      cancelAnimationFrame(
+        animationFrame
+      )
+    }
+  }, [
+    playing,
+    lastIndex,
+    playbackSpeed,
+  ])
 
+  /*
+    Only completed rounds count
+    toward the official displayed
+    standings.
 
+    Therefore no fake scores like 4.7.
+  */
   const completedRound =
     Math.min(
       Math.floor(
@@ -299,8 +409,14 @@ const nextPlayhead = Math.min(
     )
 
   /*
-    Produce one temporary moving
-    data point for the chart.
+    Build the moving temporary endpoint.
+
+    Example:
+    halfway between 3 and 10 points
+    becomes 6.5 internally.
+
+    That value is used only to animate
+    the line.
   */
   const visibleData =
     useMemo(() => {
@@ -381,11 +497,8 @@ const nextPlayhead = Math.min(
     ]
 
   /*
-    Official scoreboard uses only the
-    last COMPLETED round.
-
-    Therefore:
-    no fake decimals.
+    Official standings use the most
+    recently COMPLETED round.
   */
   const officialRow =
     timeline[
@@ -410,51 +523,65 @@ const nextPlayhead = Math.min(
           }))
           .sort(
             (a, b) =>
-              b.points - a.points ||
+              b.points -
+                a.points ||
               a.name.localeCompare(
                 b.name
               )
           )
       : []
 
-
-const xMaximum =
-  Math.max(lastIndex, 1)
-
-
-const xTicks =
-  Array.from(
-    {
-      length: lastIndex + 1,
-    },
-    (_, index) => index
-  )
-
-const allTimelineValues =
-  timeline.flatMap((row) =>
-    sessionPlayers.map(
-      (player) =>
-        row[
-          `player-${player.playerId}`
-        ] ?? 0
-    )
-  )
-
-const rawMaximum =
-  Math.max(
-    0,
-    ...allTimelineValues
-  )
-
-const rawMinimum =
-  Math.min(
-    0,
-    ...allTimelineValues
-  )
   /*
-    Padding around the highest and
-    lowest visible score.
+    FIXED X AXIS
+
+    This was the big smoothness fix.
+
+    The chart itself no longer grows
+    during playback.
   */
+  const xMaximum =
+    Math.max(
+      lastIndex,
+      1
+    )
+
+  const xTicks =
+    Array.from(
+      {
+        length:
+          lastIndex + 1,
+      },
+      (_, index) => index
+    )
+
+  /*
+    FIXED Y AXIS
+
+    Find every score that occurs
+    throughout the whole session.
+  */
+  const allTimelineValues =
+    timeline.flatMap((row) =>
+      sessionPlayers.map(
+        (player) =>
+          row[
+            `player-${player.playerId}`
+          ] ?? 0
+      )
+    )
+
+  const rawMaximum =
+    Math.max(
+      0,
+      ...allTimelineValues
+    )
+
+  const rawMinimum =
+    Math.min(
+      0,
+      ...allTimelineValues
+    )
+
   const yMaximum =
     Math.max(
       3,
@@ -468,15 +595,15 @@ const rawMinimum =
     )
 
   /*
-    Integer Y labels.
-
-    Scale can move smoothly underneath,
-    but the user sees whole numbers.
+    Whole-number Y axis labels.
   */
+  const yRange =
+    yMaximum - yMinimum
+
   const yStep =
-    yMaximum - yMinimum > 20
+    yRange > 20
       ? 5
-      : yMaximum - yMinimum > 10
+      : yRange > 10
         ? 2
         : 1
 
@@ -493,12 +620,197 @@ const rawMinimum =
     yTicks.push(value)
   }
 
+  /*
+    ENDPOINT NAME COLLISION SYSTEM
+
+    This works in PIXELS rather than
+    checking whether scores are equal.
+
+    Therefore scores such as:
+
+    3
+    3
+    2.8
+    2.6
+
+    can still have readable names.
+  */
+  const labelOffsets =
+    useMemo(() => {
+      const offsets:
+        Record<number, number> = {}
+
+      if (!animatedRow) {
+        return offsets
+      }
+
+      const minimumGap = 20
+
+      const minimumY =
+        PLOT_TOP + 6
+
+      const maximumY =
+        PLOT_TOP +
+        PLOT_HEIGHT -
+        6
+
+      const labels =
+        sessionPlayers
+          .map((player) => {
+            const key =
+              `player-${player.playerId}`
+
+            const score =
+              animatedRow[key] ?? 0
+
+            const normalized =
+              (yMaximum - score) /
+              (yMaximum -
+                yMinimum)
+
+            const desiredY =
+              PLOT_TOP +
+              normalized *
+                PLOT_HEIGHT
+
+            return {
+              playerId:
+                player.playerId,
+
+              desiredY,
+
+              finalY:
+                desiredY,
+            }
+          })
+          .sort(
+            (a, b) =>
+              a.desiredY -
+              b.desiredY
+          )
+
+      /*
+        First pass:
+        push overlapping labels downward.
+      */
+      for (
+        let index = 1;
+        index < labels.length;
+        index++
+      ) {
+        const previous =
+          labels[index - 1]
+
+        const current =
+          labels[index]
+
+        if (
+          current.finalY -
+            previous.finalY <
+          minimumGap
+        ) {
+          current.finalY =
+            previous.finalY +
+            minimumGap
+        }
+      }
+
+      /*
+        If the lowest label went outside
+        the chart, move it back up and
+        work backwards.
+      */
+      if (
+        labels.length > 0 &&
+        labels[
+          labels.length - 1
+        ].finalY > maximumY
+      ) {
+        labels[
+          labels.length - 1
+        ].finalY = maximumY
+
+        for (
+          let index =
+            labels.length - 2;
+          index >= 0;
+          index--
+        ) {
+          const current =
+            labels[index]
+
+          const below =
+            labels[index + 1]
+
+          current.finalY =
+            Math.min(
+              current.finalY,
+              below.finalY -
+                minimumGap
+            )
+        }
+      }
+
+      /*
+        Protect the top boundary too.
+      */
+      if (
+        labels.length > 0 &&
+        labels[0].finalY <
+          minimumY
+      ) {
+        labels[0].finalY =
+          minimumY
+
+        for (
+          let index = 1;
+          index < labels.length;
+          index++
+        ) {
+          const previous =
+            labels[index - 1]
+
+          const current =
+            labels[index]
+
+          current.finalY =
+            Math.max(
+              current.finalY,
+              previous.finalY +
+                minimumGap
+            )
+        }
+      }
+
+      /*
+        Convert final positions into
+        simple vertical offsets from
+        each player's real endpoint.
+      */
+      labels.forEach((label) => {
+        offsets[label.playerId] =
+          label.finalY -
+          label.desiredY
+      })
+
+      return offsets
+    }, [
+      animatedRow,
+      sessionPlayers,
+      yMaximum,
+      yMinimum,
+    ])
+
   function togglePlayback() {
     if (playing) {
       setPlaying(false)
       return
     }
 
+    /*
+      Replay from the beginning if
+      already at the latest round.
+    */
     if (
       playhead >= lastIndex
     ) {
@@ -509,17 +821,21 @@ const rawMinimum =
   }
 
   function cycleSpeed() {
-  const currentIndex =
-    PLAYBACK_SPEEDS.indexOf(playbackSpeed)
+    const currentIndex =
+      PLAYBACK_SPEEDS.indexOf(
+        playbackSpeed
+      )
 
-  const nextIndex =
-    (currentIndex + 1) %
-    PLAYBACK_SPEEDS.length
+    const nextIndex =
+      (currentIndex + 1) %
+      PLAYBACK_SPEEDS.length
 
-  setPlaybackSpeed(
-    PLAYBACK_SPEEDS[nextIndex]
-  )
-}
+    setPlaybackSpeed(
+      PLAYBACK_SPEEDS[
+        nextIndex
+      ]
+    )
+  }
 
   if (
     !rounds ||
@@ -554,26 +870,31 @@ const rawMinimum =
           </h1>
         </div>
 
-<div className="raceHeaderActions">
-  <button
-    className="raceSpeed"
-    onClick={cycleSpeed}
-  >
-    {playbackSpeed}×
-  </button>
+        <div className="raceHeaderActions">
+          <button
+            className="raceSpeed"
+            onClick={cycleSpeed}
+          >
+            {playbackSpeed}×
+          </button>
 
-  <button
-    className="racePlay"
-    onClick={togglePlayback}
-    disabled={lastIndex === 0}
-  >
-    {playing
-      ? 'Pause'
-      : playhead >= lastIndex
-        ? 'Replay'
-        : 'Play'}
-  </button>
-</div>
+          <button
+            className="racePlay"
+            onClick={
+              togglePlayback
+            }
+            disabled={
+              lastIndex === 0
+            }
+          >
+            {playing
+              ? 'Pause'
+              : playhead >=
+                  lastIndex
+                ? 'Replay'
+                : 'Play'}
+          </button>
+        </div>
       </header>
 
       {lastIndex === 0 ? (
@@ -586,7 +907,7 @@ const rawMinimum =
           <section className="raceChart">
             <ResponsiveContainer
               width="100%"
-              height={500}
+              height={CHART_HEIGHT}
             >
               <LineChart
                 data={visibleData}
@@ -611,7 +932,9 @@ const rawMinimum =
                   ]}
                   ticks={xTicks}
                   allowDataOverflow
-                  allowDecimals={false}
+                  allowDecimals={
+                    false
+                  }
                   stroke="#7f8997"
                   tickLine={false}
                   axisLine={false}
@@ -636,7 +959,9 @@ const rawMinimum =
                   ]}
                   ticks={yTicks}
                   allowDataOverflow
-                  allowDecimals={false}
+                  allowDecimals={
+                    false
+                  }
                   stroke="#7f8997"
                   tickLine={false}
                   axisLine={false}
@@ -661,14 +986,18 @@ const rawMinimum =
                     value
                   ) =>
                     `Round ${Math.round(
-                      Number(value)
+                      Number(
+                        value
+                      )
                     )}`
                   }
                   formatter={(
                     value
                   ) =>
                     Math.round(
-                      Number(value)
+                      Number(
+                        value
+                      )
                     )
                   }
                 />
@@ -736,26 +1065,25 @@ const rawMinimum =
                           fill={color}
                           stroke="#0d1015"
                           strokeWidth={2}
-                          isFront
-                          label={{
-                            value:
-                              getName(
-                                player.playerId
-                              ),
-
-                            position:
-                              'right',
-
-                            fill:
-                              color,
-
-                            fontSize:
-                              14,
-
-                            fontWeight:
-                              800,
-                          }}
-                        />
+                        >
+                          <Label
+                            content={
+                              <EndpointLabel
+                                name={getName(
+                                  player.playerId
+                                )}
+                                color={
+                                  color
+                                }
+                                offsetY={
+                                  labelOffsets[
+                                    player.playerId
+                                  ] ?? 0
+                                }
+                              />
+                            }
+                          />
+                        </ReferenceDot>
                       )
                     }
                   )}
@@ -801,8 +1129,12 @@ const rawMinimum =
                 <motion.div
                   layout
                   transition={{
-                    type: 'spring',
-                    stiffness: 450,
+                    type:
+                      'spring',
+
+                    stiffness:
+                      450,
+
                     damping: 38,
                   }}
                   className="raceStanding"
