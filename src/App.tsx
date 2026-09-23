@@ -10,6 +10,7 @@ import JimRound from './JimRound'
 import './index.css'
 import DataTools from './DataTools'
 import Penalty from './Penalty'
+import HistoryStats from './HistoryStats'
 
 function App() {
   const players = useLiveQuery(
@@ -233,6 +234,20 @@ useState<
     )
   }
 
+  if (
+    screen === 'history' &&
+    players
+  ) {
+    return (
+      <HistoryStats
+        players={players}
+        onBack={() =>
+          setScreen('scoreboard')
+        }
+      />
+    )
+  }
+
   /* ---------------------------
      ACTIVE SESSION
   ---------------------------- */
@@ -365,35 +380,51 @@ if (
 
     return (
       <main className="app">
-        <header className="gameHeader">
-          <div>
-            <h1>JIM</h1>
+        <header className="gameHeader gameHeaderPolished">
+          <div className="gameRoundHero">
+            <span>
+              ROUND
+            </span>
 
-            <span className="gameRound">
-              ROUND{' '}
+            <strong>
               {
                 activeSession.roundNumber
               }
-            </span>
+            </strong>
           </div>
 
-<div className="gameHeaderActions">
-  <button
-    className="dataButton"
-    onClick={() =>
-      setShowDataTools(true)
-    }
-  >
-    Data
-  </button>
+          <div className="gameBrand">
+            <h1>
+              JIMRAMI
+            </h1>
+          </div>
 
-  <button
-    className="endSession"
-    onClick={endSession}
-  >
-    End Session
-  </button>
-</div>
+          <div className="gameHeaderActions">
+            <button
+              className="dataButton"
+              onClick={() =>
+                setScreen('history')
+              }
+            >
+              History
+            </button>
+
+            <button
+              className="dataButton"
+              onClick={() =>
+                setShowDataTools(true)
+              }
+            >
+              Data
+            </button>
+
+            <button
+              className="endSession"
+              onClick={endSession}
+            >
+              End Session
+            </button>
+          </div>
         </header>
 
         <section className="gameScoreboard">
@@ -411,7 +442,11 @@ if (
 
               return (
                 <article
-                  className="standingRow"
+                  className={`standingRow ${
+                    index === 0
+                      ? 'leader'
+                      : ''
+                  }`}
                   key={
                     sessionPlayer.id
                   }
@@ -422,24 +457,30 @@ if (
 
                   <div className="standingPlayer">
                     <div>
-                      <h2>
-                        {getPlayerName(
-                          sessionPlayer.playerId
+                      <div className="standingNameLine">
+                        <h2>
+                          {getPlayerName(
+                            sessionPlayer.playerId
+                          )}
+                        </h2>
+
+                        {isPlaying && (
+                          <span className="playingTag">
+                            PLAYING
+                          </span>
                         )}
-                      </h2>
+                      </div>
 
-                      <p>
-                        Round won: [{sessionPlayer.wins}]
-                        {'  •  '}
-                        Jim: [★{sessionPlayer.jimWins ?? 0}]
-                      </p>
+                      <div className="standingMeta">
+                        <span className="standingMetaStandard">
+                          STANDARD {sessionPlayer.wins} WINS
+                        </span>
+
+                        <span className="standingMetaJim">
+                          ★ {sessionPlayer.jimWins ?? 0} JIM
+                        </span>
+                      </div>
                     </div>
-
-                    {isPlaying && (
-                      <span className="playingTag">
-                        PLAYING
-                      </span>
-                    )}
                   </div>
 
                   <div className="standingPoints">
@@ -538,12 +579,21 @@ if (
   return (
     <main className="app">
      <header className="setupHeader">
-  <h1>JIM</h1>
+  <h1>JIMRAMI</h1>
 
   <div className="setupHeaderActions">
     <span>
       New Session
     </span>
+
+    <button
+      className="dataButton"
+      onClick={() =>
+        setScreen('history')
+      }
+    >
+      History
+    </button>
 
     <button
       className="dataButton"

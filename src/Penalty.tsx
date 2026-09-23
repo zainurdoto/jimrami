@@ -34,6 +34,15 @@ export default function Penalty({
   const [saving, setSaving] =
     useState(false)
 
+
+  const [
+    selectedPenaltyPlayer,
+    setSelectedPenaltyPlayer,
+  ] =
+    useState<SessionPlayer | null>(
+      null
+    )
+
   function getName(
     playerId: number
   ) {
@@ -45,19 +54,32 @@ export default function Penalty({
     )
   }
 
-  async function applyPenalty(
+  function choosePenaltyPlayer(
     selected: SessionPlayer
   ) {
     if (saving) return
 
-    const confirmed =
-      window.confirm(
-        `Give ${getName(
-          selected.playerId
-        )} a -1 penalty?`
-      )
+    setSelectedPenaltyPlayer(
+      selected
+    )
+  }
 
-    if (!confirmed) {
+  function cancelPenalty() {
+    if (saving) return
+
+    setSelectedPenaltyPlayer(
+      null
+    )
+  }
+
+  async function applyPenalty() {
+    const selected =
+      selectedPenaltyPlayer
+
+    if (
+      saving ||
+      !selected
+    ) {
       return
     }
 
@@ -138,6 +160,10 @@ export default function Penalty({
 
     setSaving(false)
 
+    setSelectedPenaltyPlayer(
+      null
+    )
+
     onComplete({
       roundNumber:
         session.roundNumber,
@@ -206,7 +232,7 @@ const orderedPlayers =
                   className="penaltyPlayer"
                   disabled={saving}
                   onClick={() =>
-                    applyPenalty(
+                    choosePenaltyPlayer(
                       player
                     )
                   }
@@ -234,6 +260,79 @@ const orderedPlayers =
           )}
         </div>
       </section>
+
+      {selectedPenaltyPlayer && (
+        <div className="penaltyConfirmOverlay">
+          <div className="penaltyConfirmDialog">
+            <span className="penaltyConfirmLabel">
+              PENALTY
+            </span>
+
+            <h2>
+              Give{' '}
+              {getName(
+                selectedPenaltyPlayer.playerId
+              )}{' '}
+              a -1 penalty?
+            </h2>
+
+            <div className="penaltyConfirmPoints">
+              <div>
+                <span>
+                  CURRENT
+                </span>
+
+                <strong>
+                  {
+                    selectedPenaltyPlayer.points
+                  }
+                </strong>
+              </div>
+
+              <div className="penaltyConfirmArrow">
+                →
+              </div>
+
+              <div>
+                <span>
+                  AFTER
+                </span>
+
+                <strong>
+                  {
+                    selectedPenaltyPlayer.points -
+                    1
+                  }
+                </strong>
+              </div>
+            </div>
+
+            <div className="penaltyConfirmActions">
+              <button
+                className="penaltyCancelButton"
+                disabled={saving}
+                onClick={
+                  cancelPenalty
+                }
+              >
+                Cancel
+              </button>
+
+              <button
+                className="penaltyConfirmButton"
+                disabled={saving}
+                onClick={
+                  applyPenalty
+                }
+              >
+                {saving
+                  ? 'Applying...'
+                  : 'Confirm -1'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   )
 }

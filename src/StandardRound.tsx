@@ -1,7 +1,14 @@
 import {
+  useEffect,
+  useRef,
+  useState,
+} from 'react'
+import { Reorder } from 'motion/react'
+
+import {
   type ScoreTransitionData,
 } from './ScoreTransition'
-import { useState } from 'react'
+
 import {
   db,
   type GameSession,
@@ -20,8 +27,25 @@ type Props = {
   ) => void
 }
 
-type Scores = Record<number, string>
-type TieResolutions = Record<string, number[]>
+type Scores =
+  Record<number, string>
+
+type TieResolutions =
+  Record<string, number[]>
+
+type EntryMode =
+  | 'quick'
+  | 'count'
+
+type PreparedResult =
+  SessionPlayer & {
+    cardScore?: number
+    position: number
+    pointsAwarded: number
+  }
+
+const NORMAL_POINTS =
+  [3, 2, 1, 0]
 
 export default function StandardRound({
   session,
@@ -30,96 +54,428 @@ export default function StandardRound({
   onBack,
   onComplete,
 }: Props) {
-  const playing = [...sessionPlayers]
-    .filter((player) => player.rotationOrder < 4)
-    .sort((a, b) => a.rotationOrder - b.rotationOrder)
+  const playing =
+    [...sessionPlayers]
+      .filter(
+        (player) =>
+          player.rotationOrder < 4
+      )
+      .sort(
+        (a, b) =>
+          a.rotationOrder -
+          b.rotationOrder
+      )
 
-  const waiting = [...sessionPlayers]
-    .filter((player) => player.rotationOrder >= 4)
-    .sort((a, b) => a.rotationOrder - b.rotationOrder)
+  const waiting =
+    [...sessionPlayers]
+      .filter(
+        (player) =>
+          player.rotationOrder >= 4
+      )
+      .sort(
+        (a, b) =>
+          a.rotationOrder -
+          b.rotationOrder
+      )
 
-  const initialScores: Scores = {}
+  const initialScores:
+    Scores = {}
 
-  playing.forEach((player) => {
-    initialScores[player.id] = ''
-  })
+  playing.forEach(
+    (player) => {
+      initialScores[
+        player.id
+      ] = ''
+    }
+  )
 
-  const [scores, setScores] =
-    useState<Scores>(initialScores)
+  const [
+    mode,
+    setMode,
+  ] =
+    useState<EntryMode>(
+      'quick'
+    )
 
-  const [activePlayerId, setActivePlayerId] =
-    useState(playing[0]?.id)
+  const [
+    rankedPlayers,
+    setRankedPlayers,
+  ] =
+    useState<
+      SessionPlayer[]
+    >(playing)
 
-  const [autoPlayerId, setAutoPlayerId] =
-    useState<number | null>(null)
+  /*
+    tieIndex means the gap AFTER
+    this row is connected.
 
-  const [message, setMessage] =
+    0 = 1st + 2nd
+    1 = 2nd + 3rd
+    2 = 3rd + 4th
+  */
+  const [
+    tieIndex,
+    setTieIndex,
+  ] =
+    useState<number | null>(
+      null
+    )
+
+  const [
+    quickNotice,
+    setQuickNotice,
+  ] =
     useState('')
 
-  const [tieGroups, setTieGroups] =
-    useState<number[][]>([])
+  const noticeTimer =
+    useRef<
+      ReturnType<
+        typeof setTimeout
+      > | null
+    >(null)
 
-  const [tieOrder, setTieOrder] =
-    useState<number[]>([])
+  const [
+    scores,
+    setScores,
+  ] =
+    useState<Scores>(
+      initialScores
+    )
 
-  const [tieResolutions, setTieResolutions] =
-    useState<TieResolutions>({})
+  const [
+    activePlayerId,
+    setActivePlayerId,
+  ] =
+    useState(
+      playing[0]?.id
+    )
 
-  function getName(playerId: number) {
+  const [
+    autoPlayerId,
+    setAutoPlayerId,
+  ] =
+    useState<
+      number | null
+    >(null)
+
+  const [
+    message,
+    setMessage,
+  ] =
+    useState('')
+
+
+  const [
+    tieGroups,
+    setTieGroups,
+  ] =
+    useState<number[][]>(
+      []
+    )
+
+  const [
+    tieOrder,
+    setTieOrder,
+  ] =
+    useState<number[]>(
+      []
+    )
+
+  const [
+    tieResolutions,
+    setTieResolutions,
+  ] =
+    useState<TieResolutions>(
+      {}
+    )
+
+  useEffect(
+    () => {
+      return () => {
+        if (
+          noticeTimer.current
+        ) {
+          clearTimeout(
+            noticeTimer.current
+          )
+        }
+      }
+    },
+    []
+  )
+
+  function getName(
+    playerId: number
+  ) {
     return (
       players.find(
-        (player) => player.id === playerId
-      )?.name ?? 'Unknown'
+        (player) =>
+          player.id ===
+          playerId
+      )?.name ??
+      'Unknown'
     )
   }
 
   function getSessionPlayerName(
     sessionPlayerId: number
   ) {
-    const sessionPlayer = playing.find(
-      (player) =>
-        player.id === sessionPlayerId
-    )
+    const sessionPlayer =
+      playing.find(
+        (player) =>
+          player.id ===
+          sessionPlayerId
+      )
 
     if (!sessionPlayer) {
       return 'Unknown'
     }
 
-    return getName(sessionPlayer.playerId)
+    return getName(
+      sessionPlayer.playerId
+    )
   }
 
-  const activePlayer = playing.find(
-    (player) =>
-      player.id === activePlayerId
-  )
+  function showQuickNotice(
+    text: string
+  ) {
+    setQuickNotice(
+      text
+    )
 
-  const cardTotal = playing.reduce(
-    (total, player) =>
-      total +
-      (Number(scores[player.id]) || 0),
-    0
-  )
+    if (
+      noticeTimer.current
+    ) {
+      clearTimeout(
+        noticeTimer.current
+      )
+    }
+
+    noticeTimer.current =
+      setTimeout(
+        () => {
+          setQuickNotice('')
+        },
+        1900
+      )
+  }
+
+  function awardForQuickSlot(
+    index: number
+  ) {
+    if (
+      tieIndex === null
+    ) {
+      return (
+        NORMAL_POINTS[
+          index
+        ] ?? 0
+      )
+    }
+
+    if (
+      index === tieIndex ||
+      index ===
+        tieIndex + 1
+    ) {
+      /*
+        Special family rule:
+        a bottom 3rd/4th tie
+        gives both 0.
+      */
+      if (
+        tieIndex === 2
+      ) {
+        return 0
+      }
+
+      return (
+        NORMAL_POINTS[
+          tieIndex
+        ] ?? 0
+      )
+    }
+
+    return (
+      NORMAL_POINTS[
+        index
+      ] ?? 0
+    )
+  }
+
+  function toggleTie(
+    index: number
+  ) {
+    /*
+      1st place is always decided
+      manually. Only 2nd/3rd or
+      3rd/4th may be connected.
+    */
+    if (index === 0) {
+      return
+    }
+
+    const removing =
+      tieIndex === index
+
+    if (removing) {
+      setTieIndex(null)
+
+      showQuickNotice(
+        'Tie removed.'
+      )
+
+      return
+    }
+
+    setTieIndex(index)
+
+    const first =
+      rankedPlayers[index]
+
+    const second =
+      rankedPlayers[
+        index + 1
+      ]
+
+    if (
+      !first ||
+      !second
+    ) {
+      return
+    }
+
+    const points =
+      index === 2
+        ? 0
+        : (
+            NORMAL_POINTS[
+              index
+            ] ?? 0
+          )
+
+    showQuickNotice(
+      `${getName(
+        first.playerId
+      )} + ${getName(
+        second.playerId
+      )} tied • both +${points}`
+    )
+  }
+
+  function handleReorder(
+    next:
+      SessionPlayer[]
+  ) {
+    setRankedPlayers(
+      next
+    )
+
+    if (
+      tieIndex !== null
+    ) {
+      setTieIndex(null)
+
+      showQuickNotice(
+        'Tie cleared after reorder.'
+      )
+    }
+  }
+
+  function prepareQuickResults():
+    PreparedResult[] {
+    return rankedPlayers.map(
+      (
+        player,
+        index
+      ) => {
+        let position =
+          index + 1
+
+        if (
+          tieIndex !== null &&
+          (
+            index ===
+              tieIndex ||
+            index ===
+              tieIndex + 1
+          )
+        ) {
+          position =
+            tieIndex + 1
+        }
+
+        return {
+          ...player,
+
+          position,
+
+          pointsAwarded:
+            awardForQuickSlot(
+              index
+            ),
+        }
+      }
+    )
+  }
+
+  const activePlayer =
+    playing.find(
+      (player) =>
+        player.id ===
+        activePlayerId
+    )
+
+  const cardTotal =
+    playing.reduce(
+      (
+        total,
+        player
+      ) =>
+        total +
+        (
+          Number(
+            scores[
+              player.id
+            ]
+          ) || 0
+        ),
+      0
+    )
 
   const allScoresEntered =
     playing.every(
       (player) =>
-        scores[player.id] !== ''
+        scores[
+          player.id
+        ] !== ''
     )
 
   function selectPlayer(
-    sessionPlayerId: number
+    sessionPlayerId:
+      number
   ) {
-    setActivePlayerId(sessionPlayerId)
+    setActivePlayerId(
+      sessionPlayerId
+    )
+
     setMessage('')
   }
 
-  function pressKey(key: string) {
-    if (!activePlayerId) return
+  function pressKey(
+    key: string
+  ) {
+    if (
+      !activePlayerId
+    ) {
+      return
+    }
 
     setMessage('')
 
     const editingAuto =
-      autoPlayerId === activePlayerId
+      autoPlayerId ===
+      activePlayerId
 
     const currentAutoId =
       editingAuto
@@ -127,113 +483,170 @@ export default function StandardRound({
         : autoPlayerId
 
     if (editingAuto) {
-      setAutoPlayerId(null)
+      setAutoPlayerId(
+        null
+      )
     }
 
-    setScores((current) => {
-      const next = { ...current }
-
-      let currentValue =
-        editingAuto
-          ? ''
-          : next[activePlayerId] || ''
-
-      let newValue = currentValue
-
-      if (key === 'clear') {
-        newValue = ''
-      } else if (
-        key === 'backspace'
-      ) {
-        newValue =
-          currentValue.slice(0, -1)
-      } else {
-        newValue =
-          currentValue === '0'
-            ? key
-            : currentValue + key
-
-        if (newValue.length > 3) {
-          return current
+    setScores(
+      (current) => {
+        const next = {
+          ...current,
         }
 
-        if (Number(newValue) > 312) {
-          return current
+        const currentValue =
+          editingAuto
+            ? ''
+            : (
+                next[
+                  activePlayerId
+                ] || ''
+              )
+
+        let newValue =
+          currentValue
+
+        if (
+          key === 'clear'
+        ) {
+          newValue = ''
+        } else if (
+          key ===
+          'backspace'
+        ) {
+          newValue =
+            currentValue.slice(
+              0,
+              -1
+            )
+        } else {
+          newValue =
+            currentValue ===
+            '0'
+              ? key
+              : (
+                  currentValue +
+                  key
+                )
+
+          if (
+            newValue.length >
+            3
+          ) {
+            return current
+          }
+
+          if (
+            Number(
+              newValue
+            ) > 312
+          ) {
+            return current
+          }
         }
+
+        next[
+          activePlayerId
+        ] = newValue
+
+        /*
+          Keep an AUTO score
+          synchronized whenever
+          a manual score changes.
+        */
+        if (
+          currentAutoId !==
+            null &&
+          activePlayerId !==
+            currentAutoId
+        ) {
+          const manualTotal =
+            playing
+              .filter(
+                (player) =>
+                  player.id !==
+                  currentAutoId
+              )
+              .reduce(
+                (
+                  total,
+                  player
+                ) =>
+                  total +
+                  (
+                    Number(
+                      next[
+                        player.id
+                      ]
+                    ) || 0
+                  ),
+                0
+              )
+
+          const remainder =
+            312 -
+            manualTotal
+
+          next[
+            currentAutoId
+          ] =
+            remainder >= 0
+              ? String(
+                  remainder
+                )
+              : ''
+        }
+
+        return next
       }
-
-      next[activePlayerId] =
-        newValue
-
-      /*
-        If one player was previously
-        auto-calculated, keep updating
-        that value whenever one of the
-        manual scores changes.
-      */
-      if (
-        currentAutoId !== null &&
-        activePlayerId !== currentAutoId
-      ) {
-        const manualTotal =
-          playing
-            .filter(
-              (player) =>
-                player.id !==
-                currentAutoId
-            )
-            .reduce(
-              (total, player) =>
-                total +
-                (Number(
-                  next[player.id]
-                ) || 0),
-              0
-            )
-
-        const remainder =
-          312 - manualTotal
-
-        next[currentAutoId] =
-          remainder >= 0
-            ? String(remainder)
-            : ''
-      }
-
-      return next
-    })
+    )
   }
 
-  const filledManualPlayers =
+  const filledPlayers =
     playing.filter(
       (player) =>
-        scores[player.id] !== ''
+        scores[
+          player.id
+        ] !== ''
     )
 
-  const autoEnteredTotal =
-    filledManualPlayers.reduce(
-      (total, player) =>
+  const enteredTotal =
+    filledPlayers.reduce(
+      (
+        total,
+        player
+      ) =>
         total +
-        Number(scores[player.id]),
+        Number(
+          scores[
+            player.id
+          ]
+        ),
       0
     )
 
   const canAutoCalculate =
-    autoPlayerId === null &&
-    filledManualPlayers.length === 3 &&
-    autoEnteredTotal <= 312
+    autoPlayerId ===
+      null &&
+    filledPlayers.length ===
+      3 &&
+    enteredTotal <= 312
 
   function calculateAutoScore() {
     setMessage('')
 
-    if (!canAutoCalculate) {
+    if (
+      !canAutoCalculate
+    ) {
       return
     }
 
     const missing =
       playing.find(
         (player) =>
-          scores[player.id] === ''
+          scores[
+            player.id
+          ] === ''
       )
 
     if (!missing) {
@@ -241,13 +654,19 @@ export default function StandardRound({
     }
 
     const remainder =
-      312 - autoEnteredTotal
+      312 -
+      enteredTotal
 
-    setScores((current) => ({
-      ...current,
-      [missing.id]:
-        String(remainder),
-    }))
+    setScores(
+      (current) => ({
+        ...current,
+
+        [missing.id]:
+          String(
+            remainder
+          ),
+      })
+    )
 
     setAutoPlayerId(
       missing.id
@@ -264,66 +683,216 @@ export default function StandardRound({
     )
   }
 
-  function submitRound() {
-    if (!allScoresEntered) {
+  function prepareCountResults(
+    resolutions:
+      TieResolutions
+  ): PreparedResult[] | null {
+    if (
+      !allScoresEntered
+    ) {
       setMessage(
         'All four scores are required.'
       )
-      return
+
+      return null
     }
 
-    if (cardTotal !== 312) {
+    if (
+      cardTotal !== 312
+    ) {
       setMessage(
         `Total must equal 312. Current total: ${cardTotal}.`
       )
-      return
+
+      return null
+    }
+
+    const ordered =
+      playing
+        .map(
+          (player) => ({
+            ...player,
+
+            cardScore:
+              Number(
+                scores[
+                  player.id
+                ]
+              ),
+          })
+        )
+        .sort(
+          (a, b) => {
+            if (
+              a.cardScore !==
+              b.cardScore
+            ) {
+              return (
+                b.cardScore -
+                a.cardScore
+              )
+            }
+
+            /*
+              Exact-score ties are
+              decided manually, except
+              the special bottom 0–0
+              rule handled below.
+            */
+            const order =
+              resolutions[
+                String(
+                  a.cardScore
+                )
+              ]
+
+            if (!order) {
+              return 0
+            }
+
+            return (
+              order.indexOf(
+                a.id
+              ) -
+              order.indexOf(
+                b.id
+              )
+            )
+          }
+        )
+
+    const zeroBottomTie =
+      ordered.length === 4 &&
+      ordered[2].cardScore ===
+        0 &&
+      ordered[3].cardScore ===
+        0
+
+    const awardedPoints =
+      zeroBottomTie
+        ? [3, 2, 0, 0]
+        : [3, 2, 1, 0]
+
+    return ordered.map(
+      (
+        player,
+        index
+      ) => ({
+        ...player,
+
+        position:
+          index + 1,
+
+        pointsAwarded:
+          awardedPoints[
+            index
+          ],
+      })
+    )
+  }
+
+  function beginCountTieResolution() {
+    if (
+      !allScoresEntered
+    ) {
+      setMessage(
+        'All four scores are required.'
+      )
+
+      return false
+    }
+
+    if (
+      cardTotal !== 312
+    ) {
+      setMessage(
+        `Total must equal 312. Current total: ${cardTotal}.`
+      )
+
+      return false
     }
 
     const scoreGroups:
-      Record<string, number[]> = {}
+      Record<
+        string,
+        number[]
+      > = {}
 
-    playing.forEach((player) => {
-      const score =
-        scores[player.id]
+    playing.forEach(
+      (player) => {
+        const score =
+          scores[
+            player.id
+          ]
 
-      if (!scoreGroups[score]) {
-        scoreGroups[score] = []
+        if (
+          !scoreGroups[
+            score
+          ]
+        ) {
+          scoreGroups[
+            score
+          ] = []
+        }
+
+        scoreGroups[
+          score
+        ].push(
+          player.id
+        )
       }
+    )
 
-      scoreGroups[score].push(
-        player.id
-      )
-    })
-
+    /*
+      A 0–0 tie is the one special
+      case that does NOT need a
+      manual order. Every other
+      equal score is ranked manually.
+    */
     const ties =
-          Object.entries(
-            scoreGroups
-          )
-            .filter(
-              ([score, group]) =>
-                group.length > 1 &&
-                score !== '0'
-            )
-            .map(
-              ([, group]) => group
-            )
+      Object.entries(
+        scoreGroups
+      )
+        .filter(
+          ([score, group]) =>
+            group.length > 1 &&
+            score !== '0'
+        )
+        .map(
+          ([, group]) =>
+            group
+        )
 
-    if (ties.length > 0) {
-      setTieGroups(ties)
-      setTieOrder([])
-      setTieResolutions({})
-      return
+    if (
+      ties.length === 0
+    ) {
+      return false
     }
 
-    finishRound({})
+    setTieGroups(
+      ties
+    )
+
+    setTieOrder(
+      []
+    )
+
+    setTieResolutions(
+      {}
+    )
+
+    return true
   }
 
   function chooseTiePlayer(
     sessionPlayerId: number
   ) {
-    const group = tieGroups[0]
+    const group =
+      tieGroups[0]
 
-    if (!group) return
+    if (!group) {
+      return
+    }
 
     const newOrder = [
       ...tieOrder,
@@ -331,8 +900,8 @@ export default function StandardRound({
     ]
 
     /*
-      Once only one remains,
-      its position is automatically known.
+      Once only one player remains,
+      their position is known.
     */
     if (
       newOrder.length ===
@@ -341,10 +910,14 @@ export default function StandardRound({
       const finalPlayer =
         group.find(
           (id) =>
-            !newOrder.includes(id)
+            !newOrder.includes(
+              id
+            )
         )
 
-      if (!finalPlayer) return
+      if (!finalPlayer) {
+        return
+      }
 
       const completeOrder = [
         ...newOrder,
@@ -352,17 +925,25 @@ export default function StandardRound({
       ]
 
       const score =
-        scores[group[0]]
+        scores[
+          group[0]
+        ]
 
       const resolutions = {
         ...tieResolutions,
-        [score]: completeOrder,
+
+        [score]:
+          completeOrder,
       }
 
       const remaining =
-        tieGroups.slice(1)
+        tieGroups.slice(
+          1
+        )
 
-      if (remaining.length > 0) {
+      if (
+        remaining.length > 0
+      ) {
         setTieResolutions(
           resolutions
         )
@@ -371,245 +952,299 @@ export default function StandardRound({
           remaining
         )
 
-        setTieOrder([])
+        setTieOrder(
+          []
+        )
 
         return
       }
 
-      setTieGroups([])
-      setTieOrder([])
-      setTieResolutions({})
+      setTieGroups(
+        []
+      )
 
-      finishRound(resolutions)
+      setTieOrder(
+        []
+      )
+
+      setTieResolutions(
+        {}
+      )
+
+      const results =
+        prepareCountResults(
+          resolutions
+        )
+
+      if (!results) {
+        return
+      }
+
+      finishRound(
+        results
+      )
+
       return
     }
 
-    setTieOrder(newOrder)
+    setTieOrder(
+      newOrder
+    )
   }
+
 
   async function finishRound(
-  resolutions: TieResolutions
-) {
-  const results = playing
-    .map((player) => ({
-      ...player,
-      cardScore: Number(scores[player.id]),
-    }))
-    .sort((a, b) => {
-      if (a.cardScore !== b.cardScore) {
-        return b.cardScore - a.cardScore
-      }
+    results:
+      PreparedResult[]
+  ) {
+    let updatedSessionPlayers =
+      sessionPlayers.map(
+        (
+          sessionPlayer
+        ) => {
+          const result =
+            results.find(
+              (entry) =>
+                entry.id ===
+                sessionPlayer.id
+            )
 
-      const order =
-        resolutions[String(a.cardScore)]
+          if (!result) {
+            return {
+              ...sessionPlayer,
+            }
+          }
 
-      if (!order) return 0
+          return {
+            ...sessionPlayer,
 
-      return (
-        order.indexOf(a.id) -
-        order.indexOf(b.id)
-      )
-    })
+            points:
+              sessionPlayer.points +
+              result.pointsAwarded,
 
-  const zeroBottomTie =
-  results.length === 4 &&
-  results[2].cardScore === 0 &&
-  results[3].cardScore === 0
-
-  const awardedPoints =
-  zeroBottomTie
-    ? [3, 2, 0, 0]
-    : [3, 2, 1, 0]
-
-  /*
-    First calculate everybody's
-    updated cumulative score.
-  */
-  let updatedSessionPlayers =
-    sessionPlayers.map((sessionPlayer) => {
-      const resultIndex =
-        results.findIndex(
-          (result) =>
-            result.id === sessionPlayer.id
-        )
-
-      if (resultIndex === -1) {
-        return { ...sessionPlayer }
-      }
-
-      return {
-        ...sessionPlayer,
-
-        points:
-          sessionPlayer.points +
-          awardedPoints[resultIndex],
-
-        wins:
-          sessionPlayer.wins +
-          (resultIndex === 0 ? 1 : 0),
-      }
-    })
-
-  /*
-    Now calculate the NEW table
-    and waiting queue.
-
-    Example:
-
-    BEFORE
-    0 Haji
-    1 Beruis
-    2 Jaki
-    3 Thomann
-    4 Bejan
-    5 Pais
-
-    If Thomann loses:
-
-    AFTER
-    0 Haji
-    1 Beruis
-    2 Jaki
-    3 Bejan
-    4 Pais
-    5 Thomann
-  */
-  if (waiting.length > 0) {
-    const loser =
-      results[results.length - 1]
-
-    const orderedPlayers =
-      [...updatedSessionPlayers].sort(
-        (a, b) =>
-          a.rotationOrder -
-          b.rotationOrder
-      )
-
-    const currentPlaying =
-      orderedPlayers.filter(
-        (player) =>
-          player.rotationOrder < 4
-      )
-
-    const currentWaiting =
-      orderedPlayers.filter(
-        (player) =>
-          player.rotationOrder >= 4
-      )
-
-    const survivingPlayers =
-      currentPlaying.filter(
-        (player) =>
-          player.id !== loser.id
-      )
-
-    const enteringPlayer =
-      currentWaiting[0]
-
-    const remainingWaiting =
-      currentWaiting.slice(1)
-
-    const newRotation = [
-      ...survivingPlayers,
-      enteringPlayer,
-      ...remainingWaiting,
-      orderedPlayers.find(
-        (player) =>
-          player.id === loser.id
-      )!,
-    ]
-
-    updatedSessionPlayers =
-      newRotation.map(
-        (player, index) => ({
-          ...player,
-          rotationOrder: index,
-        })
-      )
-  }
-
-  await db.transaction(
-    'rw',
-    db.rounds,
-    db.roundResults,
-    db.sessionPlayers,
-    db.sessions,
-    async () => {
-      const roundId =
-        await db.rounds.add({
-          sessionId: session.id,
-          roundNumber:
-            session.roundNumber,
-          type: 'standard',
-          createdAt: new Date(),
-        })
-
-      await db.roundResults.bulkAdd(
-        results.map(
-          (result, index) => ({
-            roundId,
-            sessionId: session.id,
-            playerId:
-              result.playerId,
-            cardScore:
-              result.cardScore,
-            position: index + 1,
-            pointsAwarded:
-              awardedPoints[index],
-          })
-        )
-      )
-
-      /*
-        Save points, wins AND rotation
-        together.
-      */
-      await db.sessionPlayers.bulkPut(
-        updatedSessionPlayers
-      )
-
-      await db.sessions.update(
-        session.id,
-        {
-          roundNumber:
-            session.roundNumber + 1,
+            wins:
+              sessionPlayer.wins +
+              (
+                result.position ===
+                1
+                  ? 1
+                  : 0
+              ),
+          }
         }
       )
+
+    /*
+      The physical 4th row is
+      still the player who goes
+      out, even when 3rd/4th are
+      connected as a scoring tie.
+    */
+    if (
+      waiting.length > 0
+    ) {
+      const loser =
+        results[
+          results.length - 1
+        ]
+
+      const orderedPlayers =
+        [
+          ...updatedSessionPlayers,
+        ].sort(
+          (a, b) =>
+            a.rotationOrder -
+            b.rotationOrder
+        )
+
+      const currentPlaying =
+        orderedPlayers.filter(
+          (player) =>
+            player.rotationOrder <
+            4
+        )
+
+      const currentWaiting =
+        orderedPlayers.filter(
+          (player) =>
+            player.rotationOrder >=
+            4
+        )
+
+      const survivors =
+        currentPlaying.filter(
+          (player) =>
+            player.id !==
+            loser.id
+        )
+
+      const entering =
+        currentWaiting[0]
+
+      const remainingWaiting =
+        currentWaiting.slice(
+          1
+        )
+
+      const newRotation = [
+        ...survivors,
+        entering,
+        ...remainingWaiting,
+
+        orderedPlayers.find(
+          (player) =>
+            player.id ===
+            loser.id
+        )!,
+      ]
+
+      updatedSessionPlayers =
+        newRotation.map(
+          (
+            player,
+            index
+          ) => ({
+            ...player,
+
+            rotationOrder:
+              index,
+          })
+        )
     }
-  )
 
-  const changes =
-  results.map(
-    (result, index) => ({
-      sessionPlayerId:
-        result.id,
+    await db.transaction(
+      'rw',
+      db.rounds,
+      db.roundResults,
+      db.sessionPlayers,
+      db.sessions,
+      async () => {
+        const roundId =
+          await db.rounds.add({
+            sessionId:
+              session.id,
 
-      amount:
-        awardedPoints[index],
+            roundNumber:
+              session.roundNumber,
+
+            type:
+              'standard',
+
+            createdAt:
+              new Date(),
+          })
+
+        await db.roundResults.bulkAdd(
+          results.map(
+            (result) => {
+              const base = {
+                roundId,
+
+                sessionId:
+                  session.id,
+
+                playerId:
+                  result.playerId,
+
+                position:
+                  result.position,
+
+                pointsAwarded:
+                  result.pointsAwarded,
+              }
+
+              if (
+                result.cardScore ===
+                undefined
+              ) {
+                return base
+              }
+
+              return {
+                ...base,
+
+                cardScore:
+                  result.cardScore,
+              }
+            }
+          )
+        )
+
+        await db.sessionPlayers.bulkPut(
+          updatedSessionPlayers
+        )
+
+        await db.sessions.update(
+          session.id,
+          {
+            roundNumber:
+              session.roundNumber +
+              1,
+          }
+        )
+      }
+    )
+
+    onComplete({
+      roundNumber:
+        session.roundNumber,
+
+      before:
+        sessionPlayers.map(
+          (player) => ({
+            ...player,
+          })
+        ),
+
+      after:
+        updatedSessionPlayers.map(
+          (player) => ({
+            ...player,
+          })
+        ),
+
+      changes:
+        results.map(
+          (result) => ({
+            sessionPlayerId:
+              result.id,
+
+            amount:
+              result.pointsAwarded,
+          })
+        ),
     })
-  )
+  }
 
-onComplete({
-  roundNumber:
-    session.roundNumber,
+  function submitQuickRound() {
+    finishRound(
+      prepareQuickResults()
+    )
+  }
 
-  before:
-    sessionPlayers.map(
-      (player) => ({
-        ...player,
-      })
-    ),
+  function submitCountRound() {
+    setMessage('')
 
-  after:
-    updatedSessionPlayers.map(
-      (player) => ({
-        ...player,
-      })
-    ),
+    const hasManualTie =
+      beginCountTieResolution()
 
-  changes,
-})
-}
+    if (hasManualTie) {
+      return
+    }
+
+    const results =
+      prepareCountResults(
+        {}
+      )
+
+    if (!results) {
+      return
+    }
+
+    finishRound(
+      results
+    )
+  }
 
   const currentTie =
     tieGroups[0]
@@ -618,7 +1253,9 @@ onComplete({
     currentTie
       ? currentTie.filter(
           (id) =>
-            !tieOrder.includes(id)
+            !tieOrder.includes(
+              id
+            )
         )
       : []
 
@@ -632,179 +1269,395 @@ onComplete({
           ←
         </button>
 
-          <div>
-            <span>
-              STANDARD ROUND
-            </span>
+        <div>
+          <span>
+            STANDARD ROUND
+          </span>
 
-            <h1>
-              Round {session.roundNumber}
-            </h1>
-          </div>
+          <h1>
+            Round {
+              session.roundNumber
+            }
+          </h1>
+        </div>
       </header>
 
-      <div className="roundEntryLayout">
-        <section>
-          <div className="roundPlayers">
-            {playing.map(
-              (player) => {
-                const active =
-                  player.id ===
-                  activePlayerId
+      <div className="standardModeBar">
+        <div>
+          <span>
+            {mode === 'quick'
+              ? 'QUICK RANK'
+              : 'COUNT CARDS'}
+          </span>
 
-                const automatic =
-                  player.id ===
-                  autoPlayerId
+          <strong>
+            {mode === 'quick'
+              ? 'Drag players into finishing order'
+              : 'Enter exact card scores'}
+          </strong>
+        </div>
 
-                return (
-                  <button
-                    key={player.id}
-                    className={`roundPlayerCard ${
-                      active
-                        ? 'active'
-                        : ''
-                    }`}
-                    onClick={() =>
-                      selectPlayer(
-                        player.id
-                      )
-                    }
-                  >
-                    <div>
-                      <strong>
-                        {getName(
-                          player.playerId
-                        )}
-                      </strong>
+        <button
+          className="standardModeButton"
+          onClick={() => {
+            setMessage('')
 
-                      {automatic && (
-                        <span className="autoScore">
-                          AUTO
-                        </span>
-                      )}
-                    </div>
+            setMode(
+              mode === 'quick'
+                ? 'count'
+                : 'quick'
+            )
+          }}
+        >
+          {mode === 'quick'
+            ? 'Count Cards'
+            : 'Quick Rank'}
+        </button>
+      </div>
 
-                    <span className="roundPlayerScore">
-                      {scores[
-                        player.id
-                      ] || '—'}
-                    </span>
-                  </button>
-                )
+      {mode === 'quick' ? (
+        <>
+          <section className="quickRankPanel">
+            <Reorder.Group
+              axis="y"
+              values={
+                rankedPlayers
               }
-            )}
-          </div>
+              onReorder={
+                handleReorder
+              }
+              className="quickRankList"
+            >
+              {rankedPlayers.map(
+                (
+                  player,
+                  index
+                ) => {
+                  const tiedWithNext =
+                    tieIndex ===
+                    index
 
-          <div
-            className={`cardTotal ${
-              cardTotal === 312 &&
-              allScoresEntered
-                ? 'valid'
-                : ''
-            }`}
-          >
-            <span>TOTAL</span>
+                  const tiedWithPrevious =
+                    tieIndex ===
+                    index - 1
 
-            <strong>
-              {cardTotal}
-              <small>
-                {' '}
-                / 312
-              </small>
-            </strong>
-          </div>
+                  return (
+                    <Reorder.Item
+                      value={player}
+                      key={
+                        player.id
+                      }
+                      className="quickRankItem"
+                    >
+                      <div
+                        className={`quickRankCard ${
+                          tiedWithNext
+                            ? 'tiedWithNext'
+                            : ''
+                        } ${
+                          tiedWithPrevious
+                            ? 'tiedWithPrevious'
+                            : ''
+                        }`}
+                      >
+                        <span className="quickRankNumber">
+                          {
+                            index + 1
+                          }
+                        </span>
 
-          {message && (
-            <p className="roundMessage">
-              {message}
-            </p>
-          )}
-        </section>
+                        <div className="quickRankPlayer">
+                          <strong>
+                            {getName(
+                              player.playerId
+                            )}
+                          </strong>
 
-        <aside className="numberPadPanel">
-          <div className="numberPadPlayer">
-            <span>ENTERING</span>
+                          <span>
+                            {tiedWithNext ||
+                            tiedWithPrevious
+                              ? 'TIED'
+                              : `Position ${
+                                  index +
+                                  1
+                                }`}
+                          </span>
+                        </div>
 
-            <strong>
-              {activePlayer
-                ? getName(
-                    activePlayer.playerId
+                        <div className="quickRankPoints">
+                          <strong>
+                            +{
+                              awardForQuickSlot(
+                                index
+                              )
+                            }
+                          </strong>
+
+                          <span>
+                            PTS
+                          </span>
+                        </div>
+
+                        <span className="quickRankDrag">
+                          ↕
+                        </span>
+                      </div>
+
+                      {index > 0 &&
+                        index < 3 && (
+                        <button
+                          type="button"
+                          className={`rankTieConnector ${
+                            tieIndex ===
+                            index
+                              ? 'active'
+                              : ''
+                          }`}
+                          onPointerDown={
+                            (
+                              event
+                            ) =>
+                              event.stopPropagation()
+                          }
+                          onClick={() =>
+                            toggleTie(
+                              index
+                            )
+                          }
+                          aria-label={`Toggle tie between positions ${
+                            index + 1
+                          } and ${
+                            index + 2
+                          }`}
+                        >
+                          <span>
+                            {tieIndex ===
+                            index
+                              ? 'TIED'
+                              : '='}
+                          </span>
+                        </button>
+                      )}
+                    </Reorder.Item>
                   )
-                : '—'}
-            </strong>
-          </div>
+                }
+              )}
+            </Reorder.Group>
 
-          <div className="numberPad">
-            {[
-              '1',
-              '2',
-              '3',
-              '4',
-              '5',
-              '6',
-              '7',
-              '8',
-              '9',
-            ].map((number) => (
+            <div className="quickRankHint">
+              <span>
+                ↕ Drag to reorder
+              </span>
+
+              <span>
+                = Tie 2nd/3rd or 3rd/4th
+              </span>
+            </div>
+
+            {quickNotice && (
+              <div className="quickRankToast">
+                {quickNotice}
+              </div>
+            )}
+          </section>
+
+          <button
+            className="saveStandardRound"
+            onClick={
+              submitQuickRound
+            }
+          >
+            Confirm Round
+          </button>
+        </>
+      ) : (
+        <>
+          <div className="roundEntryLayout">
+            <section>
+              <div className="roundPlayers">
+                {playing.map(
+                  (player) => {
+                    const active =
+                      player.id ===
+                      activePlayerId
+
+                    const automatic =
+                      player.id ===
+                      autoPlayerId
+
+                    return (
+                      <button
+                        key={
+                          player.id
+                        }
+                        className={`roundPlayerCard ${
+                          active
+                            ? 'active'
+                            : ''
+                        }`}
+                        onClick={() =>
+                          selectPlayer(
+                            player.id
+                          )
+                        }
+                      >
+                        <div>
+                          <strong>
+                            {getName(
+                              player.playerId
+                            )}
+                          </strong>
+
+                          {automatic && (
+                            <span className="autoScore">
+                              AUTO
+                            </span>
+                          )}
+                        </div>
+
+                        <span className="roundPlayerScore">
+                          {scores[
+                            player.id
+                          ] || '—'}
+                        </span>
+                      </button>
+                    )
+                  }
+                )}
+              </div>
+
+              <div
+                className={`cardTotal ${
+                  cardTotal === 312 &&
+                  allScoresEntered
+                    ? 'valid'
+                    : ''
+                }`}
+              >
+                <span>
+                  TOTAL
+                </span>
+
+                <strong>
+                  {cardTotal}
+                  <small>
+                    {' '}
+                    / 312
+                  </small>
+                </strong>
+              </div>
+
+              {message && (
+                <p className="roundMessage">
+                  {message}
+                </p>
+              )}
+            </section>
+
+            <aside className="numberPadPanel">
+              <div className="numberPadPlayer">
+                <span>
+                  ENTERING
+                </span>
+
+                <strong>
+                  {activePlayer
+                    ? getName(
+                        activePlayer.playerId
+                      )
+                    : '—'}
+                </strong>
+              </div>
+
+              <div className="numberPad">
+                {[
+                  '1',
+                  '2',
+                  '3',
+                  '4',
+                  '5',
+                  '6',
+                  '7',
+                  '8',
+                  '9',
+                ].map(
+                  (number) => (
+                    <button
+                      key={
+                        number
+                      }
+                      onClick={() =>
+                        pressKey(
+                          number
+                        )
+                      }
+                    >
+                      {number}
+                    </button>
+                  )
+                )}
+
+                <button
+                  className="numberPadSecondary"
+                  onClick={() =>
+                    pressKey(
+                      'clear'
+                    )
+                  }
+                >
+                  C
+                </button>
+
+                <button
+                  onClick={() =>
+                    pressKey(
+                      '0'
+                    )
+                  }
+                >
+                  0
+                </button>
+
+                <button
+                  className="numberPadSecondary"
+                  onClick={() =>
+                    pressKey(
+                      'backspace'
+                    )
+                  }
+                >
+                  ⌫
+                </button>
+              </div>
+
               <button
-                key={number}
-                onClick={() =>
-                  pressKey(number)
+                className="nextScorePlayer"
+                disabled={
+                  !canAutoCalculate
+                }
+                onClick={
+                  calculateAutoScore
                 }
               >
-                {number}
+                AUTO
               </button>
-            ))}
-
-            <button
-              className="numberPadSecondary"
-              onClick={() =>
-                pressKey('clear')
-              }
-            >
-              C
-            </button>
-
-            <button
-              onClick={() =>
-                pressKey('0')
-              }
-            >
-              0
-            </button>
-
-            <button
-              className="numberPadSecondary"
-              onClick={() =>
-                pressKey(
-                  'backspace'
-                )
-              }
-            >
-              ⌫
-            </button>
+            </aside>
           </div>
 
           <button
-            className="nextScorePlayer"
-            disabled={!canAutoCalculate}
-            onClick={calculateAutoScore}
+            className="saveStandardRound"
+            disabled={
+              !allScoresEntered ||
+              cardTotal !== 312
+            }
+            onClick={
+              submitCountRound
+            }
           >
-            AUTO
+            Confirm Round
           </button>
-        </aside>
-      </div>
-
-      <button
-        className="saveStandardRound"
-        disabled={
-          !allScoresEntered ||
-          cardTotal !== 312
-        }
-        onClick={submitRound}
-      >
-        Submit Round
-      </button>
+        </>
+      )}
 
       {currentTie && (
         <div className="tieOverlay">

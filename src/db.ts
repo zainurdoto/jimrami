@@ -43,7 +43,7 @@ export type RoundResult = {
   roundId: number
   sessionId: number
   playerId: number
-  cardScore: number
+  cardScore?: number
   position: number
   pointsAwarded: number
 }

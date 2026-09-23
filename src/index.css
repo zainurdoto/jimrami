@@ -1790,3 +1790,3248 @@ button {
     grid-template-columns: 1fr !important;
   }
 }
+
+/* ==============================
+   HISTORY & STATS
+================================ */
+
+.historyPage {
+  max-width: 1100px;
+}
+
+.historyHeader {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 26px;
+}
+
+.historyHeader > div > span {
+  color: #7f8997;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+
+.historyHeader h1 {
+  margin: 3px 0 0;
+  font-size: 34px;
+}
+
+.historyTabs {
+  display: grid;
+  grid-template-columns:
+    repeat(3, 1fr);
+  gap: 7px;
+
+  margin-bottom: 22px;
+  padding: 6px;
+
+  border-radius: 16px;
+  background: #13171d;
+}
+
+.historyTabs button {
+  min-height: 52px;
+
+  border: 0;
+  border-radius: 12px;
+
+  background: transparent;
+  color: #7f8997;
+
+  font-weight: 800;
+}
+
+.historyTabs button.active {
+  background: #29323e;
+  color: #f5f7fa;
+}
+
+/* SESSION HISTORY */
+
+.historySessionList {
+  display: grid;
+  gap: 12px;
+}
+
+.historySession {
+  overflow: hidden;
+
+  border: 1px solid #29313b;
+  border-radius: 18px;
+
+  background: #171c24;
+}
+
+.historySessionSummary {
+  width: 100%;
+  min-height: 88px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+
+  padding: 16px 20px;
+
+  border: 0;
+
+  background: transparent;
+  color: #f5f7fa;
+
+  text-align: left;
+}
+
+.historySessionSummary > div:first-child {
+  display: grid;
+  gap: 4px;
+}
+
+.historySessionSummary > div:first-child strong {
+  font-size: 20px;
+}
+
+.historySessionSummary > div:first-child span,
+.historySessionSummaryRight > span {
+  color: #8793a1;
+  font-size: 13px;
+}
+
+.historySessionSummaryRight {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.historySessionSummaryRight b {
+  padding: 5px 8px;
+
+  border-radius: 7px;
+
+  background: #29323d;
+  color: #9eabb9;
+
+  font-size: 10px;
+  letter-spacing: 0.08em;
+}
+
+.historySessionSummaryRight b.active {
+  background: #20372a;
+  color: #81d499;
+}
+
+.historySessionDetails {
+  padding: 18px 20px 20px;
+
+  border-top: 1px solid #29313b;
+}
+
+.historySessionMeta {
+  display: grid;
+  grid-template-columns:
+    repeat(4, minmax(0, 1fr));
+  gap: 9px;
+
+  margin-bottom: 16px;
+}
+
+.historySessionMeta > div {
+  min-width: 0;
+
+  padding: 14px;
+
+  border-radius: 13px;
+
+  background: #11151b;
+}
+
+.historySessionMeta span {
+  display: block;
+
+  margin-bottom: 5px;
+
+  color: #778392;
+
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.historySessionMeta strong {
+  display: block;
+
+  overflow: hidden;
+
+  font-size: 18px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.historyStandings {
+  display: grid;
+  gap: 7px;
+}
+
+.historyStanding {
+  display: grid;
+  grid-template-columns:
+    38px minmax(0, 1fr) auto;
+  align-items: center;
+
+  min-height: 62px;
+
+  padding: 8px 14px;
+
+  border-radius: 12px;
+
+  background: #202731;
+}
+
+.historyStanding > span {
+  color: #788391;
+  font-weight: 850;
+}
+
+.historyStanding > div {
+  display: grid;
+  gap: 3px;
+
+  min-width: 0;
+}
+
+.historyStanding > div > strong {
+  overflow: hidden;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.historyStanding small {
+  color: #8994a2;
+}
+
+.historyStanding > b {
+  font-size: 22px;
+}
+
+.historyRaceButton {
+  width: 100%;
+  min-height: 58px;
+
+  margin-top: 14px;
+
+  border: 0;
+  border-radius: 14px;
+
+  background: #303946;
+  color: #f5f7fa;
+
+  font-weight: 850;
+}
+
+.historyEmpty {
+  padding: 50px 20px;
+
+  border: 1px dashed #303844;
+  border-radius: 17px;
+
+  color: #7f8997;
+
+  text-align: center;
+}
+
+/* PLAYER STATS */
+
+.playerStatsList {
+  display: grid;
+  gap: 14px;
+}
+
+.playerStatsCard {
+  padding: 20px;
+
+  border: 1px solid #29313b;
+  border-radius: 18px;
+
+  background: #171c24;
+}
+
+.playerStatsCard > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+
+  margin-bottom: 18px;
+}
+
+.playerStatsCard > header > div {
+  display: grid;
+  gap: 3px;
+}
+
+.playerStatsCard h2 {
+  margin: 0;
+
+  font-size: 27px;
+}
+
+.playerStatsCard > header span {
+  color: #8994a2;
+  font-size: 13px;
+}
+
+.playerStatsCard > header > strong {
+  font-size: 21px;
+}
+
+.playerStatSectionLabel {
+  margin: 17px 2px 8px;
+
+  color: #7c8795;
+
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+
+.playerStatGrid {
+  display: grid;
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.playerStatGrid > div {
+  min-width: 0;
+
+  padding: 14px;
+
+  border-radius: 13px;
+
+  background: #11151b;
+}
+
+.playerStatGrid span {
+  display: block;
+
+  min-height: 24px;
+  margin-bottom: 5px;
+
+  color: #778392;
+
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.07em;
+}
+
+.playerStatGrid strong {
+  font-size: 23px;
+}
+
+.hideStageBreakdown {
+  display: grid;
+  grid-template-columns:
+    auto repeat(4, 1fr);
+  align-items: center;
+  gap: 8px;
+
+  margin-top: 10px;
+  padding: 11px 13px;
+
+  border: 1px solid #3c3250;
+  border-radius: 13px;
+
+  background: #1d1827;
+}
+
+.hideStageBreakdown > span {
+  color: #a891c5;
+
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.hideStageBreakdown > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 5px;
+}
+
+.hideStageBreakdown small {
+  color: #8f7ba8;
+}
+
+.hideStageBreakdown strong {
+  color: #d0b7ef;
+}
+
+/* AWARDS */
+
+.historyAwards {
+  display: grid;
+  gap: 18px;
+}
+
+.awardsIntro {
+  padding: 5px 2px 2px;
+}
+
+.awardsIntro > span {
+  color: #d9ae4b;
+
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.11em;
+}
+
+.awardsIntro h2 {
+  margin: 5px 0 6px;
+
+  font-size: 31px;
+}
+
+.awardsIntro p {
+  max-width: 620px;
+  margin: 0;
+
+  color: #8994a2;
+  line-height: 1.5;
+}
+
+.awardGrid {
+  display: grid;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.awardCard {
+  min-width: 0;
+
+  padding: 20px;
+
+  border: 1px solid #303844;
+  border-radius: 18px;
+
+  background: #171c24;
+}
+
+.awardCard > span {
+  color: #d9ae4b;
+
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.awardCard h3 {
+  margin: 8px 0 4px;
+
+  overflow-wrap: anywhere;
+
+  font-size: 27px;
+}
+
+.awardCard > strong {
+  color: #b5c0cd;
+
+  font-size: 15px;
+}
+
+.awardCard p {
+  margin: 11px 0 0;
+
+  color: #7f8b99;
+
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+@media (max-width: 700px) {
+  .historySessionMeta {
+    grid-template-columns:
+      repeat(2, 1fr);
+  }
+
+  .playerStatGrid {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+
+  .awardGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 520px) {
+  .historyTabs {
+    grid-template-columns: 1fr;
+  }
+
+  .historySessionSummary {
+    align-items: flex-start;
+  }
+
+  .historySessionSummaryRight {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 5px;
+  }
+
+  .hideStageBreakdown {
+    grid-template-columns:
+      1fr 1fr;
+  }
+
+  .hideStageBreakdown > span {
+    grid-column: 1 / -1;
+  }
+}
+
+
+/* ==============================
+   SESSION AWARDS
+================================ */
+
+.sessionAwardsSection {
+  margin-top: 20px;
+  padding-top: 18px;
+
+  border-top: 1px solid #29313b;
+}
+
+.sessionAwardsHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+
+  margin-bottom: 12px;
+}
+
+.sessionAwardsHeader span {
+  color: #d9ae4b;
+
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+
+.sessionAwardsHeader strong {
+  color: #8994a2;
+
+  font-size: 13px;
+}
+
+.sessionAwardGrid {
+  display: grid;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  gap: 9px;
+}
+
+.sessionAwardCard {
+  padding: 15px;
+
+  background: #141920;
+}
+
+.sessionAwardCard > span {
+  font-size: 9px;
+}
+
+.sessionAwardCard h3 {
+  margin: 6px 0 3px;
+
+  font-size: 21px;
+}
+
+.sessionAwardCard > strong {
+  font-size: 13px;
+}
+
+.sessionAwardCard p {
+  margin-top: 8px;
+
+  font-size: 12px;
+}
+
+@media (max-width: 600px) {
+  .sessionAwardGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .sessionAwardsHeader {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 3px;
+  }
+}
+
+/* ==============================
+   AWARD COLORS + BIGGER TITLES
+   Append after the existing
+   History / Session Awards CSS.
+================================ */
+
+.awardCard {
+  --award-color: #d9ae4b;
+
+  border-left:
+    4px solid var(--award-color);
+}
+
+.awardCard > span {
+  color: var(--award-color);
+
+  font-size: 15px;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+}
+
+.awardCard > strong {
+  color: var(--award-color);
+}
+
+/* Session cards are smaller overall,
+   but the award name should still
+   be obvious at a glance. */
+
+.sessionAwardCard > span {
+  font-size: 13px;
+}
+
+.sessionAwardCard h3 {
+  font-size: 23px;
+}
+
+/* Each family title gets its own
+   stable visual identity. */
+
+.awardTone-cuci {
+  --award-color: #6fc8d4;
+}
+
+.awardTone-slayer {
+  --award-color: #ef7f89;
+}
+
+.awardTone-tuah {
+  --award-color: #e0b65c;
+}
+
+.awardTone-malang {
+  --award-color: #b491df;
+}
+
+.awardTone-standard {
+  --award-color: #79a7f2;
+}
+
+.awardTone-jim {
+  --award-color: #e79a61;
+}
+
+.awardTone-hide {
+  --award-color: #bd8fe9;
+}
+
+.awardTone-denda {
+  --award-color: #e88b9c;
+}
+
+.awardTone-survivor {
+  --award-color: #7fcf95;
+}
+
+.awardTone-comeback {
+  --award-color: #67c5b3;
+}
+
+.awardTone-jatuh {
+  --award-color: #d7838f;
+}
+
+.awardTone-default {
+  --award-color: #aab5c2;
+}
+
+@media (max-width: 600px) {
+  .awardCard > span {
+    font-size: 14px;
+  }
+
+  .sessionAwardCard > span {
+    font-size: 12px;
+  }
+}
+
+/* ==============================
+   HISTORY V3
+   Append after the existing
+   History / Awards CSS.
+================================ */
+
+/* SESSION DETAILS */
+
+.historySessionMetaExpanded {
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr));
+}
+
+/* PLAYER SORTING */
+
+.playerSortPanel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+
+  margin-bottom: 14px;
+  padding: 16px 18px;
+
+  border: 1px solid #29313b;
+  border-radius: 16px;
+
+  background: #151a21;
+}
+
+.playerSortPanel > div:first-child {
+  display: grid;
+  gap: 3px;
+
+  flex: 0 0 auto;
+}
+
+.playerSortPanel > div:first-child span {
+  color: #788493;
+
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+
+.playerSortPanel > div:first-child strong {
+  font-size: 17px;
+}
+
+.playerSortButtons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 7px;
+}
+
+.playerSortButtons button {
+  min-height: 38px;
+  padding: 0 12px;
+
+  border: 1px solid #303945;
+  border-radius: 10px;
+
+  background: #202630;
+  color: #8f9aa7;
+
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.playerSortButtons button.active {
+  border-color: #59697d;
+
+  background: #344152;
+  color: #f5f7fa;
+}
+
+.playerStatsIdentity {
+  display: flex !important;
+  align-items: center;
+  gap: 13px;
+}
+
+.playerStatsRank {
+  display: grid !important;
+  place-items: center;
+
+  width: 42px;
+  height: 42px;
+
+  flex: 0 0 42px;
+
+  border-radius: 12px;
+
+  background: #242c36;
+  color: #9ba7b5 !important;
+
+  font-size: 13px !important;
+  font-weight: 900;
+}
+
+.playerStatsHeadline {
+  display: grid;
+  justify-items: end;
+  gap: 1px;
+}
+
+.playerStatsHeadline strong {
+  font-size: 25px;
+}
+
+.playerStatsHeadline span {
+  color: #778391;
+
+  font-size: 8px !important;
+  font-weight: 900;
+  letter-spacing: 0.09em;
+}
+
+/* AWARD SECTIONS */
+
+.awardSection {
+  display: grid;
+  gap: 13px;
+
+  margin-top: 10px;
+}
+
+.awardSection + .awardSection {
+  margin-top: 28px;
+  padding-top: 27px;
+
+  border-top: 1px solid #29313b;
+}
+
+.awardSectionHeader {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 30px;
+
+  padding: 0 2px;
+}
+
+.awardSectionHeader > div {
+  display: grid;
+  gap: 3px;
+}
+
+.awardSectionHeader > div > span {
+  color: #8a95a3;
+
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+
+.awardSectionHeader h3 {
+  margin: 0;
+
+  font-size: 25px;
+}
+
+.awardSectionHeader p {
+  max-width: 420px;
+  margin: 0;
+
+  color: #74808e;
+
+  font-size: 12px;
+  line-height: 1.45;
+  text-align: right;
+}
+
+.awardRecordNote {
+  display: block;
+
+  margin-top: 5px;
+
+  color: #8995a3;
+
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.rateAwardCard {
+  min-height: 180px;
+}
+
+/* Updated award tones */
+
+.awardTone-denda {
+  --award-color: #df8a72;
+}
+
+.awardTone-duration {
+  --award-color: #70b8d9;
+}
+
+.awardTone-rounds {
+  --award-color: #8ca8e8;
+}
+
+/* Bigger award identity */
+
+.awardCard > span {
+  font-size: 16px;
+}
+
+.awardCard h3 {
+  margin-top: 10px;
+
+  font-size: 28px;
+}
+
+.awardCard > strong {
+  font-size: 17px;
+}
+
+/* Mobile */
+
+@media (max-width: 800px) {
+  .playerSortPanel {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .playerSortButtons {
+    justify-content: flex-start;
+
+    width: 100%;
+  }
+
+  .historySessionMetaExpanded {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+
+  .awardSectionHeader {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .awardSectionHeader p {
+    max-width: none;
+
+    text-align: left;
+  }
+}
+
+@media (max-width: 520px) {
+  .playerSortButtons {
+    display: grid;
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+
+  .playerSortButtons button {
+    width: 100%;
+  }
+
+  .playerStatsCard > header {
+    align-items: flex-start;
+  }
+
+  .playerStatsHeadline {
+    min-width: 70px;
+  }
+
+  .historySessionMetaExpanded {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .awardCard > span {
+    font-size: 14px;
+  }
+
+  .awardCard h3 {
+    font-size: 23px;
+  }
+}
+
+/* ==============================
+   COMBINED ALL-TIME AWARDS
+   Append after History V3 CSS.
+================================ */
+
+.combinedAwardCard {
+  grid-column: span 1;
+
+  padding: 22px;
+}
+
+.combinedAwardDescription {
+  margin: 8px 0 17px !important;
+
+  color: #7f8b99 !important;
+
+  font-size: 12px !important;
+  line-height: 1.45 !important;
+}
+
+.combinedAwardMetrics {
+  display: grid;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  overflow: hidden;
+
+  border: 1px solid #2b343f;
+  border-radius: 14px;
+
+  background: #11151b;
+}
+
+.combinedAwardMetric {
+  min-width: 0;
+
+  padding: 15px 16px;
+}
+
+.combinedAwardMetric +
+.combinedAwardMetric {
+  border-left:
+    1px solid #2b343f;
+}
+
+.combinedAwardMetric small {
+  display: block;
+
+  margin-bottom: 6px;
+
+  color: var(--award-color);
+
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 900;
+  letter-spacing: 0.09em;
+}
+
+.combinedAwardMetric h3 {
+  margin: 0 0 3px;
+
+  overflow-wrap: anywhere;
+
+  font-size: 23px;
+}
+
+.combinedAwardMetric strong {
+  display: block;
+
+  color: var(--award-color);
+
+  font-size: 15px;
+}
+
+.combinedAwardMetric em {
+  display: block;
+
+  margin-top: 5px;
+
+  color: #778493;
+
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 750;
+}
+
+/* Raja Session */
+.awardTone-session {
+  --award-color: #75c6a7;
+}
+
+@media (max-width: 620px) {
+  .combinedAwardMetrics {
+    grid-template-columns: 1fr;
+  }
+
+  .combinedAwardMetric +
+  .combinedAwardMetric {
+    border-top:
+      1px solid #2b343f;
+
+    border-left: 0;
+  }
+
+  .combinedAwardMetric h3 {
+    font-size: 21px;
+  }
+}
+
+/* ==============================
+   CLEAN SINGLE-SESSION WINNERS
+   Append after existing History CSS.
+================================ */
+
+.sessionRecordWinners {
+  display: grid;
+  gap: 7px;
+
+  margin: 10px 0 8px;
+}
+
+.sessionRecordWinner {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+
+  min-width: 0;
+
+  padding: 9px 11px;
+
+  border-radius: 10px;
+
+  background: #11151b;
+}
+
+.sessionRecordWinner h3 {
+  min-width: 0;
+  margin: 0;
+
+  overflow: hidden;
+
+  font-size: 22px;
+  line-height: 1.15;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sessionRecordWinner > span {
+  flex: 0 0 auto;
+
+  color: #82909f;
+
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+/* Keep the record value visually
+   separate from the winner rows. */
+.rateAwardCard > .sessionRecordWinners + strong {
+  display: block;
+
+  margin-top: 7px;
+}
+
+/* On small screens, let the date sit
+   underneath instead of crushing names. */
+@media (max-width: 520px) {
+  .sessionRecordWinner {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .sessionRecordWinner h3 {
+    width: 100%;
+
+    overflow: visible;
+    white-space: normal;
+  }
+}
+
+/* ==============================
+   CLEAN ALL-TIME TIED WINNERS
+   Append after the existing
+   combined award CSS.
+================================ */
+
+.combinedWinnerList {
+  display: grid;
+  gap: 5px;
+
+  margin: 2px 0 7px;
+}
+
+.combinedWinnerRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+
+  min-width: 0;
+}
+
+.combinedWinnerRow h3 {
+  min-width: 0;
+  margin: 0;
+
+  overflow: hidden;
+
+  font-size: 22px;
+  line-height: 1.18;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.combinedWinnerRow > span {
+  flex: 0 0 auto;
+
+  color: #7f8b99;
+
+  font-size: 10px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+/* Keep the shared record value
+   visually separate from tied names. */
+
+.combinedAwardMetric >
+.combinedWinnerList + strong {
+  margin-top: 5px;
+}
+
+/* If many people share a record,
+   the card grows vertically instead
+   of forcing names onto one line. */
+
+@media (max-width: 520px) {
+  .combinedWinnerRow {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 1px;
+  }
+
+  .combinedWinnerRow h3 {
+    width: 100%;
+
+    overflow: visible;
+    white-space: normal;
+  }
+}
+
+/* ==============================
+   PER-SESSION AWARDS
+   Append after current History CSS.
+================================ */
+
+.historySessionActions {
+  display: grid;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+  gap: 10px;
+
+  margin-top: 14px;
+}
+
+.historySessionActions
+.historyRaceButton,
+.historySessionActions
+.historyAwardsButton {
+  width: 100%;
+  min-height: 58px;
+  margin-top: 0;
+
+  border: 0;
+  border-radius: 14px;
+
+  font-weight: 850;
+}
+
+.historyAwardsButton {
+  background: #26382f;
+  color: #91d5aa;
+}
+
+.historyAwardsButton:hover {
+  background: #2d4437;
+}
+
+.sessionAwardsPage {
+  max-width: 1100px;
+}
+
+.sessionAwardsSummary {
+  display: grid;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+  gap: 10px;
+
+  margin-bottom: 18px;
+}
+
+.sessionAwardsSummary > div {
+  padding: 15px 17px;
+
+  border: 1px solid #29313b;
+  border-radius: 14px;
+
+  background: #151a21;
+}
+
+.sessionAwardsSummary span {
+  display: block;
+
+  margin-bottom: 4px;
+
+  color: #788493;
+
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+
+.sessionAwardsSummary strong {
+  font-size: 20px;
+}
+
+.sessionOwnAwardGrid {
+  margin-top: 2px;
+}
+
+.sessionOwnAwardGrid
+.awardCard {
+  min-height: 190px;
+}
+
+@media (max-width: 600px) {
+  .historySessionActions {
+    grid-template-columns: 1fr;
+  }
+
+  .sessionAwardsSummary {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* ==============================
+   PLAYER SORT STAT HIGHLIGHT
+   Append after current History CSS.
+================================ */
+
+/* Grid statistic selected by the
+   active player-sort button. */
+.playerStatGrid > div.sortStatHighlight {
+  position: relative;
+
+  border:
+    1px solid rgba(222, 181, 88, 0.62);
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(222, 181, 88, 0.11),
+      #11151b 62%
+    );
+
+  box-shadow:
+    inset 0 0 0 1px
+      rgba(222, 181, 88, 0.05);
+}
+
+.playerStatGrid >
+div.sortStatHighlight > span {
+  color: #c7a755;
+}
+
+.playerStatGrid >
+div.sortStatHighlight > strong {
+  color: #f0c75e;
+}
+
+/* TOTAL PTS lives in the card header
+   rather than the stat grid. */
+.playerStatsHeadline.sortStatHighlight {
+  min-width: 92px;
+  padding: 9px 11px;
+
+  border:
+    1px solid rgba(222, 181, 88, 0.62);
+  border-radius: 12px;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(222, 181, 88, 0.12),
+      rgba(17, 21, 27, 0.78)
+    );
+}
+
+.playerStatsHeadline.sortStatHighlight
+strong {
+  color: #f0c75e;
+}
+
+.playerStatsHeadline.sortStatHighlight
+span {
+  color: #c7a755;
+}
+
+/* ==============================
+   MVP TAB
+   Append after current History CSS.
+================================ */
+
+/* 4 tabs now */
+.historyTabs {
+  grid-template-columns:
+    repeat(4, 1fr);
+}
+
+.mvpPage {
+  display: grid;
+  gap: 18px;
+}
+
+.mvpIntro {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 30px;
+
+  padding: 4px 2px 2px;
+}
+
+.mvpIntro > div:first-child > span {
+  color: #e0b65c;
+
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.11em;
+}
+
+.mvpIntro h2 {
+  margin: 5px 0 6px;
+
+  font-size: 31px;
+}
+
+.mvpIntro p {
+  max-width: 650px;
+  margin: 0;
+
+  color: #8994a2;
+  line-height: 1.5;
+}
+
+.mvpFormula {
+  display: grid;
+  grid-template-columns:
+    repeat(2, minmax(0, auto));
+  gap: 6px 14px;
+
+  padding: 14px 16px;
+
+  border: 1px solid #303844;
+  border-radius: 14px;
+
+  background: #151a21;
+}
+
+.mvpFormula > span {
+  grid-column: 1 / -1;
+
+  color: #7c8795;
+
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+
+.mvpFormula strong {
+  color: #c9d2dc;
+
+  font-size: 12px;
+}
+
+.mvpEligibility {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 22px;
+
+  padding: 14px 16px;
+
+  border: 1px solid #3a3322;
+  border-radius: 14px;
+
+  background: #1b1913;
+}
+
+.mvpEligibility span {
+  flex: 0 0 auto;
+
+  color: #d9ae4b;
+
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+
+.mvpEligibility p {
+  margin: 0;
+
+  color: #9a8d6c;
+
+  font-size: 12px;
+  line-height: 1.45;
+  text-align: right;
+}
+
+.mvpLeaderboard {
+  display: grid;
+  gap: 13px;
+}
+
+.mvpCard {
+  padding: 20px;
+
+  border: 1px solid #2d3641;
+  border-radius: 18px;
+
+  background: #171c24;
+}
+
+.mvpCard.mvpLeader {
+  border-color: #5d4d27;
+
+  box-shadow:
+    inset 4px 0 0 #d9ae4b;
+}
+
+.mvpCard > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+
+  margin-bottom: 16px;
+}
+
+.mvpIdentity {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+}
+
+.mvpIdentity > span {
+  display: grid;
+  place-items: center;
+
+  width: 42px;
+  height: 42px;
+
+  border-radius: 12px;
+
+  background: #252d37;
+  color: #9aa6b5;
+
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.mvpIdentity h3 {
+  margin: 0 0 3px;
+
+  font-size: 26px;
+}
+
+.mvpIdentity small {
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.09em;
+}
+
+.mvpProvisional {
+  color: #c99963;
+}
+
+.mvpQualified {
+  color: #75c895;
+}
+
+.mvpScore {
+  display: grid;
+  justify-items: end;
+}
+
+.mvpScore strong {
+  color: #e0b65c;
+
+  font-size: 36px;
+  line-height: 1;
+}
+
+.mvpScore span {
+  margin-top: 3px;
+
+  color: #9d8245;
+
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+
+.mvpComponents {
+  display: grid;
+  grid-template-columns:
+    repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.mvpComponents > div {
+  min-width: 0;
+
+  padding: 14px;
+
+  border-radius: 13px;
+
+  background: #11151b;
+}
+
+.mvpComponents span {
+  display: block;
+
+  margin-bottom: 5px;
+
+  color: #788493;
+
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.09em;
+}
+
+.mvpComponents strong {
+  display: block;
+
+  margin-bottom: 4px;
+
+  font-size: 23px;
+}
+
+.mvpComponents small {
+  color: #7f8b99;
+
+  font-size: 10px;
+  line-height: 1.35;
+}
+
+.mvpSample {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+
+  margin-top: 11px;
+}
+
+.mvpSample span {
+  padding: 5px 8px;
+
+  border-radius: 8px;
+
+  background: #222a34;
+  color: #8d99a7;
+
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.mvpMethodNote {
+  padding: 15px 17px;
+
+  border: 1px solid #2c3540;
+  border-radius: 14px;
+
+  background: #131820;
+}
+
+.mvpMethodNote strong {
+  color: #9aa6b5;
+
+  font-size: 10px;
+  letter-spacing: 0.09em;
+}
+
+.mvpMethodNote p {
+  margin: 6px 0 0;
+
+  color: #778493;
+
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+@media (max-width: 850px) {
+  .mvpIntro {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .mvpComponents {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+
+  .mvpEligibility {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .mvpEligibility p {
+    text-align: left;
+  }
+}
+
+@media (max-width: 600px) {
+  .historyTabs {
+    grid-template-columns:
+      repeat(2, 1fr);
+  }
+
+  .mvpComponents {
+    grid-template-columns: 1fr;
+  }
+
+  .mvpCard > header {
+    align-items: flex-start;
+  }
+
+  .mvpScore strong {
+    font-size: 30px;
+  }
+}
+
+/* ==============================
+   MVP QUALIFICATION TICKS
+   Append after MVP CSS.
+================================ */
+
+.mvpSample span.complete {
+  background: #1d3025;
+  color: #7fd19a;
+}
+
+/* ==============================
+   MVP PODIUM
+   Append after the current MVP CSS.
+================================ */
+
+.mvpPodiumSection {
+  padding: 22px 22px 0;
+
+  border: 1px solid #303844;
+  border-radius: 18px;
+
+  background:
+    radial-gradient(
+      circle at 50% 0%,
+      rgba(217, 174, 75, 0.11),
+      transparent 46%
+    ),
+    #151a21;
+}
+
+.mvpPodiumHeader {
+  text-align: center;
+}
+
+.mvpPodiumHeader > span,
+.mvpLeaderboardHeader > span {
+  color: #d9ae4b;
+
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.11em;
+}
+
+.mvpPodiumHeader h3,
+.mvpLeaderboardHeader h3 {
+  margin: 4px 0 0;
+
+  font-size: 25px;
+}
+
+.mvpPodium {
+  display: grid;
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr));
+  align-items: end;
+  gap: 14px;
+
+  max-width: 900px;
+  margin: 30px auto 0;
+}
+
+.mvpPodiumSlot {
+  display: grid;
+  grid-template-rows:
+    auto auto auto;
+  align-items: end;
+
+  min-width: 0;
+}
+
+.mvpPodiumPlayer {
+  position: relative;
+
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+
+  padding: 17px 12px 14px;
+
+  border: 1px solid #313a46;
+  border-radius: 15px 15px 0 0;
+
+  background: #1b212a;
+
+  text-align: center;
+}
+
+.mvpPodiumPlayer > strong {
+  max-width: 100%;
+
+  overflow: hidden;
+
+  font-size: 22px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mvpPodiumPlayer > small {
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 0.09em;
+}
+
+.mvpMedal {
+  display: grid;
+  place-items: center;
+
+  width: 38px;
+  height: 38px;
+
+  margin-top: -37px;
+
+  border: 3px solid #151a21;
+  border-radius: 50%;
+
+  background: #596473;
+  color: #f5f7fa;
+
+  font-size: 16px;
+  font-weight: 950;
+}
+
+.mvpPodiumScore {
+  display: grid;
+  justify-items: center;
+
+  padding: 13px 10px;
+
+  border-right: 1px solid #313a46;
+  border-left: 1px solid #313a46;
+
+  background: #11151b;
+}
+
+.mvpPodiumScore strong {
+  font-size: 31px;
+  line-height: 1;
+}
+
+.mvpPodiumScore span {
+  margin-top: 4px;
+
+  color: #7e8997;
+
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+
+.mvpPodiumBlock {
+  display: grid;
+  place-items: center;
+
+  min-height: 128px;
+
+  border-radius: 0 0 10px 10px;
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255,255,255,0.045),
+      rgba(255,255,255,0.01)
+    ),
+    #29323d;
+}
+
+.mvpPodiumBlock span {
+  color: #cbd3dc;
+
+  font-size: 33px;
+  font-weight: 950;
+}
+
+/* #1 in the middle, tallest and gold */
+
+.mvpPodiumSlot.rank1
+.mvpPodiumPlayer {
+  border-color: #6b582a;
+
+  background:
+    linear-gradient(
+      180deg,
+      #262317,
+      #1d1d1b
+    );
+}
+
+.mvpPodiumSlot.rank1
+.mvpMedal {
+  background: #d9ae4b;
+  color: #1a160b;
+}
+
+.mvpPodiumSlot.rank1
+.mvpPodiumScore strong {
+  color: #e8bd57;
+}
+
+.mvpPodiumSlot.rank1
+.mvpPodiumBlock {
+  min-height: 190px;
+
+  background:
+    linear-gradient(
+      180deg,
+      #6c5624,
+      #3c311b
+    );
+}
+
+.mvpPodiumSlot.rank1
+.mvpPodiumBlock span {
+  color: #f1c969;
+}
+
+/* #2 silver */
+
+.mvpPodiumSlot.rank2
+.mvpMedal {
+  background: #9ca8b5;
+  color: #171b20;
+}
+
+.mvpPodiumSlot.rank2
+.mvpPodiumScore strong {
+  color: #c8d0d9;
+}
+
+.mvpPodiumSlot.rank2
+.mvpPodiumBlock {
+  min-height: 145px;
+
+  background:
+    linear-gradient(
+      180deg,
+      #48535f,
+      #303a45
+    );
+}
+
+/* #3 bronze */
+
+.mvpPodiumSlot.rank3
+.mvpMedal {
+  background: #ba8058;
+  color: #1b120c;
+}
+
+.mvpPodiumSlot.rank3
+.mvpPodiumScore strong {
+  color: #d69a70;
+}
+
+.mvpPodiumSlot.rank3
+.mvpPodiumBlock {
+  min-height: 112px;
+
+  background:
+    linear-gradient(
+      180deg,
+      #5d4031,
+      #352a25
+    );
+}
+
+.mvpLeaderboardSection {
+  display: grid;
+  gap: 13px;
+
+  margin-top: 2px;
+}
+
+.mvpLeaderboardHeader {
+  padding: 0 2px;
+}
+
+/* Make the #1 detailed card a little
+   quieter now that the podium is the hero. */
+
+.mvpCard.mvpLeader {
+  border-color: #3c4652;
+
+  box-shadow: none;
+}
+
+/* Tablet / phone */
+
+@media (max-width: 760px) {
+  .mvpPodiumSection {
+    padding: 18px 12px 0;
+  }
+
+  .mvpPodium {
+    gap: 7px;
+
+    margin-top: 28px;
+  }
+
+  .mvpPodiumPlayer {
+    padding:
+      14px 7px 11px;
+  }
+
+  .mvpPodiumPlayer > strong {
+    font-size: 17px;
+  }
+
+  .mvpMedal {
+    width: 32px;
+    height: 32px;
+
+    margin-top: -31px;
+
+    font-size: 13px;
+  }
+
+  .mvpPodiumScore strong {
+    font-size: 24px;
+  }
+
+  .mvpPodiumBlock span {
+    font-size: 27px;
+  }
+
+  .mvpPodiumSlot.rank1
+  .mvpPodiumBlock {
+    min-height: 155px;
+  }
+
+  .mvpPodiumSlot.rank2
+  .mvpPodiumBlock {
+    min-height: 118px;
+  }
+
+  .mvpPodiumSlot.rank3
+  .mvpPodiumBlock {
+    min-height: 90px;
+  }
+}
+
+@media (max-width: 520px) {
+  .mvpPodium {
+    grid-template-columns:
+      repeat(3, minmax(0, 1fr));
+  }
+
+  .mvpPodiumPlayer > strong {
+    font-size: 14px;
+  }
+
+  .mvpPodiumPlayer > small {
+    font-size: 6px;
+  }
+
+  .mvpPodiumScore {
+    padding:
+      10px 4px;
+  }
+
+  .mvpPodiumScore strong {
+    font-size: 20px;
+  }
+}
+
+
+/* ==============================
+   STANDARD ROUND — QUICK RANK
+   Append after current Standard
+   Round CSS.
+================================ */
+
+.standardModeBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+
+  max-width: 760px;
+  margin: 0 auto 18px;
+  padding: 14px 16px;
+
+  border: 1px solid #2c3540;
+  border-radius: 15px;
+
+  background: #151a21;
+}
+
+.standardModeBar > div {
+  display: grid;
+  gap: 3px;
+}
+
+.standardModeBar > div > span {
+  color: #7f8b99;
+
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+
+.standardModeBar > div > strong {
+  font-size: 16px;
+}
+
+.standardModeButton {
+  flex: 0 0 auto;
+
+  min-height: 40px;
+  padding: 0 14px;
+
+  border: 1px solid #3a4552;
+  border-radius: 10px;
+
+  background: #252d38;
+  color: #dfe5eb;
+
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.quickRankPanel {
+  position: relative;
+
+  max-width: 760px;
+  margin: 0 auto 18px;
+}
+
+.quickRankList {
+  display: grid;
+
+  margin: 0;
+  padding: 0;
+
+  list-style: none;
+}
+
+.quickRankItem {
+  position: relative;
+
+  margin: 0;
+  padding: 0;
+
+  list-style: none;
+
+  touch-action: none;
+}
+
+.quickRankCard {
+  display: grid;
+  grid-template-columns:
+    54px minmax(0, 1fr) auto 30px;
+  align-items: center;
+  gap: 13px;
+
+  min-height: 84px;
+  padding: 12px 16px;
+
+  border: 1px solid #303a46;
+  border-radius: 16px;
+
+  background: #1a2028;
+
+  cursor: grab;
+  user-select: none;
+}
+
+.quickRankCard:active {
+  cursor: grabbing;
+}
+
+.quickRankNumber {
+  display: grid;
+  place-items: center;
+
+  width: 42px;
+  height: 42px;
+
+  border-radius: 12px;
+
+  background: #252e39;
+  color: #9ba8b6;
+
+  font-size: 17px;
+  font-weight: 950;
+}
+
+.quickRankPlayer {
+  display: grid;
+  gap: 3px;
+
+  min-width: 0;
+}
+
+.quickRankPlayer strong {
+  overflow: hidden;
+
+  font-size: 22px;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.quickRankPlayer span {
+  color: #778493;
+
+  font-size: 9px;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.quickRankPoints {
+  display: grid;
+  justify-items: end;
+}
+
+.quickRankPoints strong {
+  font-size: 25px;
+}
+
+.quickRankPoints span {
+  color: #788493;
+
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+
+.quickRankDrag {
+  color: #647181;
+
+  font-size: 20px;
+  font-weight: 900;
+}
+
+/*
+  The small divider between cards is
+  the "connect these two" control.
+*/
+.rankTieConnector {
+  position: relative;
+  z-index: 3;
+
+  display: grid;
+  place-items: center;
+
+  width: calc(100% - 36px);
+  height: 24px;
+  margin: -1px 18px;
+
+  border: 0;
+
+  background: transparent;
+}
+
+.rankTieConnector::before {
+  content: '';
+
+  position: absolute;
+
+  left: 0;
+  right: 0;
+  top: 50%;
+
+  height: 1px;
+
+  background: #27303a;
+}
+
+.rankTieConnector > span {
+  position: relative;
+  z-index: 1;
+
+  display: grid;
+  place-items: center;
+
+  min-width: 30px;
+  height: 20px;
+  padding: 0 7px;
+
+  border: 1px solid #34404d;
+  border-radius: 999px;
+
+  background: #11161c;
+  color: #7e8997;
+
+  font-size: 10px;
+  font-weight: 950;
+  letter-spacing: 0.05em;
+}
+
+.rankTieConnector.active {
+  height: 30px;
+
+  margin-top: -4px;
+  margin-bottom: -4px;
+
+  border-right: 2px solid #856fd0;
+  border-left: 2px solid #856fd0;
+
+  background:
+    rgba(133, 111, 208, 0.08);
+}
+
+.rankTieConnector.active::before {
+  background: #856fd0;
+}
+
+.rankTieConnector.active > span {
+  border-color: #856fd0;
+
+  background: #302747;
+  color: #c9b8f3;
+}
+
+.quickRankCard.tiedWithNext,
+.quickRankCard.tiedWithPrevious {
+  border-color: #6757a1;
+
+  background:
+    linear-gradient(
+      90deg,
+      rgba(116, 91, 180, 0.08),
+      #1a2028 45%
+    );
+}
+
+.quickRankCard.tiedWithNext {
+  border-bottom-right-radius: 8px;
+  border-bottom-left-radius: 8px;
+}
+
+.quickRankCard.tiedWithPrevious {
+  border-top-right-radius: 8px;
+  border-top-left-radius: 8px;
+}
+
+.quickRankCard.tiedWithNext
+.quickRankPlayer span,
+.quickRankCard.tiedWithPrevious
+.quickRankPlayer span {
+  color: #aa98db;
+}
+
+.quickRankHint {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 16px;
+
+  margin-top: 13px;
+
+  color: #74808e;
+
+  font-size: 10px;
+  font-weight: 750;
+}
+
+.quickRankToast {
+  position: sticky;
+  bottom: 18px;
+  z-index: 10;
+
+  width: fit-content;
+  max-width: calc(100% - 24px);
+
+  margin: 14px auto 0;
+  padding: 9px 13px;
+
+  border: 1px solid #5d4b8d;
+  border-radius: 999px;
+
+  background: #251f34;
+  color: #cdbcf3;
+
+  font-size: 11px;
+  font-weight: 850;
+  text-align: center;
+}
+
+/* The old exact-score mode remains
+   secondary, not the default. */
+
+.nextScorePlayer:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+@media (max-width: 620px) {
+  .standardModeBar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .standardModeButton {
+    width: 100%;
+  }
+
+  .quickRankCard {
+    grid-template-columns:
+      44px minmax(0, 1fr) auto 24px;
+
+    min-height: 76px;
+    padding: 10px 12px;
+  }
+
+  .quickRankNumber {
+    width: 36px;
+    height: 36px;
+
+    font-size: 15px;
+  }
+
+  .quickRankPlayer strong {
+    font-size: 18px;
+  }
+
+  .quickRankPoints strong {
+    font-size: 21px;
+  }
+}
+
+/* ==============================
+   PENALTY CONFIRMATION MODAL
+   Append after current Penalty CSS.
+================================ */
+
+.penaltyConfirmOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+
+  display: grid;
+  place-items: center;
+
+  padding: 22px;
+
+  background: rgba(5, 8, 12, 0.76);
+  backdrop-filter: blur(8px);
+}
+
+.penaltyConfirmDialog {
+  width: min(100%, 520px);
+  padding: 28px;
+
+  border: 1px solid #4a3035;
+  border-radius: 22px;
+
+  background: #171c24;
+
+  box-shadow:
+    0 24px 70px rgba(0, 0, 0, 0.45);
+}
+
+.penaltyConfirmLabel {
+  color: #dc7d87;
+
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+
+.penaltyConfirmDialog h2 {
+  margin: 8px 0 22px;
+
+  font-size: 30px;
+  line-height: 1.15;
+}
+
+.penaltyConfirmPoints {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 12px;
+
+  margin-bottom: 22px;
+}
+
+.penaltyConfirmPoints > div:not(
+  .penaltyConfirmArrow
+) {
+  padding: 16px;
+
+  border-radius: 14px;
+
+  background: #11151b;
+}
+
+.penaltyConfirmPoints span {
+  display: block;
+
+  margin-bottom: 5px;
+
+  color: #7e8997;
+
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+
+.penaltyConfirmPoints strong {
+  font-size: 30px;
+}
+
+.penaltyConfirmArrow {
+  color: #697583;
+
+  font-size: 22px;
+  font-weight: 900;
+}
+
+.penaltyConfirmActions {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr;
+  gap: 10px;
+}
+
+.penaltyConfirmActions button {
+  min-height: 58px;
+
+  border-radius: 14px;
+
+  font-size: 15px;
+  font-weight: 850;
+}
+
+.penaltyCancelButton {
+  border: 1px solid #39434f;
+
+  background: #232a33;
+  color: #b5bfca;
+}
+
+.penaltyConfirmButton {
+  border: 0;
+
+  background: #6a3037;
+  color: #f4dfe2;
+}
+
+.penaltyConfirmButton:hover {
+  background: #793740;
+}
+
+.penaltyConfirmActions button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (max-width: 520px) {
+  .penaltyConfirmDialog {
+    padding: 22px;
+  }
+
+  .penaltyConfirmDialog h2 {
+    font-size: 25px;
+  }
+
+  .penaltyConfirmActions {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ==============================
+   MAIN SCOREBOARD POLISH
+   Append after current index.css.
+================================ */
+
+/* ---------- HEADER ---------- */
+
+.gameHeader.gameHeaderPolished {
+  display: grid;
+  grid-template-columns:
+    minmax(190px, 1fr)
+    auto
+    minmax(190px, 1fr);
+
+  align-items: center;
+  gap: 24px;
+
+  margin-bottom: 30px;
+}
+
+.gameRoundHero {
+  display: flex;
+  align-items: baseline;
+  gap: 11px;
+
+  justify-self: start;
+}
+
+.gameRoundHero > span {
+  color: #758292;
+
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: 0.14em;
+}
+
+.gameRoundHero > strong {
+  color: #f5f7fa;
+
+  font-size: 48px;
+  font-weight: 950;
+  line-height: 0.95;
+  letter-spacing: -0.045em;
+}
+
+.gameBrand {
+  justify-self: center;
+
+  text-align: center;
+}
+
+.gameBrand h1 {
+  margin: 0 !important;
+
+  font-size: 45px !important;
+  font-weight: 950;
+  line-height: 1 !important;
+  letter-spacing: -0.045em !important;
+}
+
+.gameHeaderPolished
+.gameHeaderActions {
+  justify-self: end;
+
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.gameHeaderPolished
+.gameHeaderActions button {
+  min-height: 46px;
+  padding: 0 17px;
+
+  border-radius: 13px;
+
+  font-size: 13px;
+  font-weight: 800;
+}
+
+/* ---------- SCOREBOARD ---------- */
+
+.gameScoreboard {
+  gap: 10px;
+}
+
+.standingRow {
+  position: relative;
+
+  grid-template-columns:
+    54px minmax(0, 1fr) 105px;
+
+  min-height: 104px;
+  padding: 16px 22px;
+
+  transition:
+    border-color 160ms ease,
+    background 160ms ease;
+}
+
+.standingRow.leader {
+  border-color: #4b4330;
+
+  background:
+    linear-gradient(
+      90deg,
+      rgba(215, 174, 81, 0.075),
+      #171c24 25%
+    );
+}
+
+.standingRow.leader::before {
+  content: '';
+
+  position: absolute;
+  top: 17px;
+  bottom: 17px;
+  left: -1px;
+
+  width: 4px;
+
+  border-radius: 0 999px 999px 0;
+
+  background: #d9ae4b;
+}
+
+.standingRank {
+  display: grid;
+  place-items: center;
+
+  width: 38px;
+  height: 38px;
+
+  border-radius: 11px;
+
+  background: #202731;
+  color: #8390a0;
+
+  font-size: 18px;
+  font-weight: 950;
+}
+
+.standingRow.leader
+.standingRank {
+  background: #342d1e;
+  color: #e0b75b;
+}
+
+.standingPlayer {
+  min-width: 0;
+}
+
+.standingPlayer > div {
+  min-width: 0;
+}
+
+.standingNameLine {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  min-width: 0;
+}
+
+.standingNameLine h2 {
+  margin: 0;
+
+  overflow: hidden;
+
+  font-size: 26px;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.standingPlayer p {
+  margin: 6px 0 0;
+
+  color: #758293;
+
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: 0.035em;
+}
+
+.playingTag {
+  flex: 0 0 auto;
+
+  padding: 5px 8px;
+
+  border: 1px solid #344150;
+  border-radius: 7px;
+
+  background: #25303c;
+  color: #abc0d8;
+
+  font-size: 8px;
+  font-weight: 950;
+  letter-spacing: 0.1em;
+}
+
+.standingPoints {
+  display: grid;
+  justify-items: end;
+  align-content: center;
+  gap: 2px;
+}
+
+.standingPoints strong {
+  font-size: 49px;
+  line-height: 0.9;
+}
+
+.standingPoints span {
+  color: #7a8796;
+
+  font-size: 9px;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+}
+
+/* ---------- WAITING ---------- */
+
+.gameWaiting {
+  min-height: 56px;
+
+  margin-top: 12px;
+  padding: 13px 18px;
+
+  border-radius: 13px;
+}
+
+.gameWaiting span {
+  font-size: 10px;
+}
+
+.gameWaiting strong {
+  color: #aeb8c4;
+
+  font-size: 14px;
+}
+
+/* ---------- MAIN ACTIONS ---------- */
+
+.gameActions {
+  display: grid !important;
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr)) !important;
+
+  gap: 10px !important;
+
+  margin-top: 20px;
+}
+
+.gameActions > button {
+  min-height: 72px;
+
+  border-radius: 17px;
+
+  font-size: 17px;
+  font-weight: 900;
+}
+
+.gameActions .penaltyAction {
+  grid-column: 3;
+
+  justify-self: end;
+
+  width: min(100%, 185px);
+  min-height: 48px;
+
+  margin-top: 2px;
+
+  border-radius: 13px;
+
+  font-size: 13px;
+}
+
+/* ---------- NEW SESSION BRAND ---------- */
+
+.setupHeader > h1 {
+  letter-spacing: -0.045em;
+}
+
+/* ---------- TABLET / MOBILE ---------- */
+
+@media (max-width: 820px) {
+  .gameHeader.gameHeaderPolished {
+    grid-template-columns:
+      1fr auto;
+    gap: 16px;
+  }
+
+  .gameBrand {
+    grid-column: 1 / -1;
+    grid-row: 1;
+
+    justify-self: center;
+  }
+
+  .gameRoundHero {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .gameHeaderPolished
+  .gameHeaderActions {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  .gameBrand h1 {
+    font-size: 39px !important;
+  }
+
+  .gameRoundHero > strong {
+    font-size: 40px;
+  }
+}
+
+@media (max-width: 620px) {
+  .gameHeaderPolished
+  .gameHeaderActions {
+    gap: 5px;
+  }
+
+  .gameHeaderPolished
+  .gameHeaderActions button {
+    min-height: 40px;
+    padding: 0 10px;
+
+    font-size: 11px;
+  }
+
+  .standingRow {
+    grid-template-columns:
+      42px minmax(0, 1fr) 72px;
+
+    min-height: 90px;
+    padding: 13px;
+  }
+
+  .standingRank {
+    width: 33px;
+    height: 33px;
+
+    font-size: 15px;
+  }
+
+  .standingNameLine {
+    gap: 6px;
+  }
+
+  .standingNameLine h2 {
+    font-size: 20px;
+  }
+
+  .standingPlayer p {
+    font-size: 9px;
+  }
+
+  .standingPoints strong {
+    font-size: 38px;
+  }
+
+  .gameActions {
+    grid-template-columns:
+      1fr !important;
+  }
+
+  .gameActions .penaltyAction {
+    grid-column: 1;
+
+    justify-self: stretch;
+
+    width: 100%;
+  }
+}
+
+/* ==============================
+   SCOREBOARD WIN META CHIPS
+   Append after scoreboard polish CSS.
+================================ */
+
+.standingMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+
+  margin-top: 7px;
+}
+
+.standingMeta > span {
+  display: inline-flex;
+  align-items: center;
+
+  min-height: 24px;
+  padding: 0 8px;
+
+  border-radius: 8px;
+
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+}
+
+/* Standard = cool blue */
+.standingMetaStandard {
+  border: 1px solid #34485f;
+
+  background: #1f2c3a;
+  color: #8fb7e3;
+}
+
+/* Jim = warm gold */
+.standingMetaJim {
+  border: 1px solid #5b4b27;
+
+  background: #302817;
+  color: #e0b65c;
+}
+
+@media (max-width: 620px) {
+  .standingMeta {
+    gap: 4px;
+  }
+
+  .standingMeta > span {
+    min-height: 21px;
+    padding: 0 6px;
+
+    font-size: 8px;
+  }
+}
+
+/* Bigger award titles */
+.awardCard > span {
+  font-size: 25px;
+}
+
+.combinedAwardCard > span {
+  font-size: 25px;
+}
+
+@media (max-width: 600px) {
+  .awardCard > span,
+  .combinedAwardCard > span {
+    font-size: 25px;
+  }
+}
+
+/* ==============================
+   PLAYER STATS — BIGGER LABELS
+================================ */
+
+.playerStatSectionLabel {
+  font-size: 14px;
+}
+
+.playerStatGrid span {
+  font-size: 13px;
+}
+
+.hideStageBreakdown > span {
+  font-size: 13px;
+}
+
+.hideStageBreakdown small {
+  font-size: 11px;
+}
+
+@media (max-width: 600px) {
+  .playerStatSectionLabel {
+    font-size: 13px;
+  }
+
+  .playerStatGrid span {
+    font-size: 11px;
+  }
+
+  .hideStageBreakdown > span {
+    font-size: 11px;
+  }
+}
+
+/* ==============================
+   DELETE SAVED SESSION
+   Append after current History CSS.
+================================ */
+
+.historyDeleteArea {
+  display: flex;
+  justify-content: flex-end;
+
+  margin-top: 11px;
+}
+
+.historyDeleteArea > span {
+  color: #697583;
+
+  font-size: 10px;
+  font-weight: 750;
+}
+
+.historyDeleteButton {
+  min-height: 38px;
+  padding: 0 13px;
+
+  border: 1px solid #51353a;
+  border-radius: 10px;
+
+  background: transparent;
+  color: #bd727b;
+
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.historyDeleteButton:hover {
+  border-color: #70434a;
+
+  background: #291b1e;
+  color: #e0929b;
+}
+
+/* Confirmation */
+
+.historyDeleteOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+
+  display: grid;
+  place-items: center;
+
+  padding: 22px;
+
+  background:
+    rgba(5, 8, 12, 0.78);
+
+  backdrop-filter:
+    blur(8px);
+}
+
+.historyDeleteDialog {
+  width: min(
+    100%,
+    540px
+  );
+
+  padding: 28px;
+
+  border:
+    1px solid #51343a;
+  border-radius: 22px;
+
+  background: #171c24;
+
+  box-shadow:
+    0 24px 70px
+    rgba(0, 0, 0, 0.48);
+}
+
+.historyDeleteLabel {
+  color: #dc7d87;
+
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+
+.historyDeleteDialog h2 {
+  margin: 7px 0 8px;
+
+  font-size: 30px;
+}
+
+.historyDeleteDialog > p {
+  margin:
+    0 0 20px;
+
+  color: #8b97a5;
+
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.historyDeleteSummary {
+  display: grid;
+  grid-template-columns:
+    repeat(2, 1fr);
+  gap: 9px;
+
+  margin-bottom: 20px;
+}
+
+.historyDeleteSummary > div {
+  padding: 14px 15px;
+
+  border-radius: 13px;
+
+  background: #11151b;
+}
+
+.historyDeleteSummary span {
+  display: block;
+
+  margin-bottom: 4px;
+
+  color: #778493;
+
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+
+.historyDeleteSummary strong {
+  font-size: 20px;
+}
+
+.historyDeleteActions {
+  display: grid;
+  grid-template-columns:
+    1fr 1.4fr;
+  gap: 10px;
+}
+
+.historyDeleteActions button {
+  min-height: 58px;
+
+  border-radius: 14px;
+
+  font-size: 14px;
+  font-weight: 850;
+}
+
+.historyDeleteCancel {
+  border:
+    1px solid #39434f;
+
+  background: #232a33;
+  color: #b5bfca;
+}
+
+.historyDeleteConfirm {
+  border: 0;
+
+  background: #6a3037;
+  color: #f4dfe2;
+}
+
+.historyDeleteConfirm:hover {
+  background: #793740;
+}
+
+.historyDeleteActions
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (max-width: 520px) {
+  .historyDeleteDialog {
+    padding: 22px;
+  }
+
+  .historyDeleteActions {
+    grid-template-columns: 1fr;
+  }
+}
