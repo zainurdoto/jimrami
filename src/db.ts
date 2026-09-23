@@ -2,7 +2,16 @@ import Dexie, { type EntityTable } from 'dexie'
 
 export type Player = {
   id: number
+
+  // Stable / canonical identity name.
   name: string
+
+  // Optional saved aliases for this same player ID.
+  nicknames?: string[]
+
+  // Used as the default alias next time this player is selected.
+  lastUsedDisplayName?: string
+
   createdAt: Date
 }
 
@@ -18,6 +27,11 @@ export type SessionPlayer = {
   id: number
   sessionId: number
   playerId: number
+
+  // Snapshot of what this player was called in this session.
+  // The permanent identity still comes from playerId.
+  displayName?: string
+
   rotationOrder: number
 
   points: number
@@ -158,3 +172,88 @@ db.version(4)
   penaltyResults:
     '++id, sessionId, playerId, roundNumber, createdAt',
 })
+
+db.version(6)
+  .stores({
+    players:
+      '++id, name, createdAt',
+
+    sessions:
+      '++id, status, startedAt',
+
+    sessionPlayers:
+      '++id, sessionId, playerId, rotationOrder',
+
+    rounds:
+      '++id, sessionId, roundNumber, type, createdAt',
+
+    roundResults:
+      '++id, roundId, sessionId, playerId',
+
+    jimResults:
+      '++id, roundId, sessionId, jimPlayerId, won',
+
+    penaltyResults:
+      '++id, sessionId, playerId, roundNumber, createdAt',
+  })
+  .upgrade(async (transaction) => {
+    const playerTable =
+      transaction.table('players')
+
+    const sessionPlayerTable =
+      transaction.table('sessionPlayers')
+
+    const existingPlayers =
+      await playerTable.toArray()
+
+    const nameByPlayerId =
+      new Map<number, string>()
+
+    existingPlayers.forEach((player) => {
+      const name =
+        typeof player.name === 'string'
+          ? player.name
+          : 'Unknown'
+
+      nameByPlayerId.set(
+        player.id,
+        name
+      )
+    })
+
+    await playerTable
+      .toCollection()
+      .modify((player) => {
+        if (!Array.isArray(player.nicknames)) {
+          player.nicknames = []
+        }
+
+        if (
+          typeof player.lastUsedDisplayName !==
+          'string'
+        ) {
+          player.lastUsedDisplayName =
+            player.name
+        }
+      })
+
+    /*
+      Existing sessions did not store a
+      per-session alias. Snapshot the
+      canonical name they already used.
+    */
+    await sessionPlayerTable
+      .toCollection()
+      .modify((sessionPlayer) => {
+        if (
+          typeof sessionPlayer.displayName !==
+          'string'
+        ) {
+          sessionPlayer.displayName =
+            nameByPlayerId.get(
+              sessionPlayer.playerId
+            ) ?? 'Unknown'
+        }
+      })
+  })
+

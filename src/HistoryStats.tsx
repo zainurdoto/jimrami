@@ -123,6 +123,18 @@ type SessionRateCandidate = {
   rate: number
 }
 
+
+type CardScoreTriviaRecord = {
+  title: string
+  value: string
+  description: string
+
+  winnerLines: {
+    name: string
+    meta: string
+  }[]
+}
+
 function percentage(
   wins: number,
   attempts: number
@@ -873,6 +885,382 @@ export default function HistoryStats({
       ) ?? 'Unknown'
     )
   }
+
+
+  function getSessionName(
+    sessionId: number,
+    playerId: number
+  ) {
+    const participant =
+      sessionPlayers?.find(
+        (entry) =>
+          entry.sessionId ===
+            sessionId &&
+          entry.playerId ===
+            playerId
+      )
+
+    return (
+      participant?.displayName ??
+      getName(playerId)
+    )
+  }
+
+
+  const cardScoreTrivia =
+    useMemo(() => {
+      if (
+        !roundResults ||
+        !rounds ||
+        !sessions
+      ) {
+        return {
+          countedRounds: 0,
+          records:
+            [] as CardScoreTriviaRecord[],
+        }
+      }
+
+      const sessionMap =
+        new Map(
+          sessions.map(
+            (session) => [
+              session.id,
+              session,
+            ]
+          )
+        )
+
+      const exactRounds =
+        rounds
+          .filter(
+            (round) =>
+              round.type ===
+              'standard'
+          )
+          .map((round) => {
+            const results =
+              roundResults.filter(
+                (result) =>
+                  result.roundId ===
+                  round.id
+              )
+
+            if (
+              results.length !== 4 ||
+              !results.every(
+                (result) =>
+                  typeof result.cardScore ===
+                  'number'
+              )
+            ) {
+              return null
+            }
+
+            const ordered =
+              [...results].sort(
+                (a, b) =>
+                  a.position -
+                  b.position
+              )
+
+            const session =
+              sessionMap.get(
+                round.sessionId
+              )
+
+            if (
+              !session ||
+              ordered.length !== 4
+            ) {
+              return null
+            }
+
+            const first =
+              ordered[0]
+            const second =
+              ordered[1]
+            const fourth =
+              ordered[3]
+
+            const firstScore =
+              first.cardScore as number
+            const secondScore =
+              second.cardScore as number
+            const fourthScore =
+              fourth.cardScore as number
+
+            return {
+              round,
+              session,
+              first,
+              second,
+              fourth,
+
+              firstScore,
+              secondScore,
+              fourthScore,
+
+              winMargin:
+                firstScore -
+                secondScore,
+
+              tableSpread:
+                firstScore -
+                fourthScore,
+            }
+          })
+          .filter(
+            (
+              entry
+            ): entry is NonNullable<
+              typeof entry
+            > =>
+              entry !== null
+          )
+
+      function roundMeta(
+        entry:
+          (typeof exactRounds)[number]
+      ) {
+        return `${formatDate(
+          entry.session.startedAt
+        )} • Round ${
+          entry.round.roundNumber
+        }`
+      }
+
+      function bestBy(
+        title: string,
+        description: string,
+        selector: (
+          entry:
+            (typeof exactRounds)[number]
+        ) => number,
+        direction:
+          | 'max'
+          | 'min',
+        valueLabel: (
+          value: number
+        ) => string,
+        lineBuilder: (
+          entry:
+            (typeof exactRounds)[number]
+        ) => {
+          name: string
+          meta: string
+        }
+      ): CardScoreTriviaRecord {
+        if (
+          exactRounds.length === 0
+        ) {
+          return {
+            title,
+            value: '—',
+            description,
+            winnerLines: [],
+          }
+        }
+
+        const values =
+          exactRounds.map(
+            selector
+          )
+
+        const target =
+          direction === 'max'
+            ? Math.max(
+                ...values
+              )
+            : Math.min(
+                ...values
+              )
+
+        const winners =
+          exactRounds.filter(
+            (entry) =>
+              selector(entry) ===
+              target
+          )
+
+        return {
+          title,
+          value:
+            valueLabel(target),
+          description,
+          winnerLines:
+            winners.map(
+              lineBuilder
+            ),
+        }
+      }
+
+      const records:
+        CardScoreTriviaRecord[] =
+        [
+          bestBy(
+            'Biggest Win',
+            'Largest card-score margin between 1st and 2nd.',
+            (entry) =>
+              entry.winMargin,
+            'max',
+            (value) =>
+              `${value} pt margin`,
+            (entry) => ({
+              name:
+                getSessionName(
+                  entry.session.id,
+                  entry.first.playerId
+                ),
+
+              meta:
+                `${roundMeta(
+                  entry
+                )} • ${
+                  entry.firstScore
+                }–${
+                  entry.secondScore
+                }`,
+            })
+          ),
+
+          bestBy(
+            'Photo Finish',
+            'Smallest card-score margin between 1st and 2nd.',
+            (entry) =>
+              entry.winMargin,
+            'min',
+            (value) =>
+              `${value} pt margin`,
+            (entry) => ({
+              name:
+                getSessionName(
+                  entry.session.id,
+                  entry.first.playerId
+                ),
+
+              meta:
+                `${roundMeta(
+                  entry
+                )} • ${
+                  entry.firstScore
+                }–${
+                  entry.secondScore
+                }`,
+            })
+          ),
+
+          bestBy(
+            'Highest Winning Score',
+            'Highest exact card score ever recorded by a Standard-round winner.',
+            (entry) =>
+              entry.firstScore,
+            'max',
+            (value) =>
+              `${value} pts`,
+            (entry) => ({
+              name:
+                getSessionName(
+                  entry.session.id,
+                  entry.first.playerId
+                ),
+
+              meta:
+                roundMeta(entry),
+            })
+          ),
+
+          bestBy(
+            'Lowest Winning Score',
+            'Lowest exact card score that was still enough to finish 1st.',
+            (entry) =>
+              entry.firstScore,
+            'min',
+            (value) =>
+              `${value} pts`,
+            (entry) => ({
+              name:
+                getSessionName(
+                  entry.session.id,
+                  entry.first.playerId
+                ),
+
+              meta:
+                roundMeta(entry),
+            })
+          ),
+
+          bestBy(
+            'Biggest Table Spread',
+            'Largest gap between 1st and 4th in a fully counted round.',
+            (entry) =>
+              entry.tableSpread,
+            'max',
+            (value) =>
+              `${value} pts`,
+            (entry) => ({
+              name:
+                `${getSessionName(
+                  entry.session.id,
+                  entry.first.playerId
+                )} vs ${getSessionName(
+                  entry.session.id,
+                  entry.fourth.playerId
+                )}`,
+
+              meta:
+                `${roundMeta(
+                  entry
+                )} • ${
+                  entry.firstScore
+                }–${
+                  entry.fourthScore
+                }`,
+            })
+          ),
+
+          bestBy(
+            'Tightest Table',
+            'Smallest gap between 1st and 4th in a fully counted round.',
+            (entry) =>
+              entry.tableSpread,
+            'min',
+            (value) =>
+              `${value} pts`,
+            (entry) => ({
+              name:
+                `${getSessionName(
+                  entry.session.id,
+                  entry.first.playerId
+                )} vs ${getSessionName(
+                  entry.session.id,
+                  entry.fourth.playerId
+                )}`,
+
+              meta:
+                `${roundMeta(
+                  entry
+                )} • ${
+                  entry.firstScore
+                }–${
+                  entry.fourthScore
+                }`,
+            })
+          ),
+        ]
+
+      return {
+        countedRounds:
+          exactRounds.length,
+        records,
+      }
+    }, [
+      roundResults,
+      rounds,
+      sessions,
+      sessionPlayers,
+      playerNameMap,
+    ])
 
   const orderedSessions =
     useMemo(() => {
@@ -2128,7 +2516,8 @@ export default function HistoryStats({
                       participant.playerId,
 
                     playerName:
-                      getName(
+                      getSessionName(
+                        session.id,
                         participant.playerId
                       ),
 
@@ -2156,7 +2545,8 @@ export default function HistoryStats({
                       participant.playerId,
 
                     playerName:
-                      getName(
+                      getSessionName(
+                        session.id,
                         participant.playerId
                       ),
 
@@ -2204,7 +2594,8 @@ export default function HistoryStats({
                       participant.playerId,
 
                     playerName:
-                      getName(
+                      getSessionName(
+                        session.id,
                         participant.playerId
                       ),
 
@@ -2250,7 +2641,8 @@ export default function HistoryStats({
                       participant.playerId,
 
                     playerName:
-                      getName(
+                      getSessionName(
+                        session.id,
                         participant.playerId
                       ),
 
@@ -2329,6 +2721,17 @@ export default function HistoryStats({
           entry.sessionId ===
           sessionId
       )
+
+
+    const sessionName = (
+      playerId: number
+    ) =>
+      participants.find(
+        (entry) =>
+          entry.playerId ===
+          playerId
+      )?.displayName ??
+      getName(playerId)
 
     const standard =
       (roundResults ?? []).filter(
@@ -2501,7 +2904,7 @@ export default function HistoryStats({
           winners
             .map(
               (winner) =>
-                getName(
+                sessionName(
                   winner
                     .participant
                     .playerId
@@ -2513,7 +2916,7 @@ export default function HistoryStats({
           winners.map(
             (winner) => ({
               name:
-                getName(
+                sessionName(
                   winner
                     .participant
                     .playerId
@@ -2565,7 +2968,7 @@ export default function HistoryStats({
           champions
             .map(
               (champion) =>
-                getName(
+                sessionName(
                   champion.playerId
                 )
             )
@@ -2575,7 +2978,7 @@ export default function HistoryStats({
           champions.map(
             (champion) => ({
               name:
-                getName(
+                sessionName(
                   champion.playerId
                 ),
 
@@ -3274,13 +3677,39 @@ export default function HistoryStats({
               b.rotationOrder
           )
 
+      const sessionDisplayPlayers =
+        players.map(
+          (player) => {
+            const participant =
+              participants.find(
+                (entry) =>
+                  entry.playerId ===
+                  player.id
+              )
+
+            if (
+              !participant?.displayName
+            ) {
+              return player
+            }
+
+            return {
+              ...player,
+              name:
+                participant.displayName,
+            }
+          }
+        )
+
       return (
         <TitleRace
           session={session}
           sessionPlayers={
             participants
           }
-          players={players}
+          players={
+            sessionDisplayPlayers
+          }
           onBack={() =>
             setRaceSessionId(
               null
@@ -3465,7 +3894,8 @@ export default function HistoryStats({
                     : leaders
                         .map(
                           (player) =>
-                            getName(
+                            getSessionName(
+                              session.id,
                               player.playerId
                             )
                         )
@@ -3629,7 +4059,8 @@ export default function HistoryStats({
 
                                 <div>
                                   <strong>
-                                    {getName(
+                                    {getSessionName(
+                                      session.id,
                                       player.playerId
                                     )}
                                   </strong>
@@ -4793,6 +5224,113 @@ export default function HistoryStats({
                   </article>
                 )
               )}
+            </div>
+          </section>
+
+
+          <section className="awardSection cardTriviaSection">
+            <header className="awardSectionHeader">
+              <div>
+                <span>
+                  CARD SCORE TRIVIA
+                </span>
+
+                <h3>
+                  Counted-card records
+                </h3>
+              </div>
+
+              <p>
+                {
+                  cardScoreTrivia.countedRounds
+                }{' '}
+                fully counted Standard{' '}
+                {
+                  cardScoreTrivia.countedRounds ===
+                  1
+                    ? 'round'
+                    : 'rounds'
+                }{' '}
+                on record. Quick Rank
+                rounds are not included.
+              </p>
+            </header>
+
+            {cardScoreTrivia.countedRounds ===
+            0 ? (
+              <div className="cardTriviaEmpty">
+                No exact card-score
+                rounds yet. Use Count
+                Cards in a Standard
+                round and these records
+                will appear
+                automatically.
+              </div>
+            ) : (
+              <div className="cardTriviaGrid">
+                {cardScoreTrivia.records.map(
+                  (record) => (
+                    <article
+                      className="cardTriviaCard"
+                      key={
+                        record.title
+                      }
+                    >
+                      <span>
+                        {record.title}
+                      </span>
+
+                      <div className="cardTriviaWinners">
+                        {record.winnerLines.map(
+                          (
+                            winner,
+                            index
+                          ) => (
+                            <div
+                              className="cardTriviaWinner"
+                              key={`${record.title}-${winner.name}-${winner.meta}-${index}`}
+                            >
+                              <h3>
+                                {
+                                  winner.name
+                                }
+                              </h3>
+
+                              <small>
+                                {
+                                  winner.meta
+                                }
+                              </small>
+                            </div>
+                          )
+                        )}
+                      </div>
+
+                      <strong>
+                        {
+                          record.value
+                        }
+                      </strong>
+
+                      <p>
+                        {
+                          record.description
+                        }
+                      </p>
+                    </article>
+                  )
+                )}
+              </div>
+            )}
+
+            <div className="cardTriviaNote">
+              These are trivia records
+              only. Because exact card
+              scores are usually counted
+              for close or unclear
+              rounds, they are not used
+              for MVP or lifetime win
+              rates.
             </div>
           </section>
         </section>

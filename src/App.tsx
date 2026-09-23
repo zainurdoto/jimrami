@@ -66,6 +66,36 @@ useState<
     setSelectedIds,
   ] = useState<number[]>([])
 
+
+  const [
+    selectedDisplayNames,
+    setSelectedDisplayNames,
+  ] = useState<
+    Record<number, string>
+  >({})
+
+  const [
+    editingPlayerId,
+    setEditingPlayerId,
+  ] = useState<number | null>(
+    null
+  )
+
+  const [
+    editPlayerName,
+    setEditPlayerName,
+  ] = useState('')
+
+  const [
+    editNicknames,
+    setEditNicknames,
+  ] = useState<string[]>([])
+
+  const [
+    newNickname,
+    setNewNickname,
+  ] = useState('')
+
     const [
     showDataTools,
     setShowDataTools,
@@ -96,10 +126,322 @@ useState<
 
     await db.players.add({
       name,
+      nicknames: [],
+      lastUsedDisplayName: name,
       createdAt: new Date(),
     })
 
     setNewPlayerName('')
+  }
+
+  function getPlayerOptions(
+    player: {
+      name: string
+      nicknames?: string[]
+    }
+  ) {
+    const raw = [
+      player.name,
+      ...(player.nicknames ?? []),
+    ]
+
+    const seen =
+      new Set<string>()
+
+    return raw.filter(
+      (name) => {
+        const trimmed =
+          name.trim()
+
+        const key =
+          trimmed.toLowerCase()
+
+        if (
+          !trimmed ||
+          seen.has(key)
+        ) {
+          return false
+        }
+
+        seen.add(key)
+        return true
+      }
+    )
+  }
+
+  function getDefaultDisplayName(
+    player: {
+      name: string
+      nicknames?: string[]
+      lastUsedDisplayName?: string
+    }
+  ) {
+    const options =
+      getPlayerOptions(player)
+
+    if (
+      player.lastUsedDisplayName &&
+      options.some(
+        (name) =>
+          name.toLowerCase() ===
+          player.lastUsedDisplayName!
+            .toLowerCase()
+      )
+    ) {
+      return (
+        options.find(
+          (name) =>
+            name.toLowerCase() ===
+            player.lastUsedDisplayName!
+              .toLowerCase()
+        ) ?? player.name
+      )
+    }
+
+    return player.name
+  }
+
+  function openPlayerEditor(
+    playerId: number
+  ) {
+    const player =
+      players?.find(
+        (entry) =>
+          entry.id === playerId
+      )
+
+    if (!player) {
+      return
+    }
+
+    setEditingPlayerId(
+      player.id
+    )
+
+    setEditPlayerName(
+      player.name
+    )
+
+    setEditNicknames(
+      [...(player.nicknames ?? [])]
+    )
+
+    setNewNickname('')
+  }
+
+  function closePlayerEditor() {
+    setEditingPlayerId(
+      null
+    )
+
+    setEditPlayerName('')
+    setEditNicknames([])
+    setNewNickname('')
+  }
+
+  function addNickname() {
+    const nickname =
+      newNickname.trim()
+
+    if (!nickname) {
+      return
+    }
+
+    const canonical =
+      editPlayerName
+        .trim()
+        .toLowerCase()
+
+    const duplicate =
+      nickname.toLowerCase() ===
+        canonical ||
+      editNicknames.some(
+        (existing) =>
+          existing.toLowerCase() ===
+          nickname.toLowerCase()
+      )
+
+    if (duplicate) {
+      setNewNickname('')
+      return
+    }
+
+    setEditNicknames(
+      (current) => [
+        ...current,
+        nickname,
+      ]
+    )
+
+    setNewNickname('')
+  }
+
+  function removeNickname(
+    nickname: string
+  ) {
+    setEditNicknames(
+      (current) =>
+        current.filter(
+          (entry) =>
+            entry !== nickname
+        )
+    )
+  }
+
+  async function savePlayerEditor() {
+    if (
+      editingPlayerId === null
+    ) {
+      return
+    }
+
+    const name =
+      editPlayerName.trim()
+
+    if (!name) {
+      return
+    }
+
+    const duplicateCanonical =
+      players?.some(
+        (player) =>
+          player.id !==
+            editingPlayerId &&
+          player.name.toLowerCase() ===
+            name.toLowerCase()
+      )
+
+    if (duplicateCanonical) {
+      window.alert(
+        'Another player already uses that main name.'
+      )
+
+      return
+    }
+
+    const cleanedNicknames:
+      string[] = []
+
+    const seen =
+      new Set<string>([
+        name.toLowerCase(),
+      ])
+
+    editNicknames.forEach(
+      (nickname) => {
+        const trimmed =
+          nickname.trim()
+
+        const key =
+          trimmed.toLowerCase()
+
+        if (
+          trimmed &&
+          !seen.has(key)
+        ) {
+          seen.add(key)
+
+          cleanedNicknames.push(
+            trimmed
+          )
+        }
+      }
+    )
+
+    const player =
+      players?.find(
+        (entry) =>
+          entry.id ===
+          editingPlayerId
+      )
+
+    if (!player) {
+      return
+    }
+
+    const validNames = [
+      name,
+      ...cleanedNicknames,
+    ]
+
+    const previousDefault =
+      player.lastUsedDisplayName
+
+    const nextDefault =
+      previousDefault &&
+      validNames.some(
+        (entry) =>
+          entry.toLowerCase() ===
+          previousDefault.toLowerCase()
+      )
+        ? (
+            validNames.find(
+              (entry) =>
+                entry.toLowerCase() ===
+                previousDefault.toLowerCase()
+            ) ?? name
+          )
+        : name
+
+    await db.players.update(
+      editingPlayerId,
+      {
+        name,
+        nicknames:
+          cleanedNicknames,
+        lastUsedDisplayName:
+          nextDefault,
+      }
+    )
+
+    setSelectedDisplayNames(
+      (current) => {
+        if (
+          !selectedIds.includes(
+            editingPlayerId
+          )
+        ) {
+          return current
+        }
+
+        const currentName =
+          current[
+            editingPlayerId
+          ]
+
+        const stillValid =
+          currentName &&
+          validNames.some(
+            (entry) =>
+              entry.toLowerCase() ===
+              currentName.toLowerCase()
+          )
+
+        return {
+          ...current,
+
+          [editingPlayerId]:
+            stillValid
+              ? currentName
+              : name,
+        }
+      }
+    )
+
+    closePlayerEditor()
+  }
+
+  function setSessionDisplayName(
+    playerId: number,
+    displayName: string
+  ) {
+    setSelectedDisplayNames(
+      (current) => ({
+        ...current,
+        [playerId]:
+          displayName,
+      })
+    )
   }
 
   function togglePlayer(
@@ -110,9 +452,40 @@ useState<
         if (
           current.includes(id)
         ) {
+          setSelectedDisplayNames(
+            (names) => {
+              const next = {
+                ...names,
+              }
+
+              delete next[id]
+
+              return next
+            }
+          )
+
           return current.filter(
             (playerId) =>
               playerId !== id
+          )
+        }
+
+        const player =
+          players?.find(
+            (entry) =>
+              entry.id === id
+          )
+
+        if (player) {
+          setSelectedDisplayNames(
+            (names) => ({
+              ...names,
+
+              [id]:
+                getDefaultDisplayName(
+                  player
+                ),
+            })
           )
         }
 
@@ -149,18 +522,48 @@ useState<
         )
     )
 
+    setSelectedDisplayNames(
+      (current) => {
+        const next = {
+          ...current,
+        }
+
+        delete next[id]
+
+        return next
+      }
+    )
+
     await db.players.delete(id)
   }
 
   async function startSession() {
     if (
-      selectedIds.length < 4
+      selectedIds.length < 4 ||
+      !players
     ) {
       return
     }
 
+    const selectedPlayers =
+      selectedIds.flatMap(
+        (playerId) => {
+          const player =
+            players.find(
+              (entry) =>
+                entry.id ===
+                playerId
+            )
+
+          return player
+            ? [player]
+            : []
+        }
+      )
+
     await db.transaction(
       'rw',
+      db.players,
       db.sessions,
       db.sessionPlayers,
       async () => {
@@ -175,21 +578,63 @@ useState<
           })
 
         await db.sessionPlayers.bulkAdd(
-          selectedIds.map(
+          selectedPlayers.map(
             (
-              playerId,
+              player,
               index
-            ) => ({
-              sessionId,
-              playerId,
+            ) => {
+              const options =
+                getPlayerOptions(
+                  player
+                )
 
-              rotationOrder:
-                index,
+              const requested =
+                selectedDisplayNames[
+                  player.id
+                ]
 
-              points: 0,
-              wins: 0,
-              jimWins: 0,
-              jimAttempts: 0,
+              const displayName =
+                options.find(
+                  (name) =>
+                    name.toLowerCase() ===
+                    requested?.toLowerCase()
+                ) ??
+                getDefaultDisplayName(
+                  player
+                )
+
+              return {
+                sessionId,
+
+                playerId:
+                  player.id,
+
+                displayName,
+
+                rotationOrder:
+                  index,
+
+                points: 0,
+                wins: 0,
+                jimWins: 0,
+                jimAttempts: 0,
+              }
+            }
+          )
+        )
+
+        await db.players.bulkPut(
+          selectedPlayers.map(
+            (player) => ({
+              ...player,
+
+              lastUsedDisplayName:
+                selectedDisplayNames[
+                  player.id
+                ] ??
+                getDefaultDisplayName(
+                  player
+                ),
             })
           )
         )
@@ -197,6 +642,7 @@ useState<
     )
 
     setSelectedIds([])
+    setSelectedDisplayNames({})
     setScreen('scoreboard')
   }
 
@@ -223,9 +669,48 @@ useState<
     setScreen('scoreboard')
   }
 
+  const activeDisplayPlayers =
+    players?.map(
+      (player) => {
+        const sessionPlayer =
+          sessionPlayers?.find(
+            (entry) =>
+              entry.playerId ===
+              player.id
+          )
+
+        if (
+          !sessionPlayer?.displayName
+        ) {
+          return player
+        }
+
+        return {
+          ...player,
+          name:
+            sessionPlayer.displayName,
+        }
+      }
+    ) ?? []
+
   function getPlayerName(
     playerId: number
   ) {
+    const sessionPlayer =
+      sessionPlayers?.find(
+        (player) =>
+          player.playerId ===
+          playerId
+      )
+
+    if (
+      sessionPlayer?.displayName
+    ) {
+      return (
+        sessionPlayer.displayName
+      )
+    }
+
     return (
       players?.find(
         (player) =>
@@ -264,7 +749,7 @@ useState<
           sessionPlayers={
             sessionPlayers
           }
-          players={players}
+          players={activeDisplayPlayers}
           onBack={() =>
             setScreen(
               'scoreboard'
@@ -283,7 +768,7 @@ useState<
     <JimRound
       session={activeSession}
       sessionPlayers={sessionPlayers}
-      players={players}
+      players={activeDisplayPlayers}
       onBack={() =>
         setScreen('scoreboard')
       }
@@ -300,7 +785,7 @@ if (screen === 'race') {
     <TitleRace
       session={activeSession}
       sessionPlayers={sessionPlayers}
-      players={players}
+      players={activeDisplayPlayers}
       onBack={() =>
         setScreen('scoreboard')
       }
@@ -315,7 +800,7 @@ if (
   return (
     <ScoreTransition
       data={transitionData}
-      players={players}
+      players={activeDisplayPlayers}
       onDone={() => {
         setTransitionData(null)
         setScreen('scoreboard')
@@ -336,7 +821,7 @@ if (
       sessionPlayers={
         sessionPlayers
       }
-      players={players}
+      players={activeDisplayPlayers}
       onBack={() =>
         setScreen(
           'scoreboard'
@@ -660,6 +1145,19 @@ if (
             const selected =
               position !== -1
 
+            const nameOptions =
+              getPlayerOptions(
+                player
+              )
+
+            const sessionName =
+              selectedDisplayNames[
+                player.id
+              ] ??
+              getDefaultDisplayName(
+                player
+              )
+
             return (
               <article
                 className={`playerSelect ${
@@ -700,16 +1198,69 @@ if (
                   </span>
                 </button>
 
-                <button
-                  className="deletePlayer"
-                  onClick={() =>
-                    deletePlayer(
-                      player.id
-                    )
-                  }
-                >
-                  ×
-                </button>
+                <div className="playerSelectActions">
+                  <button
+                    className="editPlayer"
+                    onClick={() =>
+                      openPlayerEditor(
+                        player.id
+                      )
+                    }
+                    aria-label={`Edit ${player.name}`}
+                  >
+                    ✎
+                  </button>
+
+                  <button
+                    className="deletePlayer"
+                    onClick={() =>
+                      deletePlayer(
+                        player.id
+                      )
+                    }
+                    aria-label={`Delete ${player.name}`}
+                  >
+                    ×
+                  </button>
+                </div>
+
+                {selected &&
+                  nameOptions.length >
+                    1 && (
+                  <div className="sessionAliasPicker">
+                    <span>
+                      PLAYING AS
+                    </span>
+
+                    <select
+                      value={
+                        sessionName
+                      }
+                      onChange={
+                        (event) =>
+                          setSessionDisplayName(
+                            player.id,
+                            event.target.value
+                          )
+                      }
+                    >
+                      {nameOptions.map(
+                        (name) => (
+                          <option
+                            key={
+                              name
+                            }
+                            value={
+                              name
+                            }
+                          >
+                            {name}
+                          </option>
+                        )
+                      )}
+                    </select>
+                  </div>
+                )}
               </article>
             )
           }
@@ -783,6 +1334,142 @@ if (
     }
   />
 )}
+
+      {editingPlayerId !== null && (
+        <div className="playerEditorOverlay">
+          <div className="playerEditorDialog">
+            <span className="playerEditorLabel">
+              PLAYER ID #{editingPlayerId}
+            </span>
+
+            <h2>
+              Edit Player
+            </h2>
+
+            <label className="playerEditorField">
+              <span>
+                MAIN NAME
+              </span>
+
+              <input
+                type="text"
+                value={
+                  editPlayerName
+                }
+                onChange={
+                  (event) =>
+                    setEditPlayerName(
+                      event.target.value
+                    )
+                }
+              />
+            </label>
+
+            <div className="playerEditorNicknames">
+              <span>
+                SAVED NICKNAMES
+              </span>
+
+              {editNicknames.length ===
+              0 ? (
+                <p>
+                  No nicknames yet.
+                </p>
+              ) : (
+                <div className="nicknameChipList">
+                  {editNicknames.map(
+                    (nickname) => (
+                      <div
+                        className="nicknameChip"
+                        key={
+                          nickname
+                        }
+                      >
+                        <strong>
+                          {nickname}
+                        </strong>
+
+                        <button
+                          onClick={() =>
+                            removeNickname(
+                              nickname
+                            )
+                          }
+                          aria-label={`Remove ${nickname}`}
+                        >
+                          ×
+                        </button>
+                      </div>
+                    )
+                  )}
+                </div>
+              )}
+
+              <div className="nicknameAddRow">
+                <input
+                  type="text"
+                  placeholder="Add nickname"
+                  value={
+                    newNickname
+                  }
+                  onChange={
+                    (event) =>
+                      setNewNickname(
+                        event.target.value
+                      )
+                  }
+                  onKeyDown={
+                    (event) => {
+                      if (
+                        event.key ===
+                        'Enter'
+                      ) {
+                        event.preventDefault()
+                        addNickname()
+                      }
+                    }
+                  }
+                />
+
+                <button
+                  onClick={
+                    addNickname
+                  }
+                >
+                  Add
+                </button>
+              </div>
+            </div>
+
+            <p className="playerEditorNote">
+              All names above belong to
+              the same permanent player
+              ID. Stats and MVP stay
+              together.
+            </p>
+
+            <div className="playerEditorActions">
+              <button
+                className="playerEditorCancel"
+                onClick={
+                  closePlayerEditor
+                }
+              >
+                Cancel
+              </button>
+
+              <button
+                className="playerEditorSave"
+                onClick={
+                  savePlayerEditor
+                }
+              >
+                Save Player
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   )
 }
