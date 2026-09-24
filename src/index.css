@@ -11495,7 +11495,7 @@ button:disabled {
   justify-content: space-between;
   gap: 16px;
 
-  margin-bottom: 6px;
+  margin-bottom: 18px;
 }
 
 .cleanTransitionHeader > div {
@@ -12070,4 +12070,711 @@ button:disabled {
   .awardInfoTooltip {
     width: min(285px, 78vw);
   }
+}
+
+/* JIMRAMI SVG BRAND */
+
+.jimramiLogo {
+  display: block;
+
+  width: 190px;
+  max-width: 100%;
+  height: auto;
+
+  margin: 0 auto;
+}
+
+@media (max-width: 700px) {
+  .jimramiLogo {
+    width: 170px;
+  }
+}
+/* JIMRAMI logo + Latin name */
+
+.jimramiBrandLockup {
+  display: flex !important;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  gap: 5px;
+
+  margin: 0 !important;
+
+  line-height: 1 !important;
+}
+
+.jimramiLogo {
+  display: block;
+
+  width: 190px;
+  height: auto;
+
+  margin: 0;
+}
+
+.jimramiLatin {
+  display: block;
+
+  color: #ffffff;
+
+  font-size: 50px !important;
+  font-weight: 900 !important;
+  line-height: 1 !important;
+
+  letter-spacing: 0.0 em !important;
+}
+
+@media (max-width: 700px) {
+  .jimramiLogo {
+    width: 170px;
+  }
+
+  .jimramiLatin {
+    font-size: 9px !important;
+  }
+}
+
+/* ==================================================
+   JIM ROUND — CIRCULAR MODE WHEEL
+   Append this at the VERY BOTTOM of index.css
+================================================== */
+
+/* Main progress card */
+.jimProgress.jimProgressWheelCard {
+  position: relative;
+
+  display: grid;
+  place-items: center;
+
+  width: 100%;
+  min-height: 430px;
+  padding: 24px 20px 20px;
+
+  overflow: hidden;
+
+  border: 1px solid #2b333e;
+  border-radius: 22px;
+
+  background:
+    radial-gradient(
+      circle at 50% 43%,
+      rgba(217, 174, 75, 0.055),
+      transparent 35%
+    ),
+    #151a21;
+}
+
+/* Whole wheel + readout */
+.jimWheelWrap {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+
+  width: 100%;
+}
+
+/* Square wheel canvas */
+.jimWheel {
+  position: relative;
+
+  width: min(100%, 360px);
+  aspect-ratio: 1;
+
+  flex: 0 0 auto;
+}
+
+/* SVG outer ring */
+.jimWheelRing {
+  position: absolute;
+  inset: 0;
+
+  display: block;
+
+  width: 100%;
+  height: 100%;
+
+  overflow: visible;
+}
+
+/* Each stage is a thick arc */
+.jimWheelSegment {
+  fill: none;
+
+  stroke: #303946;
+  stroke-width: 28;
+  stroke-linecap: round;
+
+  opacity: 0.82;
+
+  transition:
+    stroke 220ms ease,
+    opacity 220ms ease,
+    filter 220ms ease;
+}
+
+/* Already survived */
+.jimWheelSegment.survived {
+  stroke: #b98f35;
+
+  opacity: 1;
+
+  filter:
+    drop-shadow(
+      0 0 5px
+      rgba(217, 174, 75, 0.16)
+    );
+}
+
+/* Stage being played right now */
+.jimWheelSegment.current {
+  stroke: #e0b447;
+
+  opacity: 1;
+
+  filter:
+    drop-shadow(
+      0 0 7px
+      rgba(224, 180, 71, 0.34)
+    );
+}
+
+/* Hide was used on this stage */
+.jimWheelSegment.hidden {
+  stroke: #9a75ca;
+
+  filter:
+    drop-shadow(
+      0 0 6px
+      rgba(154, 117, 202, 0.28)
+    );
+}
+
+/* Stage numbers */
+.jimWheelNumber {
+  dominant-baseline: middle;
+  text-anchor: middle;
+
+  fill: #718093;
+
+  font-family: inherit;
+  font-size: 19px;
+  font-weight: 800;
+
+  pointer-events: none;
+
+  transition:
+    fill 220ms ease,
+    opacity 220ms ease;
+}
+
+.jimWheelNumber.survived {
+  fill: #e4bd62;
+}
+
+.jimWheelNumber.current {
+  fill: #ffd36c;
+}
+
+.jimWheelNumber.hidden {
+  fill: #d3b8f2;
+}
+
+/* Center Jim emblem */
+.jimModeEmblem {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+
+  width: 48%;
+  aspect-ratio: 1;
+
+  transform:
+    translate(-50%, -50%);
+
+  display: grid;
+  place-items: center;
+
+  overflow: hidden;
+
+  border: 1px solid #3b424d;
+  border-radius: 50%;
+
+  background:
+    radial-gradient(
+      circle at 50% 45%,
+      #1a2028,
+      #10151b 72%
+    );
+
+  box-shadow:
+    inset 0 0 0 7px
+      rgba(255,255,255,0.012),
+    0 0 0 1px
+      rgba(217,174,75,0.05);
+}
+
+/*
+  The same SVG is layered several times.
+  The dim copy shows the unfinished logo.
+  Completed stages reveal one horizontal
+  sixth from the bottom upward.
+*/
+.jimModeLogo {
+  position: absolute;
+  inset: 13%;
+
+  width: 74%;
+  height: 74%;
+
+  object-fit: contain;
+
+  filter:
+    brightness(0)
+    invert(1);
+
+  pointer-events: none;
+  user-select: none;
+}
+
+.jimModeLogoGhost {
+  opacity: 0.11;
+}
+
+.jimModeLogoBand {
+  opacity: 1;
+
+  filter:
+    brightness(0)
+    invert(1)
+    drop-shadow(
+      0 0 4px
+      rgba(255,255,255,0.08)
+    );
+
+  animation:
+    jimModeBandReveal
+    300ms
+    cubic-bezier(
+      0.2,
+      0.8,
+      0.2,
+      1
+    )
+    both;
+}
+
+@keyframes jimModeBandReveal {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+/* Score underneath the wheel */
+.jimWheelProgress {
+  display: grid;
+  justify-items: center;
+  gap: 5px;
+
+  margin-top: -7px;
+}
+
+.jimWheelProgress span {
+  color: #8290a2;
+
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.jimWheelProgress strong {
+  color: #f5f7fa;
+
+  font-size: 34px;
+  font-weight: 750;
+  line-height: 1;
+}
+
+/* Tablet */
+@media (max-width: 760px) {
+  .jimProgress.jimProgressWheelCard {
+    min-height: 400px;
+    padding: 20px 14px 18px;
+  }
+
+  .jimWheel {
+    width: min(100%, 330px);
+  }
+}
+
+/* Smaller phones */
+@media (max-width: 520px) {
+  .jimProgress.jimProgressWheelCard {
+    min-height: 350px;
+    padding:
+      14px 8px
+      16px;
+  }
+
+  .jimWheel {
+    width: min(100%, 290px);
+  }
+
+  .jimWheelSegment {
+    stroke-width: 25;
+  }
+
+  .jimWheelNumber {
+    font-size: 17px;
+  }
+
+  .jimWheelProgress strong {
+    font-size: 30px;
+  }
+}
+
+/* JIM WHEEL TUNING */
+
+.jimWheelSegment {
+  stroke-width: 15px !important;
+  stroke-linecap: butt !important;
+}
+
+/* make the center area larger */
+.jimModeEmblem {
+  width: 58% !important;
+}
+
+/* =========================================
+   JIM MODE — SINGLE-CIRCLE SVG UPDATE
+========================================= */
+
+/* Stage bars: thinner + flat ends */
+.jimWheelSegment {
+  stroke-width: 13px !important;
+  stroke-linecap: butt !important;
+}
+
+/* The SVG itself now owns the center circle */
+.jimModeEmblem {
+  width: 58% !important;
+  aspect-ratio: 1 !important;
+
+  border: none !important;
+  border-radius: 0 !important;
+
+  background: transparent !important;
+
+  box-shadow: none !important;
+
+  overflow: visible !important;
+}
+
+/* Center the complete SVG exactly */
+.jimModeLogo {
+  inset: auto !important;
+
+  top: 50% !important;
+  left: 50% !important;
+
+  width: 100% !important;
+  height: 100% !important;
+
+  transform:
+    translate(-50%, -50%) !important;
+
+  object-fit: contain !important;
+}
+
+/* Unfinished/background copy */
+.jimModeLogoGhost {
+  opacity: 0.12 !important;
+}
+
+/* Current stage bar stays neutral until survived */
+
+.jimWheelSegment.current {
+  stroke: #303946 !important;
+  opacity: 0.9 !important;
+  filter: none !important;
+}
+
+/* Current stage NUMBER can still show where you are */
+.jimWheelNumber.current {
+  fill: #ffd36c !important;
+}
+
+/* Completed stages are gold */
+.jimWheelSegment.survived {
+  stroke: #d5a738 !important;
+  opacity: 1 !important;
+
+  filter:
+    drop-shadow(
+      0 0 5px
+      rgba(213, 167, 56, 0.22)
+    ) !important;
+}
+
+/* Stage numbers only turn gold AFTER survival */
+
+.jimWheelNumber.current {
+  fill: #718093 !important;
+}
+
+.jimWheelNumber.survived {
+  fill: #e4bd62 !important;
+}
+
+/* Keep Hide stage purple */
+.jimWheelNumber.hidden {
+  fill: #d3b8f2 !important;
+}
+
+/* ==================================================
+   JIM MODE — WIN / CAUGHT OUTCOME WHEEL
+   Append at the VERY BOTTOM of index.css
+================================================== */
+
+/* Failed current stage turns red only after
+   a catcher has been selected. */
+.jimWheelSegment.failed {
+  stroke: #b95660 !important;
+  opacity: 1 !important;
+
+  filter:
+    drop-shadow(
+      0 0 5px
+      rgba(185, 86, 96, 0.28)
+    ) !important;
+}
+
+.jimWheelNumber.failed {
+  fill: #ef9aa2 !important;
+}
+
+/* Caught state: give the central Jim a soft red tint. */
+.jimWheel.outcome-caught .jimModeLogo {
+  filter:
+    brightness(0)
+    saturate(100%)
+    invert(70%)
+    sepia(18%)
+    saturate(1450%)
+    hue-rotate(305deg)
+    brightness(96%)
+    contrast(92%) !important;
+}
+
+.jimWheel.outcome-caught .jimModeLogoGhost {
+  opacity: 0.20 !important;
+}
+
+.jimWheel.outcome-caught .jimModeEmblem {
+  filter:
+    drop-shadow(
+      0 0 8px
+      rgba(185, 86, 96, 0.10)
+    );
+}
+
+/* Full-survival state: keep all six completed
+   stages gold and give the emblem a subtle finish. */
+.jimWheel.outcome-win .jimModeLogoBand {
+  filter:
+    brightness(0)
+    invert(1)
+    drop-shadow(
+      0 0 5px
+      rgba(224, 180, 71, 0.16)
+    ) !important;
+}
+
+.jimWheel.outcome-win .jimModeEmblem {
+  filter:
+    drop-shadow(
+      0 0 8px
+      rgba(224, 180, 71, 0.14)
+    );
+}
+
+/* Outcome text under the wheel */
+.jimWheelProgress.win span {
+  color: #c89e43;
+}
+
+.jimWheelProgress.caught span {
+  color: #c97881;
+}
+
+.jimWheelAward {
+  display: block;
+
+  margin-top: 2px;
+
+  font-size: 34px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.jimWheelAward.win {
+  color: #e0b447;
+}
+
+.jimWheelAward.caught {
+  color: #e17f89;
+}
+
+/* Caught confirmation */
+.jimCaughtPrompt {
+  margin-top: -2px;
+}
+
+.jimPlayerChoice.caughtSelected {
+  border-color: #8b454c !important;
+
+  background: #3a2327 !important;
+  color: #f0a0a8 !important;
+}
+
+.jimCaughtReward {
+  display: grid;
+  grid-template-columns:
+    auto auto minmax(0, 1fr);
+  align-items: baseline;
+  gap: 10px;
+
+  padding: 14px 16px;
+
+  border: 1px solid #59343a;
+  border-radius: 14px;
+
+  background: #281b1e;
+}
+
+.jimCaughtReward span {
+  color: #a56a72;
+
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.10em;
+}
+
+.jimCaughtReward strong {
+  color: #ef9aa2;
+
+  font-size: 24px;
+}
+
+.jimCaughtReward small {
+  justify-self: end;
+
+  color: #d6dde5;
+
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.jimCaughtConfirm {
+  background: #522a30 !important;
+  color: #f0a0a8 !important;
+}
+
+/* No-waiting-player win keeps the completed
+   wheel visible with +7 on the same page. */
+.jimWinWheelPanel {
+  gap: 20px;
+}
+
+.jimProgressWin {
+  border-color:
+    rgba(224, 180, 71, 0.30) !important;
+}
+
+.jimWinWheelConfirm {
+  margin-top: 0;
+}
+
+/* Slightly tighten outcome wheel on smaller screens. */
+@media (max-width: 600px) {
+  .jimWheelAward {
+    font-size: 30px;
+  }
+
+  .jimCaughtReward {
+    grid-template-columns:
+      auto auto 1fr;
+  }
+}
+
+.jimCaughtChoices {
+  display: grid !important;
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+}
+
+.jimCaughtChoices .jimPlayerChoice {
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+.jimWheelHideOutline {
+  fill: none;
+
+  stroke: #9a75ca;
+  stroke-width: 18px;
+  stroke-linecap: butt;
+
+  opacity: 1;
+
+  filter:
+    drop-shadow(
+      0 0 4px
+      rgba(154, 117, 202, 0.22)
+    );
+}
+
+.jimCaughtReward strong {
+  color: #72cf93 !important;
+}
+
+/* CATCHER REWARD — NEUTRAL BLOCK */
+
+.jimCaughtReward {
+  border-color: #303844 !important;
+  background: #171c24 !important;
+}
+
+.jimCaughtReward span {
+  color: #8290a2 !important;
+}
+
+.jimCaughtReward strong {
+  color: #72cf93 !important;
+}
+
+.jimCaughtReward small {
+  color: #f5f7fa !important;
+}
+
+/* Hide stage number stays purple even if Jim is caught there */
+
+.jimWheelNumber.hidden,
+.jimWheelNumber.hidden.failed {
+  fill: #d3b8f2 !important;
+}
+
+/* More breathing room below Stage 3 on caught screen */
+
+/* SPACE BETWEEN STAGE 3 AND PROGRESS TEXT */
+
+.jimWheelProgress,
+.jimWheelProgress.caught,
+.jimWheelProgress.win {
+  margin-top: 12px !important;
 }

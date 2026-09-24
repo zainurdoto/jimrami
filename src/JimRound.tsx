@@ -28,6 +28,290 @@ type Phase =
   | 'caught'
   | 'win'
 
+
+type JimProgressWheelProps = {
+  stepsSurvived: number
+  currentStage: number
+  hideStage: number | null
+  outcome?: 'win' | 'caught'
+}
+
+function wheelPoint(
+  radius: number,
+  angleDegrees: number
+) {
+  const angle =
+    ((angleDegrees - 90) *
+      Math.PI) /
+    180
+
+  return {
+    x:
+      150 +
+      radius * Math.cos(angle),
+
+    y:
+      150 +
+      radius * Math.sin(angle),
+  }
+}
+
+function wheelArc(
+  radius: number,
+  startAngle: number,
+  endAngle: number
+) {
+  const start =
+    wheelPoint(radius, endAngle)
+
+  const end =
+    wheelPoint(radius, startAngle)
+
+  const largeArcFlag =
+    endAngle - startAngle <= 180
+      ? 0
+      : 1
+
+  return [
+    'M',
+    start.x,
+    start.y,
+    'A',
+    radius,
+    radius,
+    0,
+    largeArcFlag,
+    0,
+    end.x,
+    end.y,
+  ].join(' ')
+}
+
+function JimProgressWheel({
+  stepsSurvived,
+  currentStage,
+  hideStage,
+  outcome,
+}: JimProgressWheelProps) {
+  /*
+    Stage 1 begins at the upper-left
+    and the sequence travels around
+    the Jim emblem toward Stage 6.
+  */
+  const stageAngles = [
+    -60,
+    -120,
+    180,
+    120,
+    60,
+    0,
+  ]
+
+  const progressLabel =
+    outcome === 'win'
+      ? 'JIM SURVIVED'
+      : outcome === 'caught'
+        ? 'JIM CAUGHT'
+        : 'SURVIVED'
+
+  return (
+    <div className="jimWheelWrap">
+      <div
+        className={[
+          'jimWheel',
+          outcome === 'win'
+            ? 'outcome-win'
+            : '',
+          outcome === 'caught'
+            ? 'outcome-caught'
+            : '',
+        ]
+          .filter(Boolean)
+          .join(' ')}
+        aria-label={
+          outcome === 'win'
+            ? 'Jim survived all 6 stages'
+            : outcome === 'caught'
+              ? `Jim was caught at Stage ${currentStage} after surviving ${stepsSurvived} stages`
+              : `Jim survived ${stepsSurvived} of 6 stages`
+        }
+      >
+        <svg
+          className="jimWheelRing"
+          viewBox="0 0 300 300"
+          aria-hidden="true"
+        >
+          {stageAngles.map(
+            (centerAngle, index) => {
+              const stage = index + 1
+
+              const survived =
+                stage <= stepsSurvived
+
+              const current =
+                stage === currentStage
+
+              const hidden =
+                stage === hideStage
+
+              const failed =
+                outcome === 'caught' &&
+                current
+
+              /*
+                Labels sit outside the
+                progress bars.
+              */
+              const label =
+                wheelPoint(
+                  140,
+                  centerAngle
+                )
+
+              return (
+                <g key={stage}>
+                        {hidden && (
+                          <path
+                            className="jimWheelHideOutline"
+                            d={wheelArc(
+                              118,
+                              centerAngle - 23.2,
+                              centerAngle + 23.2
+                            )}
+                          />
+                        )}
+
+                  <path
+                    className={[
+                      'jimWheelSegment',
+                      survived
+                        ? 'survived'
+                        : '',
+                      current
+                        ? 'current'
+                        : '',
+                      failed
+                        ? 'failed'
+                        : '',
+                    ]
+                      .filter(Boolean)
+                      .join(' ')}
+                    d={wheelArc(
+                      118,
+                      centerAngle - 22,
+                      centerAngle + 22
+                    )}
+                  />
+
+                  <text
+                    className={[
+                      'jimWheelNumber',
+                      survived
+                        ? 'survived'
+                        : '',
+                      current
+                        ? 'current'
+                        : '',
+                      hidden
+                        ? 'hidden'
+                        : '',
+                      failed
+                        ? 'failed'
+                        : '',
+                    ]
+                      .filter(Boolean)
+                      .join(' ')}
+                    x={label.x}
+                    y={label.y}
+                  >
+                    {stage}
+                  </text>
+                </g>
+              )
+            }
+          )}
+        </svg>
+
+        <div
+          className="jimModeEmblem"
+          aria-hidden="true"
+        >
+          <img
+            className="jimModeLogo jimModeLogoGhost"
+            src="/Jim_Mode.svg"
+            alt=""
+          />
+
+          {Array.from(
+            {
+              length: stepsSurvived,
+            },
+            (_, index) => {
+              const bandTop =
+                100 -
+                (index + 1) *
+                  (100 / 6)
+
+              const bandBottom =
+                index * (100 / 6)
+
+              return (
+                <img
+                  key={index}
+                  className="jimModeLogo jimModeLogoBand"
+                  src="/Jim_Mode.svg"
+                  alt=""
+                  style={{
+                    clipPath:
+                      `inset(${bandTop}% 0 ${bandBottom}% 0)`,
+                  }}
+                />
+              )
+            }
+          )}
+        </div>
+      </div>
+
+      <div
+        className={[
+          'jimWheelProgress',
+          outcome === 'win'
+            ? 'win'
+            : '',
+          outcome === 'caught'
+            ? 'caught'
+            : '',
+        ]
+          .filter(Boolean)
+          .join(' ')}
+      >
+        <span>
+          {progressLabel}
+        </span>
+
+        <strong>
+          {stepsSurvived}
+          {' / '}
+          6
+        </strong>
+
+        {outcome === 'win' && (
+          <b className="jimWheelAward win">
+            +7
+          </b>
+        )}
+
+        {outcome === 'caught' && (
+          <b className="jimWheelAward caught">
+            -3
+          </b>
+        )}
+      </div>
+    </div>
+  )
+}
+
+
 export default function JimRound({
   session,
   sessionPlayers,
@@ -418,8 +702,6 @@ export default function JimRound({
     setSaving(false)
 
     onComplete({
-      type: 'round',
-
       roundNumber:
         session.roundNumber,
 
@@ -594,8 +876,6 @@ export default function JimRound({
     setSaving(false)
 
     onComplete({
-      type: 'round',
-
       roundNumber:
         session.roundNumber,
 
@@ -691,78 +971,12 @@ export default function JimRound({
               </h2>
             </div>
 
-            <div className="jimProgress">
-              <div className="jimProgressTop">
-                <span>
-                  SURVIVED
-                </span>
-
-                <strong>
-                  {stepsSurvived}
-                  {' / '}
-                  6
-                </strong>
-              </div>
-
-              <div className="jimStages">
-                {[
-                  1,
-                  2,
-                  3,
-                  4,
-                  5,
-                  6,
-                ].map(
-                  (stage) => {
-                    const survived =
-                      stage <=
-                      stepsSurvived
-
-                    const current =
-                      stage ===
-                      currentStage
-
-                    const hidden =
-                      stage ===
-                      hideStage
-
-                    return (
-                      <div
-                        key={stage}
-                        className={[
-                          'jimStage',
-
-                          survived
-                            ? 'survived'
-                            : '',
-
-                          current
-                            ? 'current'
-                            : '',
-
-                          hidden
-                            ? 'hidden'
-                            : '',
-                        ]
-                          .filter(
-                            Boolean
-                          )
-                          .join(' ')}
-                      >
-                        <span>
-                          {stage}
-                        </span>
-
-                        {hidden && (
-                          <small>
-                            HIDE
-                          </small>
-                        )}
-                      </div>
-                    )
-                  }
-                )}
-              </div>
+            <div className="jimProgress jimProgressWheelCard">
+              <JimProgressWheel
+                stepsSurvived={stepsSurvived}
+                currentStage={currentStage}
+                hideStage={hideStage}
+              />
             </div>
 
             <div className="jimHideArea">
@@ -825,9 +1039,30 @@ export default function JimRound({
       {phase === 'caught' &&
         jimPlayer && (
           <section className="jimPanel">
-            <div className="jimSectionTitle">
+            <div className="jimCurrentPlayer">
               <span>
                 JIM CAUGHT
+              </span>
+
+              <h2>
+                {getName(
+                  jimPlayer.playerId
+                )}
+              </h2>
+            </div>
+
+            <div className="jimProgress jimProgressWheelCard">
+                <JimProgressWheel
+                  stepsSurvived={stepsSurvived}
+                  currentStage={currentStage}
+                  hideStage={hideStage}
+                  outcome="caught"
+                />
+            </div>
+
+            <div className="jimSectionTitle jimCaughtPrompt">
+              <span>
+                CATCHER
               </span>
 
               <h2>
@@ -839,7 +1074,7 @@ export default function JimRound({
               </h2>
             </div>
 
-            <div className="jimPlayerChoices">
+            <div className="jimPlayerChoices jimCaughtChoices">
               {playing
                 .filter(
                   (player) =>
@@ -855,7 +1090,7 @@ export default function JimRound({
                       className={
                         catcherSessionPlayerId ===
                         player.id
-                          ? 'jimPlayerChoice selected'
+                          ? 'jimPlayerChoice selected caughtSelected'
                           : 'jimPlayerChoice'
                       }
                       onClick={() =>
@@ -872,18 +1107,9 @@ export default function JimRound({
                 )}
             </div>
 
-            <div className="jimOutcomeSummary">
-              <div>
-                <span>
-                  JIM
-                </span>
-
-                <strong>
-                  -3
-                </strong>
-              </div>
-
-              <div>
+            {catcherSessionPlayerId !==
+              null && (
+              <div className="jimCaughtReward">
                 <span>
                   CATCHER
                 </span>
@@ -891,37 +1117,22 @@ export default function JimRound({
                 <strong>
                   +1
                 </strong>
+
+                <small>
+                  {getName(
+                    sessionPlayers.find(
+                      (player) =>
+                        player.id ===
+                        catcherSessionPlayerId
+                    )?.playerId ??
+                      -1
+                  )}
+                </small>
               </div>
-
-              <div>
-                <span>
-                  SURVIVED
-                </span>
-
-                <strong>
-                  {
-                    stepsSurvived
-                  }
-                  /6
-                </strong>
-              </div>
-
-              <div>
-                <span>
-                  HIDE
-                </span>
-
-                <strong>
-                  {hideStage ===
-                  null
-                    ? 'NO'
-                    : `S${hideStage}`}
-                </strong>
-              </div>
-            </div>
+            )}
 
             <button
-              className="jimConfirmButton"
+              className="jimConfirmButton jimCaughtConfirm"
               disabled={
                 catcherSessionPlayerId ===
                   null ||
@@ -940,130 +1151,154 @@ export default function JimRound({
 
       {phase === 'win' &&
         jimPlayer && (
-          <section className="jimPanel">
-            <div className="jimWinTitle">
-              <span>
-                JIM SURVIVED
-              </span>
-
-              <h2>
-                {getName(
-                  jimPlayer.playerId
-                )}
-              </h2>
-
-              <strong>
-                +7
-              </strong>
-            </div>
-
-            <div className="jimOutcomeSummary">
-              <div>
+          waiting.length > 0 ? (
+            <section className="jimPanel">
+              <div className="jimWinTitle">
                 <span>
-                  SURVIVED
+                  JIM SURVIVED
                 </span>
 
+                <h2>
+                  {getName(
+                    jimPlayer.playerId
+                  )}
+                </h2>
+
                 <strong>
-                  6/6
+                  +7
                 </strong>
               </div>
 
-              <div>
-                <span>
-                  HIDE
-                </span>
-
-                <strong>
-                  {hideStage ===
-                  null
-                    ? 'NO'
-                    : `S${hideStage}`}
-                </strong>
-              </div>
-            </div>
-
-            {waiting.length >
-            0 ? (
-              <>
-                <div className="jimSectionTitle">
+              <div className="jimOutcomeSummary">
+                <div>
                   <span>
-                    ROTATION
+                    SURVIVED
                   </span>
 
-                  <h2>
-                    Who is out?
-                  </h2>
+                  <strong>
+                    6/6
+                  </strong>
                 </div>
 
-                <div className="jimPlayerChoices">
-                  {playing
-                    .filter(
-                      (player) =>
-                        player.id !==
-                        jimPlayer.id
+                <div>
+                  <span>
+                    HIDE
+                  </span>
+
+                  <strong>
+                    {hideStage ===
+                    null
+                      ? 'NO'
+                      : `S${hideStage}`}
+                  </strong>
+                </div>
+              </div>
+
+              <div className="jimSectionTitle">
+                <span>
+                  ROTATION
+                </span>
+
+                <h2>
+                  Who is out?
+                </h2>
+              </div>
+
+              <div className="jimPlayerChoices">
+                {playing
+                  .filter(
+                    (player) =>
+                      player.id !==
+                      jimPlayer.id
+                  )
+                  .map(
+                    (player) => (
+                      <button
+                        key={
+                          player.id
+                        }
+                        className={
+                          outSessionPlayerId ===
+                          player.id
+                            ? 'jimPlayerChoice selected'
+                            : 'jimPlayerChoice'
+                        }
+                        onClick={() =>
+                          setOutSessionPlayerId(
+                            player.id
+                          )
+                        }
+                      >
+                        {getName(
+                          player.playerId
+                        )}
+                      </button>
                     )
-                    .map(
-                      (player) => (
-                        <button
-                          key={
-                            player.id
-                          }
-                          className={
-                            outSessionPlayerId ===
-                            player.id
-                              ? 'jimPlayerChoice selected'
-                              : 'jimPlayerChoice'
-                          }
-                          onClick={() =>
-                            setOutSessionPlayerId(
-                              player.id
-                            )
-                          }
-                        >
-                          {getName(
-                            player.playerId
-                          )}
-                        </button>
-                      )
-                    )}
-                </div>
+                  )}
+              </div>
 
-                <p className="jimRotationNote">
-                  {getName(
-                    waiting[0]
-                      .playerId
-                  )}{' '}
-                  will enter.
-                </p>
-              </>
-            ) : (
               <p className="jimRotationNote">
-                No waiting player.
-                No rotation needed.
+                {getName(
+                  waiting[0]
+                    .playerId
+                )}{' '}
+                will enter.
               </p>
-            )}
 
-            <button
-              className="jimConfirmButton jimWinConfirm"
-              disabled={
-                saving ||
-                (
-                  waiting.length >
-                    0 &&
+              <button
+                className="jimConfirmButton jimWinConfirm"
+                disabled={
+                  saving ||
                   outSessionPlayerId ===
                     null
-                )
-              }
-              onClick={
-                finishWin
-              }
-            >
-              {saving
-                ? 'Saving...'
-                : 'Confirm Jim Win'}
-            </button>
-          </section>
+                }
+                onClick={
+                  finishWin
+                }
+              >
+                {saving
+                  ? 'Saving...'
+                  : 'Confirm Jim Win'}
+              </button>
+            </section>
+          ) : (
+            <section className="jimPanel jimWinWheelPanel">
+              <div className="jimCurrentPlayer">
+                <span>
+                  JIM SURVIVED
+                </span>
+
+                <h2>
+                  {getName(
+                    jimPlayer.playerId
+                  )}
+                </h2>
+              </div>
+
+              <div className="jimProgress jimProgressWheelCard jimProgressWin">
+                <JimProgressWheel
+                  stepsSurvived={6}
+                  currentStage={6}
+                  hideStage={hideStage}
+                  outcome="win"
+                />
+              </div>
+
+              <button
+                className="jimConfirmButton jimWinConfirm jimWinWheelConfirm"
+                disabled={saving}
+                onClick={
+                  finishWin
+                }
+              >
+                {saving
+                  ? 'Saving...'
+                  : 'Confirm Jim Win'}
+              </button>
+            </section>
+          )
         )}
+
     </main>
   )
 }

@@ -1121,11 +1121,19 @@ if (
             </strong>
           </div>
 
-          <div className="gameBrand">
-            <h1>
-              JIMRAMI
-            </h1>
-          </div>
+<div className="gameBrand">
+  <h1 className="jimramiBrandLockup">
+    <img
+      className="jimramiLogo"
+      src="/Jim_Jawi.svg"
+      alt=""
+    />
+
+    <span className="jimramiLatin">
+      JIMRAMI
+    </span>
+  </h1>
+</div>
 
           <div className="gameHeaderActions">
             <button
@@ -1367,7 +1375,17 @@ if (
   return (
     <main className="app">
      <header className="setupHeader">
-  <h1>JIMRAMI</h1>
+<h1 className="jimramiBrandLockup">
+  <img
+    className="jimramiLogo"
+    src="/Jim_Jawi.svg"
+    alt=""
+  />
+
+  <span className="jimramiLatin">
+    JIMRAMI
+  </span>
+</h1>
 
   <div className="setupHeaderActions">
     <span>

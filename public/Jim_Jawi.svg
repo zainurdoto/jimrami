@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="74.570168mm"
+   height="26.511253mm"
+   viewBox="0 0 74.570168 26.511253"
+   version="1.1"
+   id="svg1"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs1" />
+  <g
+     id="layer1"
+     transform="translate(101.93476,-227.69945)">
+    <path
+       style="fill:none;stroke:#000000;stroke-width:0.347075;stroke-miterlimit:3.7;paint-order:stroke fill markers"
+       d="m 13.279031,43.165066 c 0,0 4.029593,10.751165 27.801023,10.15141 21.411343,0.01879 27.33959,-10.15141 27.33959,-10.15141"
+       id="path2" />
+    <text
+       xml:space="preserve"
+       style="font-size:13.1879px;line-height:1;font-family:noto;-inkscape-font-specification:noto;text-align:center;letter-spacing:0.0247273px;word-spacing:0.0412123px;writing-mode:lr-tb;direction:ltr;text-anchor:middle;fill:#ffffff;stroke-width:0.900305;stroke-miterlimit:3.7;paint-order:stroke fill markers"
+       id="text2"
+       transform="matrix(1.6449164,0,0,1.6449164,-130.07337,155.46266)"><textPath
+         xlink:href="#path2"
+         startOffset="50%"
+         id="textPath2"><tspan
+           id="tspan2"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:'Scheherazade New';-inkscape-font-specification:'Scheherazade New';fill:#ffffff;stroke-width:0.900308">جيم رامي</tspan></textPath></text>
+  </g>
+</svg>
