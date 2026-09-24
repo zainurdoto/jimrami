@@ -12,6 +12,128 @@ import DataTools from './DataTools'
 import Penalty from './Penalty'
 import HistoryStats from './HistoryStats'
 
+function StandardWinTally({
+  count,
+}: {
+  count: number
+}) {
+  if (count <= 0) {
+    return null
+  }
+
+  const groups =
+    Array.from(
+      {
+        length:
+          Math.ceil(
+            count / 5
+          ),
+      },
+      (_, index) =>
+        Math.min(
+          5,
+          count -
+            index * 5
+        )
+    )
+
+  return (
+    <div
+      className="standardWinTally"
+      aria-label={`${count} Standard ${
+        count === 1
+          ? 'win'
+          : 'wins'
+      }`}
+      title={`${count} Standard ${
+        count === 1
+          ? 'win'
+          : 'wins'
+      }`}
+    >
+
+      <div className="tallyGroups">
+        {groups.map(
+          (
+            groupSize,
+            groupIndex
+          ) => (
+            <span
+              className="tallyGroup"
+              key={
+                groupIndex
+              }
+            >
+              {Array.from(
+                {
+                  length:
+                    Math.min(
+                      groupSize,
+                      4
+                    ),
+                },
+                (
+                  _,
+                  markIndex
+                ) => (
+                  <i
+                    className="tallyMark"
+                    key={
+                      markIndex
+                    }
+                  />
+                )
+              )}
+
+              {groupSize ===
+                5 && (
+                <i className="tallyStrike" />
+              )}
+            </span>
+          )
+        )}
+      </div>
+    </div>
+  )
+}
+
+function JimWinStars({
+  count,
+}: {
+  count: number
+}) {
+  if (count <= 0) {
+    return null
+  }
+
+  return (
+    <div
+      className="jimWinStars"
+      aria-label={`${count} Jim ${
+        count === 1
+          ? 'win'
+          : 'wins'
+      }`}
+      title={`${count} Jim ${
+        count === 1
+          ? 'win'
+          : 'wins'
+      }`}
+    >
+      {Array.from(
+        {
+          length: count,
+        },
+        (_, index) => (
+          <span key={index}>
+            ★
+          </span>
+        )
+      )}
+    </div>
+  )
+}
+
 function App() {
   const players = useLiveQuery(
     () =>
@@ -44,6 +166,127 @@ function App() {
     },
     [activeSession?.id]
   )
+
+
+  const previousRoundWinner =
+    useLiveQuery(
+      async () => {
+        if (!activeSession) {
+          return null
+        }
+
+        const sessionRounds =
+          await db.rounds
+            .where(
+              'sessionId'
+            )
+            .equals(
+              activeSession.id
+            )
+            .toArray()
+
+        if (
+          sessionRounds.length ===
+          0
+        ) {
+          return null
+        }
+
+        const latestRound =
+          [...sessionRounds].sort(
+            (a, b) =>
+              b.roundNumber -
+                a.roundNumber ||
+              b.createdAt.getTime() -
+                a.createdAt.getTime()
+          )[0]
+
+        if (
+          latestRound.type ===
+          'standard'
+        ) {
+          const results =
+            await db.roundResults
+              .where(
+                'roundId'
+              )
+              .equals(
+                latestRound.id
+              )
+              .toArray()
+
+          const winner =
+            results.find(
+              (result) =>
+                result.position ===
+                1
+            )
+
+          if (!winner) {
+            return null
+          }
+
+          return {
+            roundNumber:
+              latestRound.roundNumber,
+
+            type:
+              'standard' as const,
+
+            winnerPlayerId:
+              winner.playerId,
+
+            detail:
+              'STANDARD',
+          }
+        }
+
+        const jimResult =
+          await db.jimResults
+            .where(
+              'roundId'
+            )
+            .equals(
+              latestRound.id
+            )
+            .first()
+
+        if (!jimResult) {
+          return null
+        }
+
+        const winnerPlayerId =
+          jimResult.won
+            ? jimResult.jimPlayerId
+            : jimResult.caughtByPlayerId
+
+        if (
+          winnerPlayerId ===
+          undefined
+        ) {
+          return null
+        }
+
+        return {
+          roundNumber:
+            latestRound.roundNumber,
+
+          type:
+            'jim' as const,
+
+          winnerPlayerId,
+
+          detail:
+            jimResult.won
+              ? 'JIM WON'
+              : 'CAUGHT JIM',
+        }
+      },
+      [
+        activeSession?.id,
+        activeSession?.roundNumber,
+      ]
+    )
 
   const [screen, setScreen] =
 useState<
@@ -912,6 +1155,43 @@ if (
           </div>
         </header>
 
+        {previousRoundWinner && (
+          <section className="previousWinnerBar">
+            <div className="previousWinnerLabel">
+              <span>
+                PREVIOUS WINNER
+              </span>
+
+              <small>
+                {previousRoundWinner.detail}
+                {' • '}
+                ROUND{' '}
+                {
+                  previousRoundWinner.roundNumber
+                }
+              </small>
+            </div>
+
+            <strong>
+              {getPlayerName(
+                previousRoundWinner.winnerPlayerId
+              )}
+            </strong>
+
+            <span
+              className={`previousWinnerIcon ${
+                previousRoundWinner.type
+              }`}
+              aria-hidden="true"
+            >
+              {previousRoundWinner.type ===
+              'jim'
+                ? '★'
+                : '✓'}
+            </span>
+          </section>
+        )}
+
         <section className="gameScoreboard">
           {ranking.map(
             (
@@ -949,22 +1229,46 @@ if (
                           )}
                         </h2>
 
-                        {isPlaying && (
-                          <span className="playingTag">
-                            PLAYING
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="standingMeta">
-                        <span className="standingMetaStandard">
-                          STANDARD {sessionPlayer.wins} WINS
-                        </span>
-
-                        <span className="standingMetaJim">
-                          ★ {sessionPlayer.jimWins ?? 0} JIM
+                        <span
+                          className={`playerStatusTag ${
+                            isPlaying
+                              ? 'playing'
+                              : 'waiting'
+                          }`}
+                        >
+                          {isPlaying
+                            ? 'PLAYING'
+                            : 'WAITING'}
                         </span>
                       </div>
+
+                      {(sessionPlayer.wins >
+                        0 ||
+                        (sessionPlayer.jimWins ??
+                          0) >
+                          0) && (
+                        <div className="standingAchievements">
+                          {sessionPlayer.wins >
+                            0 && (
+                            <StandardWinTally
+                              count={
+                                sessionPlayer.wins
+                              }
+                            />
+                          )}
+
+                          {(sessionPlayer.jimWins ??
+                            0) >
+                            0 && (
+                            <JimWinStars
+                              count={
+                                sessionPlayer.jimWins ??
+                                0
+                              }
+                            />
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -985,27 +1289,26 @@ if (
           )}
         </section>
 
-        <section className="gameWaiting">
-          <span>
-            WAITING
-          </span>
+        {waiting.length > 0 && (
+          <section className="gameWaiting">
+            <span>
+              WAITING QUEUE
+            </span>
 
-          <strong>
-            {waiting.length ===
-            0
-              ? '—'
-              : waiting
-                  .map(
-                    (player) =>
-                      getPlayerName(
-                        player.playerId
-                      )
-                  )
-                  .join(
-                    '  •  '
-                  )}
-          </strong>
-        </section>
+            <strong>
+              {waiting
+                .map(
+                  (player) =>
+                    getPlayerName(
+                      player.playerId
+                    )
+                )
+                .join(
+                  '  •  '
+                )}
+            </strong>
+          </section>
+        )}
 
         <footer className="gameActions">
           <button

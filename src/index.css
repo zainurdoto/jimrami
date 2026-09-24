@@ -23,6 +23,7 @@ body,
   min-width: 320px;
   min-height: 100%;
   margin: 0;
+  overscroll-behavior-y: none;
 }
 
 body {
@@ -48,23 +49,51 @@ button {
 /* HEADER */
 
 .setupHeader {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns:
+    1fr auto 1fr;
+  align-items: center;
   gap: 20px;
   margin-bottom: 28px;
 }
 
-.setupHeader h1 {
+.setupHeader > h1 {
+  grid-column: 2;
+  justify-self: center;
+
   margin: 0;
   font-size: 44px;
-  letter-spacing: -0.04em;
+  letter-spacing: -0.045em;
+  text-align: center;
+}
+
+.setupHeaderActions {
+  grid-column: 3;
+  justify-self: end;
 }
 
 .setupHeader span {
   color: #8a95a4;
   font-size: 15px;
   font-weight: 700;
+}
+
+@media (max-width: 700px) {
+  .setupHeader {
+    grid-template-columns:
+      1fr auto;
+    gap: 14px;
+  }
+
+  .setupHeader > h1 {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+
+  .setupHeaderActions {
+    grid-column: 2;
+    grid-row: 2;
+  }
 }
 
 /* ADD PLAYER */
@@ -118,7 +147,7 @@ button {
 
 .playerSelect {
   display: grid;
-  grid-template-columns: 1fr 56px;
+  grid-template-columns: 1fr 94px;
   min-height: 78px;
   overflow: hidden;
   border: 2px solid #272e38;
@@ -296,31 +325,53 @@ button {
 
 .gameScoreboard {
   display: grid;
-  gap: 12px;
+  gap: 10px;
 }
 
 .standingRow {
+  position: relative;
+
   display: grid;
   grid-template-columns:
-    64px minmax(0, 1fr) auto;
+    54px minmax(0, 1fr) 105px;
   align-items: center;
-  min-height: 112px;
-  padding: 18px 24px;
+
+  min-height: 104px;
+  padding: 16px 22px;
+
   border: 1px solid #282f39;
   border-radius: 18px;
   background: #171c24;
+
+  transition:
+    border-color 160ms ease,
+    background 160ms ease;
 }
 
 .standingRank {
-  color: #747f8e;
-  font-size: 30px;
-  font-weight: 850;
+  display: grid;
+  place-items: center;
+
+  width: 38px;
+  height: 38px;
+
+  border-radius: 11px;
+
+  background: #202731;
+  color: #8390a0;
+
+  font-size: 18px;
+  font-weight: 950;
 }
 
 .standingPlayer {
   display: flex;
   align-items: center;
   gap: 14px;
+  min-width: 0;
+}
+
+.standingPlayer > div {
   min-width: 0;
 }
 
@@ -331,34 +382,32 @@ button {
 
 .standingPlayer p {
   margin: 6px 0 0;
-  color: #8994a2;
-}
 
-.playingTag {
-  padding: 5px 8px;
-  border-radius: 7px;
-  background: #29323e;
-  color: #aab7c7;
-  font-size: 10px;
-  font-weight: 900;
-  letter-spacing: 0.08em;
+  color: #758293;
+
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: 0.035em;
 }
 
 .standingPoints {
-  display: flex;
-  align-items: baseline;
-  gap: 7px;
+  display: grid;
+  justify-items: end;
+  align-content: center;
+  gap: 2px;
 }
 
 .standingPoints strong {
-  font-size: 52px;
-  line-height: 1;
+  font-size: 49px;
+  line-height: 0.9;
 }
 
 .standingPoints span {
-  color: #8994a2;
-  font-size: 12px;
-  font-weight: 900;
+  color: #7a8796;
+
+  font-size: 9px;
+  font-weight: 950;
+  letter-spacing: 0.12em;
 }
 
 .gameWaiting {
@@ -366,29 +415,36 @@ button {
   align-items: center;
   justify-content: space-between;
   gap: 24px;
-  margin-top: 18px;
-  padding: 20px 22px;
-  border: 1px solid #282f39;
-  border-radius: 15px;
-  background: #13171d;
+
+  min-height: 56px;
+  margin-top: 12px;
+  padding: 13px 18px;
+
+  border: 1px solid #2b3440;
+  border-radius: 13px;
+  background: #151b22;
 }
 
 .gameWaiting span {
-  color: #808b99;
-  font-size: 12px;
+  color: #778596;
+  font-size: 10px;
   font-weight: 900;
   letter-spacing: 0.1em;
 }
 
 .gameWaiting strong {
+  color: #edf2f7;
+  font-size: 14px;
   text-align: right;
 }
 
 .gameActions {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 14px;
-  margin-top: 22px;
+  display: grid !important;
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr)) !important;
+
+  gap: 10px !important;
+  margin-top: 20px;
 }
 
 .gameActions button {
@@ -432,8 +488,5960 @@ button {
     font-size: 40px;
   }
 
-  .playingTag {
-    display: none;
+  .gameActions {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ==============================
+   STANDARD ROUND ENTRY
+================================ */
+
+.roundEntryHeader {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 28px;
+}
+
+.roundEntryHeader h1 {
+  margin: 3px 0 0;
+  font-size: 34px;
+}
+
+.roundEntryHeader span {
+  color: #7f8997;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+
+
+/* SHARED ROUND / ACTION HEADER */
+
+.roundHeader {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 28px;
+}
+
+.roundHeader > div {
+  min-width: 0;
+}
+
+.roundHeader > div > span {
+  color: #7f8997;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.roundHeader h1 {
+  margin: 3px 0 0;
+  font-size: 34px;
+}
+
+.roundBack {
+  width: 54px;
+  height: 54px;
+  flex: 0 0 auto;
+  border: 1px solid #2d3540;
+  border-radius: 15px;
+  background: #171c24;
+  color: white;
+  font-size: 25px;
+}
+
+.roundEntryLayout {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1fr)
+    330px;
+
+  gap: 22px;
+  align-items: start;
+}
+
+.roundPlayers {
+  display: grid;
+  grid-template-columns:
+    1fr 1fr;
+  gap: 12px;
+}
+
+.roundPlayerCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+
+  width: 100%;
+  min-height: 125px;
+
+  padding: 20px;
+
+  border: 2px solid #282f39;
+  border-radius: 18px;
+
+  background: #171c24;
+  color: white;
+
+  text-align: left;
+}
+
+.roundPlayerCard.active {
+  border-color: #8faeff;
+  background: #1c2330;
+}
+
+.roundPlayerCard strong {
+  font-size: 23px;
+}
+
+.roundPlayerScore {
+  min-width: 60px;
+  text-align: right;
+  font-size: 42px;
+  font-weight: 850;
+  line-height: 1;
+}
+
+.autoScore {
+  display: block;
+  width: fit-content;
+
+  margin-top: 8px;
+  padding: 4px 7px;
+
+  border-radius: 6px;
+
+  background: #29313d;
+  color: #a8b4c2;
+
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.cardTotal {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  margin-top: 14px;
+  padding: 22px 24px;
+
+  border: 1px solid #282f39;
+  border-radius: 18px;
+
+  background: #171c24;
+}
+
+.cardTotal.valid {
+  border-color: #4b9865;
+}
+
+.cardTotal > span {
+  color: #8993a1;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+
+.cardTotal strong {
+  font-size: 38px;
+}
+
+.cardTotal small {
+  color: #798493;
+  font-size: 20px;
+}
+
+.roundMessage {
+  min-height: 22px;
+  margin: 12px 4px 0;
+  color: #aab3bf;
+  font-size: 14px;
+}
+
+/* KEYPAD */
+
+.numberPadPanel {
+  padding: 18px;
+
+  border: 1px solid #282f39;
+  border-radius: 18px;
+
+  background: #171c24;
+}
+
+.numberPadPlayer {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.numberPadPlayer span {
+  color: #7e8998;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+
+.numberPadPlayer strong {
+  font-size: 20px;
+}
+
+.numberPad {
+  display: grid;
+  grid-template-columns:
+    repeat(4, 1fr);
+
+  gap: 9px;
+}
+
+.numberPad button {
+  min-height: 66px;
+
+  border: 1px solid #303946;
+  border-radius: 14px;
+
+  background: #202731;
+  color: white;
+
+  font-size: 24px;
+  font-weight: 800;
+}
+
+.numberPad button:active {
+  background: #303a48;
+}
+
+.numberPad .numberPadSecondary {
+  color: #aab4c1;
+  font-size: 19px;
+}
+
+.nextScorePlayer {
+  width: 100%;
+  min-height: 58px;
+
+  margin-top: 11px;
+
+  border: 0;
+  border-radius: 14px;
+
+  background: #323b48;
+  color: white;
+
+  font-weight: 850;
+}
+
+.saveStandardRound {
+  width: 100%;
+  min-height: 76px;
+
+  margin-top: 18px;
+
+  border: 0;
+  border-radius: 18px;
+
+  background: #f2f4f6;
+  color: #101419;
+
+  font-size: 18px;
+  font-weight: 850;
+}
+
+.saveStandardRound:disabled {
+  background: #252b34;
+  color: #5f6976;
+  cursor: not-allowed;
+}
+
+/* TIE DIALOG */
+
+.tieOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+
+  display: grid;
+  place-items: center;
+
+  padding: 24px;
+
+  background:
+    rgba(5, 7, 10, 0.84);
+}
+
+.tieDialog {
+  width: min(
+    100%,
+    470px
+  );
+
+  padding: 28px;
+
+  border: 1px solid #323b47;
+  border-radius: 22px;
+
+  background: #171c24;
+}
+
+.tieLabel {
+  color: #d9ae4b;
+
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+
+.tieDialog h2 {
+  margin: 8px 0 4px;
+  font-size: 32px;
+}
+
+.tieDialog p {
+  margin: 0 0 20px;
+  color: #9aa5b3;
+}
+
+.tieChoices {
+  display: grid;
+  gap: 10px;
+}
+
+.tieChoices button {
+  min-height: 64px;
+
+  border: 1px solid #323b47;
+  border-radius: 14px;
+
+  background: #222a35;
+  color: white;
+
+  font-size: 19px;
+  font-weight: 800;
+}
+
+@media (max-width: 760px) {
+  .roundEntryLayout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 520px) {
+  .roundPlayers {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ==============================
+   TITLE RACE
+================================ */
+
+.raceAction {
+  background: #2d3541 !important;
+  color: #f5f7fa !important;
+}
+
+.racePage {
+  max-width: 1200px;
+}
+
+.raceHeader {
+  display: grid;
+  grid-template-columns:
+    auto 1fr auto;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 22px;
+}
+
+.raceHeader > div > span {
+  color: #7e8998;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.11em;
+}
+
+.raceHeader h1 {
+  margin: 3px 0 0;
+  font-size: 34px;
+}
+
+.racePlay {
+  min-width: 110px;
+  min-height: 52px;
+
+  border: 0;
+  border-radius: 14px;
+
+  background: #f2f4f6;
+  color: #101419;
+
+  font-weight: 850;
+}
+
+.racePlay:disabled {
+  opacity: 0.35;
+}
+
+.raceChart {
+  padding: 18px 8px 4px;
+
+  border: 1px solid #282f39;
+  border-radius: 20px;
+
+  background: #141920;
+}
+
+.raceControls {
+  display: grid;
+  grid-template-columns:
+    1fr auto;
+  align-items: center;
+  gap: 20px;
+
+  margin-top: 18px;
+}
+
+.raceControls input {
+  width: 100%;
+  accent-color: #f2f4f6;
+}
+
+.raceRoundCount {
+  min-width: 105px;
+  color: #8994a2;
+  font-size: 13px;
+  font-weight: 800;
+  text-align: right;
+}
+
+.raceStandings {
+  display: grid;
+  gap: 8px;
+
+  margin-top: 20px;
+}
+
+.raceStanding {
+  display: grid;
+  grid-template-columns:
+    40px 1fr auto;
+  align-items: center;
+
+  min-height: 52px;
+  padding: 0 16px;
+
+  border-radius: 12px;
+  background: #171c24;
+
+  will-change: transform;
+}
+
+.raceStanding > span {
+  color: #788391;
+  font-weight: 900;
+}
+
+.raceStanding strong {
+  font-size: 16px;
+}
+
+.raceStanding b {
+  font-size: 20px;
+}
+
+.raceEmpty {
+  padding: 60px 20px;
+
+  border: 1px dashed #303844;
+  border-radius: 18px;
+
+  color: #7f8997;
+  text-align: center;
+}
+
+@media (max-width: 600px) {
+  .gameActions {
+    grid-template-columns: 1fr;
+  }
+
+  .raceChart {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .raceControls {
+    grid-template-columns: 1fr;
+  }
+
+  .raceRoundCount {
+    text-align: center;
+  }
+}
+
+.raceHeaderActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.raceSpeed {
+  min-width: 66px;
+  min-height: 52px;
+
+  border: 1px solid #303844;
+  border-radius: 14px;
+
+  background: #171c24;
+  color: #f5f7fa;
+
+  font-weight: 850;
+}
+
+.raceSpeed:active {
+  background: #252d39;
+}
+
+/* ==============================
+   DATA / BACKUP
+================================ */
+
+.gameHeaderActions,
+.setupHeaderActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dataButton {
+  min-height: 48px;
+  padding: 0 18px;
+
+  border: 1px solid #39414c;
+  border-radius: 13px;
+
+  background: #171c24;
+  color: #f2f4f6;
+
+  font-weight: 800;
+}
+
+.dataOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+
+  display: grid;
+  place-items: center;
+
+  padding: 22px;
+
+  background:
+    rgba(4, 6, 9, 0.84);
+}
+
+.dataPanel {
+  width: min(
+    100%,
+    620px
+  );
+
+  padding: 26px;
+
+  border: 1px solid #303844;
+  border-radius: 22px;
+
+  background: #171c24;
+}
+
+.dataHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  margin-bottom: 22px;
+}
+
+.dataHeader span {
+  color: #7f8997;
+
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.11em;
+}
+
+.dataHeader h2 {
+  margin: 3px 0 0;
+  font-size: 30px;
+}
+
+.dataHeader > button {
+  width: 46px;
+  height: 46px;
+
+  border: 1px solid #303844;
+  border-radius: 13px;
+
+  background: #202731;
+  color: white;
+
+  font-size: 24px;
+}
+
+.dataOption {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1fr)
+    auto;
+
+  align-items: center;
+  gap: 20px;
+
+  padding: 20px 0;
+
+  border-top:
+    1px solid #29313b;
+}
+
+.dataOption strong {
+  font-size: 18px;
+}
+
+.dataOption p {
+  margin: 6px 0 0;
+
+  color: #8994a2;
+
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.dataOption > button,
+.dataOption > label {
+  min-width: 100px;
+  min-height: 48px;
+
+  display: grid;
+  place-items: center;
+
+  padding: 0 16px;
+
+  border: 0;
+  border-radius: 13px;
+
+  background: #f2f4f6;
+  color: #101419;
+
+  cursor: pointer;
+
+  font-weight: 850;
+}
+
+.dataOption input {
+  display: none;
+}
+
+.importDisabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.dataWarning {
+  margin: 16px 0 0;
+
+  color: #737f8e;
+
+  font-size: 12px;
+}
+
+@media (max-width: 520px) {
+  .dataOption {
+    grid-template-columns: 1fr;
+  }
+
+  .dataOption > button,
+  .dataOption > label {
+    width: 100%;
+  }
+}
+
+/* ==============================
+   PENALTY
+================================ */
+
+.penaltyPanel {
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+.penaltyPrompt {
+  margin: 10px 0 16px;
+
+  color: #8994a2;
+
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.penaltyPlayers {
+  display: grid;
+  gap: 10px;
+}
+
+.penaltyPlayer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  min-height: 84px;
+  padding: 15px 20px;
+
+  border: 1px solid #303844;
+  border-radius: 16px;
+
+  background: #171c24;
+  color: white;
+
+  text-align: left;
+}
+
+.penaltyPlayer > div {
+  display: grid;
+  gap: 5px;
+}
+
+.penaltyPlayer strong {
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.penaltyPlayer span {
+  color: #858f9c;
+
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.penaltyPlayer b {
+  font-size: 30px;
+}
+
+.penaltyPlayer:active {
+  transform: scale(0.985);
+}
+
+.penaltyAction {
+  background: #47272b !important;
+  color: #f1a0a7 !important;
+}
+
+
+/* ==============================
+   JIM ROUND
+================================ */
+
+.jimRoundPage {
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.jimPanel {
+  width: 100%;
+  max-width: 760px;
+  margin: 0 auto;
+
+  display: grid;
+  gap: 24px;
+}
+
+/* ---------- HEADINGS ---------- */
+
+.jimSectionTitle,
+.jimCurrentPlayer,
+.jimWinTitle {
+  display: grid;
+  gap: 5px;
+}
+
+.jimSectionTitle span,
+.jimCurrentPlayer span,
+.jimWinTitle > span {
+  color: #8290a2;
+
+  font-size: 11px;
+  font-weight: 700;
+
+  letter-spacing: 0.08em;
+}
+
+.jimSectionTitle h2,
+.jimCurrentPlayer h2,
+.jimWinTitle h2 {
+  margin: 0;
+
+  color: #f5f7fa;
+
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+
+/* ---------- PLAYER CHOICES ---------- */
+
+.jimPlayerChoices {
+  width: 100%;
+
+  display: grid !important;
+
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr)) !important;
+
+  gap: 12px !important;
+}
+
+.jimPlayerChoice {
+  width: 100% !important;
+  min-width: 0 !important;
+
+  min-height: 82px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 14px 18px;
+
+  border: 1px solid #303946 !important;
+  border-radius: 16px !important;
+
+  background: #171d25 !important;
+  color: #f5f7fa !important;
+
+  font: inherit;
+  font-size: 22px !important;
+  font-weight: 700 !important;
+
+  text-align: center;
+
+  cursor: pointer;
+}
+
+.jimPlayerChoice:hover {
+  background: #1d242e !important;
+}
+
+.jimPlayerChoice:active {
+  transform: scale(0.985);
+}
+
+.jimPlayerChoice.selected {
+  border-color: #d5ad53 !important;
+
+  background: #332c1f !important;
+  color: #f3ce77 !important;
+}
+
+/* ---------- PROGRESS ---------- */
+
+.jimProgress {
+  width: 100%;
+
+  padding: 24px 20px 22px;
+
+  border: 1px solid #2b333e;
+  border-radius: 22px;
+
+  background: #151a21;
+}
+
+.jimProgressTop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  gap: 8px;
+  margin-bottom: 22px;
+
+  text-align: center;
+}
+
+.jimProgressTop span {
+  color: #8290a2;
+
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.jimProgressTop strong {
+  color: #f5f7fa;
+
+  font-size: 38px;
+  line-height: 1;
+}
+
+/* ---------- SIX JIM STAGES ---------- */
+
+.jimStages {
+  width: 100%;
+
+  display: grid !important;
+
+  grid-template-columns:
+    repeat(6, minmax(0, 1fr)) !important;
+
+  gap: 12px !important;
+
+  justify-items: center;
+  align-items: start;
+  padding-bottom: 20px;
+}
+
+.jimStage {
+  position: relative;
+
+  width: 72px;
+  height: 72px;
+  min-width: 72px;
+  min-height: 72px;
+
+  display: grid;
+  place-items: center;
+
+  border: 2px solid #303946;
+  border-radius: 999px;
+
+  background: #10151b;
+  color: #697585;
+
+  font-size: 22px;
+  font-weight: 700;
+
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,0.02);
+}
+
+.jimStage.survived {
+  border-color: #315940;
+
+  background: #1e3828;
+  color: #8fd6a3;
+}
+
+.jimStage.current {
+  border-color: #d6ae55;
+
+  background: #2b2417;
+  color: #f1cc74;
+}
+
+.jimStage.hidden {
+  border-color: #9171c1;
+
+  background: #302640;
+  color: #caadf0;
+}
+
+.jimStage small {
+  position: absolute;
+
+  left: 50%;
+  bottom: -18px;
+
+  transform: translateX(-50%);
+
+  padding: 2px 6px;
+
+  border-radius: 999px;
+
+  background: #5a4680;
+  color: #f1e9ff;
+
+  text-align: center;
+
+  font-size: 8px;
+  font-weight: 900;
+  line-height: 1;
+
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+/* ---------- HIDE ---------- */
+
+.jimHideArea {
+  width: 100%;
+}
+
+.jimHideButton {
+  width: 100% !important;
+
+  min-height: 68px;
+
+  border: 1px solid #8867b7 !important;
+  border-radius: 15px !important;
+
+  background: #2c233c !important;
+  color: #cbb0ef !important;
+
+  font: inherit;
+  font-size: 17px !important;
+  font-weight: 700 !important;
+
+  letter-spacing: 0.04em;
+}
+
+.jimHideButton:disabled {
+  border-color: #2b333e !important;
+
+  background: #171c23 !important;
+  color: #606c7b !important;
+}
+
+.jimHideUsed {
+  width: 100%;
+  min-height: 68px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 0 20px;
+
+  border: 1px solid #8867b7;
+  border-radius: 15px;
+
+  background: #2c233c;
+  color: #cbb0ef;
+}
+
+.jimHideUsed span {
+  font-size: 11px;
+  font-weight: 900;
+
+  letter-spacing: 0.1em;
+}
+
+.jimHideUsed strong {
+  font-size: 21px;
+}
+
+/* ---------- MAIN JIM BUTTONS ---------- */
+
+.jimMainActions {
+  width: 100%;
+
+  display: grid !important;
+
+  grid-template-columns:
+    2fr 1fr !important;
+
+  gap: 12px !important;
+}
+
+.jimSurvivedButton,
+.jimCaughtButton,
+.jimConfirmButton {
+  width: 100% !important;
+
+  min-height: 70px;
+
+  border: 0 !important;
+  border-radius: 15px !important;
+
+  font: inherit;
+  font-size: 17px !important;
+  font-weight: 700 !important;
+
+  cursor: pointer;
+}
+
+.jimSurvivedButton {
+  background: #f0f2f5 !important;
+  color: #101318 !important;
+}
+
+.jimCaughtButton {
+  background: #47272c !important;
+  color: #f1a0a8 !important;
+}
+
+/* ---------- RESULT SUMMARY ---------- */
+
+.jimOutcomeSummary {
+  width: 100%;
+
+  display: grid !important;
+
+  grid-template-columns:
+    repeat(4, minmax(0, 1fr)) !important;
+
+  gap: 10px !important;
+}
+
+.jimOutcomeSummary > div {
+  min-width: 0;
+
+  padding: 16px;
+
+  border: 1px solid #29313b;
+  border-radius: 14px;
+
+  background: #151a21;
+}
+
+.jimOutcomeSummary span {
+  display: block;
+
+  margin-bottom: 6px;
+
+  color: #7f8b9a;
+
+  font-size: 9px;
+  font-weight: 900;
+
+  letter-spacing: 0.09em;
+}
+
+.jimOutcomeSummary strong {
+  display: block;
+
+  color: #f5f7fa;
+
+  font-size: 22px;
+}
+
+/* ---------- CONFIRM ---------- */
+
+.jimConfirmButton {
+  background: #eef1f5 !important;
+  color: #101318 !important;
+}
+
+.jimConfirmButton:disabled {
+  opacity: 0.4;
+}
+
+.jimWinConfirm {
+  background: #d2ab50 !important;
+  color: #17130b !important;
+}
+
+/* ---------- WIN ---------- */
+
+.jimWinTitle > strong {
+  margin-top: 4px;
+
+  color: #d8b45d;
+
+  font-size: 48px;
+  line-height: 1;
+}
+
+/* ---------- ROTATION NOTE ---------- */
+
+.jimRotationNote {
+  margin: 0;
+
+  color: #909ba8;
+
+  font-size: 15px;
+}
+
+/* ---------- SMALLER SCREENS ---------- */
+
+@media (max-width: 600px) {
+  .jimPanel {
+    gap: 18px;
+  }
+
+  .jimPlayerChoices {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .jimPlayerChoice {
+    min-height: 72px;
+
+    font-size: 19px !important;
+  }
+
+  .jimStages {
+    gap: 5px !important;
+  }
+
+.jimStage {
+  width: 56px;
+  height: 56px;
+  min-width: 56px;
+  min-height: 56px;
+
+  font-size: 18px;
+}
+  .jimOutcomeSummary {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .jimMainActions {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ==============================
+   HISTORY & STATS
+================================ */
+
+.historyPage {
+  max-width: 1100px;
+}
+
+.historyHeader {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 26px;
+}
+
+.historyHeader > div > span {
+  color: #7f8997;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+
+.historyHeader h1 {
+  margin: 3px 0 0;
+  font-size: 34px;
+}
+
+.historyTabs {
+  display: grid;
+  grid-template-columns:
+    repeat(4, 1fr);
+  gap: 7px;
+
+  margin-bottom: 22px;
+  padding: 6px;
+
+  border-radius: 16px;
+  background: #13171d;
+}
+
+.historyTabs button {
+  min-height: 52px;
+
+  border: 0;
+  border-radius: 12px;
+
+  background: transparent;
+  color: #7f8997;
+
+  font-weight: 800;
+}
+
+.historyTabs button.active {
+  background: #29323e;
+  color: #f5f7fa;
+}
+
+/* SESSION HISTORY */
+
+.historySessionList {
+  display: grid;
+  gap: 12px;
+}
+
+.historySession {
+  overflow: hidden;
+
+  border: 1px solid #29313b;
+  border-radius: 18px;
+
+  background: #171c24;
+}
+
+.historySessionSummary {
+  width: 100%;
+  min-height: 88px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+
+  padding: 16px 20px;
+
+  border: 0;
+
+  background: transparent;
+  color: #f5f7fa;
+
+  text-align: left;
+}
+
+.historySessionSummary > div:first-child {
+  display: grid;
+  gap: 4px;
+}
+
+.historySessionSummary > div:first-child strong {
+  font-size: 20px;
+}
+
+.historySessionSummary > div:first-child span,
+.historySessionSummaryRight > span {
+  color: #8793a1;
+  font-size: 13px;
+}
+
+.historySessionSummaryRight {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.historySessionSummaryRight b {
+  padding: 5px 8px;
+
+  border-radius: 7px;
+
+  background: #29323d;
+  color: #9eabb9;
+
+  font-size: 10px;
+  letter-spacing: 0.08em;
+}
+
+.historySessionSummaryRight b.active {
+  background: #20372a;
+  color: #81d499;
+}
+
+.historySessionDetails {
+  padding: 18px 20px 20px;
+
+  border-top: 1px solid #29313b;
+}
+
+.historySessionMeta {
+  display: grid;
+  grid-template-columns:
+    repeat(4, minmax(0, 1fr));
+  gap: 9px;
+
+  margin-bottom: 16px;
+}
+
+.historySessionMeta > div {
+  min-width: 0;
+
+  padding: 14px;
+
+  border-radius: 13px;
+
+  background: #11151b;
+}
+
+.historySessionMeta span {
+  display: block;
+
+  margin-bottom: 5px;
+
+  color: #778392;
+
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.historySessionMeta strong {
+  display: block;
+
+  overflow: hidden;
+
+  font-size: 18px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.historyStandings {
+  display: grid;
+  gap: 7px;
+}
+
+.historyStanding {
+  display: grid;
+  grid-template-columns:
+    38px minmax(0, 1fr) auto;
+  align-items: center;
+
+  min-height: 62px;
+
+  padding: 8px 14px;
+
+  border-radius: 12px;
+
+  background: #202731;
+}
+
+.historyStanding > span {
+  color: #788391;
+  font-weight: 850;
+}
+
+.historyStanding > div {
+  display: grid;
+  gap: 3px;
+
+  min-width: 0;
+}
+
+.historyStanding > div > strong {
+  overflow: hidden;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.historyStanding small {
+  color: #8994a2;
+}
+
+.historyStanding > b {
+  font-size: 22px;
+}
+
+.historyRaceButton {
+  width: 100%;
+  min-height: 58px;
+
+  margin-top: 14px;
+
+  border: 0;
+  border-radius: 14px;
+
+  background: #303946;
+  color: #f5f7fa;
+
+  font-weight: 850;
+}
+
+.historyEmpty {
+  padding: 50px 20px;
+
+  border: 1px dashed #303844;
+  border-radius: 17px;
+
+  color: #7f8997;
+
+  text-align: center;
+}
+
+/* PLAYER STATS */
+
+.playerStatsList {
+  display: grid;
+  gap: 14px;
+}
+
+.playerStatsCard {
+  padding: 20px;
+
+  border: 1px solid #29313b;
+  border-radius: 18px;
+
+  background: #171c24;
+}
+
+.playerStatsCard > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+
+  margin-bottom: 18px;
+}
+
+.playerStatsCard > header > div {
+  display: grid;
+  gap: 3px;
+}
+
+.playerStatsCard h2 {
+  margin: 0;
+
+  font-size: 27px;
+}
+
+.playerStatsCard > header span {
+  color: #8994a2;
+  font-size: 13px;
+}
+
+.playerStatsCard > header > strong {
+  font-size: 21px;
+}
+
+.playerStatSectionLabel {
+  margin: 17px 2px 8px;
+
+  color: #7c8795;
+
+  font-size: 14px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+
+.playerStatGrid {
+  display: grid;
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.playerStatGrid > div {
+  min-width: 0;
+
+  padding: 14px;
+
+  border-radius: 13px;
+
+  background: #11151b;
+}
+
+.playerStatGrid span {
+  display: block;
+
+  min-height: 24px;
+  margin-bottom: 5px;
+
+  color: #778392;
+
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.07em;
+}
+
+.playerStatGrid strong {
+  font-size: 23px;
+}
+
+.hideStageBreakdown {
+  display: grid;
+  grid-template-columns:
+    auto repeat(4, 1fr);
+  align-items: center;
+  gap: 8px;
+
+  margin-top: 10px;
+  padding: 11px 13px;
+
+  border: 1px solid #3c3250;
+  border-radius: 13px;
+
+  background: #1d1827;
+}
+
+.hideStageBreakdown > span {
+  color: #a891c5;
+
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.hideStageBreakdown > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 5px;
+}
+
+.hideStageBreakdown small {
+  color: #8f7ba8;
+  font-size: 11px;
+}
+
+.hideStageBreakdown strong {
+  color: #d0b7ef;
+}
+
+/* AWARDS */
+
+.historyAwards {
+  display: grid;
+  gap: 18px;
+}
+
+.awardsIntro {
+  padding: 5px 2px 2px;
+}
+
+.awardsIntro > span {
+  color: #d9ae4b;
+
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.11em;
+}
+
+.awardsIntro h2 {
+  margin: 5px 0 6px;
+
+  font-size: 31px;
+}
+
+.awardsIntro p {
+  max-width: 620px;
+  margin: 0;
+
+  color: #8994a2;
+  line-height: 1.5;
+}
+
+.awardGrid {
+  display: grid;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.awardCard {
+  min-width: 0;
+
+  padding: 20px;
+
+  border: 1px solid #303844;
+  border-radius: 18px;
+
+  background: #171c24;
+}
+
+.awardCard > span {
+  color: #d9ae4b;
+
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.awardCard h3 {
+  margin: 8px 0 4px;
+
+  overflow-wrap: anywhere;
+
+  font-size: 27px;
+}
+
+.awardCard > strong {
+  color: #b5c0cd;
+
+  font-size: 15px;
+}
+
+.awardCard p {
+  margin: 11px 0 0;
+
+  color: #7f8b99;
+
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+@media (max-width: 700px) {
+  .historySessionMeta {
+    grid-template-columns:
+      repeat(2, 1fr);
+  }
+
+  .playerStatSectionLabel {
+    font-size: 13px;
+  }
+
+  .playerStatGrid {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+
+  .playerStatGrid span,
+  .hideStageBreakdown > span {
+    font-size: 11px;
+  }
+
+  .awardGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 520px) {
+  .historySessionSummary {
+    align-items: flex-start;
+  }
+
+  .historySessionSummaryRight {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 5px;
+  }
+
+  .hideStageBreakdown {
+    grid-template-columns:
+      1fr 1fr;
+  }
+
+  .hideStageBreakdown > span {
+    grid-column: 1 / -1;
+  }
+}
+
+
+/* ==============================
+   SESSION AWARDS
+================================ */
+
+.sessionAwardsSection {
+  margin-top: 20px;
+  padding-top: 18px;
+
+  border-top: 1px solid #29313b;
+}
+
+.sessionAwardsHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+
+  margin-bottom: 12px;
+}
+
+.sessionAwardsHeader span {
+  color: #d9ae4b;
+
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+
+.sessionAwardsHeader strong {
+  color: #8994a2;
+
+  font-size: 13px;
+}
+
+.sessionAwardGrid {
+  display: grid;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  gap: 9px;
+}
+
+.sessionAwardCard {
+  padding: 15px;
+
+  background: #141920;
+}
+
+.sessionAwardCard > span {
+  font-size: 9px;
+}
+
+.sessionAwardCard h3 {
+  margin: 6px 0 3px;
+
+  font-size: 21px;
+}
+
+.sessionAwardCard > strong {
+  font-size: 13px;
+}
+
+.sessionAwardCard p {
+  margin-top: 8px;
+
+  font-size: 12px;
+}
+
+@media (max-width: 600px) {
+  .sessionAwardGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .sessionAwardsHeader {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 3px;
+  }
+}
+
+/* ==============================
+   AWARD COLORS + BIGGER TITLES
+   History / Session Awards CSS.
+================================ */
+
+.awardCard {
+  --award-color: #d9ae4b;
+
+  border-left:
+    4px solid var(--award-color);
+}
+
+.awardCard > span {
+  color: var(--award-color);
+
+  font-size: 15px;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+}
+
+.awardCard > strong {
+  color: var(--award-color);
+}
+
+/* Session cards are smaller overall,
+   but the award name should still
+   be obvious at a glance. */
+
+.sessionAwardCard > span {
+  font-size: 13px;
+}
+
+.sessionAwardCard h3 {
+  font-size: 23px;
+}
+
+/* Each family title gets its own
+   stable visual identity. */
+
+.awardTone-cuci {
+  --award-color: #6fc8d4;
+}
+
+.awardTone-slayer {
+  --award-color: #ef7f89;
+}
+
+.awardTone-tuah {
+  --award-color: #e0b65c;
+}
+
+.awardTone-malang {
+  --award-color: #b491df;
+}
+
+.awardTone-standard {
+  --award-color: #79a7f2;
+}
+
+.awardTone-jim {
+  --award-color: #e79a61;
+}
+
+.awardTone-hide {
+  --award-color: #bd8fe9;
+}
+
+.awardTone-denda {
+  --award-color: #e88b9c;
+}
+
+.awardTone-survivor {
+  --award-color: #7fcf95;
+}
+
+.awardTone-comeback {
+  --award-color: #67c5b3;
+}
+
+.awardTone-jatuh {
+  --award-color: #d7838f;
+}
+
+.awardTone-default {
+  --award-color: #aab5c2;
+}
+
+@media (max-width: 600px) {
+  .awardCard > span {
+    font-size: 14px;
+  }
+
+  .sessionAwardCard > span {
+    font-size: 12px;
+  }
+}
+
+/* ==============================
+   HISTORY V3
+   History / Awards CSS.
+================================ */
+
+/* SESSION DETAILS */
+
+.historySessionMetaExpanded {
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr));
+}
+
+/* PLAYER SORTING */
+
+.playerSortPanel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+
+  margin-bottom: 14px;
+  padding: 16px 18px;
+
+  border: 1px solid #29313b;
+  border-radius: 16px;
+
+  background: #151a21;
+}
+
+.playerSortPanel > div:first-child {
+  display: grid;
+  gap: 3px;
+
+  flex: 0 0 auto;
+}
+
+.playerSortPanel > div:first-child span {
+  color: #788493;
+
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+
+.playerSortPanel > div:first-child strong {
+  font-size: 17px;
+}
+
+.playerSortButtons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 7px;
+}
+
+.playerSortButtons button {
+  min-height: 38px;
+  padding: 0 12px;
+
+  border: 1px solid #303945;
+  border-radius: 10px;
+
+  background: #202630;
+  color: #8f9aa7;
+
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.playerSortButtons button.active {
+  border-color: #59697d;
+
+  background: #344152;
+  color: #f5f7fa;
+}
+
+.playerStatsIdentity {
+  display: flex !important;
+  align-items: center;
+  gap: 13px;
+}
+
+.playerStatsRank {
+  display: grid !important;
+  place-items: center;
+
+  width: 42px;
+  height: 42px;
+
+  flex: 0 0 42px;
+
+  border-radius: 12px;
+
+  background: #242c36;
+  color: #9ba7b5 !important;
+
+  font-size: 13px !important;
+  font-weight: 900;
+}
+
+.playerStatsHeadline {
+  display: grid;
+  justify-items: end;
+  gap: 1px;
+}
+
+.playerStatsHeadline strong {
+  font-size: 25px;
+}
+
+.playerStatsHeadline span {
+  color: #778391;
+
+  font-size: 8px !important;
+  font-weight: 900;
+  letter-spacing: 0.09em;
+}
+
+/* AWARD SECTIONS */
+
+.awardSection {
+  display: grid;
+  gap: 13px;
+
+  margin-top: 10px;
+}
+
+.awardSection + .awardSection {
+  margin-top: 28px;
+  padding-top: 27px;
+
+  border-top: 1px solid #29313b;
+}
+
+.awardSectionHeader {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 30px;
+
+  padding: 0 2px;
+}
+
+.awardSectionHeader > div {
+  display: grid;
+  gap: 3px;
+}
+
+.awardSectionHeader > div > span {
+  color: #8a95a3;
+
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+
+.awardSectionHeader h3 {
+  margin: 0;
+
+  font-size: 25px;
+}
+
+.awardSectionHeader p {
+  max-width: 420px;
+  margin: 0;
+
+  color: #74808e;
+
+  font-size: 12px;
+  line-height: 1.45;
+  text-align: right;
+}
+
+.awardRecordNote {
+  display: block;
+
+  margin-top: 5px;
+
+  color: #8995a3;
+
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.rateAwardCard {
+  min-height: 180px;
+}
+
+/* Updated award tones */
+
+.awardTone-denda {
+  --award-color: #df8a72;
+}
+
+.awardTone-duration {
+  --award-color: #70b8d9;
+}
+
+.awardTone-rounds {
+  --award-color: #8ca8e8;
+}
+
+/* Bigger award identity */
+
+.awardCard > span {
+  font-size: 25px;
+}
+
+.awardCard h3 {
+  margin-top: 10px;
+
+  font-size: 28px;
+}
+
+.awardCard > strong {
+  font-size: 17px;
+}
+
+/* Mobile */
+
+@media (max-width: 800px) {
+  .playerSortPanel {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .playerSortButtons {
+    justify-content: flex-start;
+
+    width: 100%;
+  }
+
+  .historySessionMetaExpanded {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+
+  .awardSectionHeader {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .awardSectionHeader p {
+    max-width: none;
+
+    text-align: left;
+  }
+}
+
+@media (max-width: 520px) {
+  .playerSortButtons {
+    display: grid;
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+
+  .playerSortButtons button {
+    width: 100%;
+  }
+
+  .playerStatsCard > header {
+    align-items: flex-start;
+  }
+
+  .playerStatsHeadline {
+    min-width: 70px;
+  }
+
+  .historySessionMetaExpanded {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .awardCard > span {
+    font-size: 25px;
+  }
+
+  .awardCard h3 {
+    font-size: 23px;
+  }
+}
+
+/* ==============================
+   COMBINED ALL-TIME AWARDS
+================================ */
+
+.combinedAwardCard {
+  grid-column: span 1;
+
+  padding: 22px;
+}
+
+.combinedAwardDescription {
+  margin: 8px 0 17px !important;
+
+  color: #7f8b99 !important;
+
+  font-size: 12px !important;
+  line-height: 1.45 !important;
+}
+
+.combinedAwardMetrics {
+  display: grid;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  overflow: hidden;
+
+  border: 1px solid #2b343f;
+  border-radius: 14px;
+
+  background: #11151b;
+}
+
+.combinedAwardMetric {
+  min-width: 0;
+
+  padding: 15px 16px;
+}
+
+.combinedAwardMetric +
+.combinedAwardMetric {
+  border-left:
+    1px solid #2b343f;
+}
+
+.combinedAwardMetric small {
+  display: block;
+
+  margin-bottom: 6px;
+
+  color: var(--award-color);
+
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 900;
+  letter-spacing: 0.09em;
+}
+
+.combinedAwardMetric h3 {
+  margin: 0 0 3px;
+
+  overflow-wrap: anywhere;
+
+  font-size: 23px;
+}
+
+.combinedAwardMetric strong {
+  display: block;
+
+  color: var(--award-color);
+
+  font-size: 15px;
+}
+
+.combinedAwardMetric em {
+  display: block;
+
+  margin-top: 5px;
+
+  color: #778493;
+
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 750;
+}
+
+/* Raja Session */
+.awardTone-session {
+  --award-color: #75c6a7;
+}
+
+@media (max-width: 620px) {
+  .combinedAwardMetrics {
+    grid-template-columns: 1fr;
+  }
+
+  .combinedAwardMetric +
+  .combinedAwardMetric {
+    border-top:
+      1px solid #2b343f;
+
+    border-left: 0;
+  }
+
+  .combinedAwardMetric h3 {
+    font-size: 21px;
+  }
+}
+
+/* ==============================
+   CLEAN SINGLE-SESSION WINNERS
+================================ */
+
+.sessionRecordWinners {
+  display: grid;
+  gap: 7px;
+
+  margin: 10px 0 8px;
+}
+
+.sessionRecordWinner {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+
+  min-width: 0;
+
+  padding: 9px 11px;
+
+  border-radius: 10px;
+
+  background: #11151b;
+}
+
+.sessionRecordWinner h3 {
+  min-width: 0;
+  margin: 0;
+
+  overflow: hidden;
+
+  font-size: 22px;
+  line-height: 1.15;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sessionRecordWinner > span {
+  flex: 0 0 auto;
+
+  color: #82909f;
+
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+/* Keep the record value visually
+   separate from the winner rows. */
+.rateAwardCard > .sessionRecordWinners + strong {
+  display: block;
+
+  margin-top: 7px;
+}
+
+/* On small screens, let the date sit
+   underneath instead of crushing names. */
+@media (max-width: 520px) {
+  .sessionRecordWinner {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .sessionRecordWinner h3 {
+    width: 100%;
+
+    overflow: visible;
+    white-space: normal;
+  }
+}
+
+/* ==============================
+   CLEAN ALL-TIME TIED WINNERS
+   combined award CSS.
+================================ */
+
+.combinedWinnerList {
+  display: grid;
+  gap: 5px;
+
+  margin: 2px 0 7px;
+}
+
+.combinedWinnerRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+
+  min-width: 0;
+}
+
+.combinedWinnerRow h3 {
+  min-width: 0;
+  margin: 0;
+
+  overflow: hidden;
+
+  font-size: 22px;
+  line-height: 1.18;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.combinedWinnerRow > span {
+  flex: 0 0 auto;
+
+  color: #7f8b99;
+
+  font-size: 10px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+/* Keep the shared record value
+   visually separate from tied names. */
+
+.combinedAwardMetric >
+.combinedWinnerList + strong {
+  margin-top: 5px;
+}
+
+/* If many people share a record,
+   the card grows vertically instead
+   of forcing names onto one line. */
+
+@media (max-width: 520px) {
+  .combinedWinnerRow {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 1px;
+  }
+
+  .combinedWinnerRow h3 {
+    width: 100%;
+
+    overflow: visible;
+    white-space: normal;
+  }
+}
+
+/* ==============================
+   PER-SESSION AWARDS
+================================ */
+
+.historySessionActions {
+  display: grid;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+  gap: 10px;
+
+  margin-top: 14px;
+}
+
+.historySessionActions
+.historyRaceButton,
+.historySessionActions
+.historyAwardsButton {
+  width: 100%;
+  min-height: 58px;
+  margin-top: 0;
+
+  border: 0;
+  border-radius: 14px;
+
+  font-weight: 850;
+}
+
+.historyAwardsButton {
+  background: #26382f;
+  color: #91d5aa;
+}
+
+.historyAwardsButton:hover {
+  background: #2d4437;
+}
+
+.sessionAwardsPage {
+  max-width: 1100px;
+}
+
+.sessionAwardsSummary {
+  display: grid;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+  gap: 10px;
+
+  margin-bottom: 18px;
+}
+
+.sessionAwardsSummary > div {
+  padding: 15px 17px;
+
+  border: 1px solid #29313b;
+  border-radius: 14px;
+
+  background: #151a21;
+}
+
+.sessionAwardsSummary span {
+  display: block;
+
+  margin-bottom: 4px;
+
+  color: #788493;
+
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+
+.sessionAwardsSummary strong {
+  font-size: 20px;
+}
+
+.sessionOwnAwardGrid {
+  margin-top: 2px;
+}
+
+.sessionOwnAwardGrid
+.awardCard {
+  min-height: 190px;
+}
+
+@media (max-width: 600px) {
+  .historySessionActions {
+    grid-template-columns: 1fr;
+  }
+
+  .sessionAwardsSummary {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* ==============================
+   PLAYER SORT STAT HIGHLIGHT
+================================ */
+
+/* Grid statistic selected by the
+   active player-sort button. */
+.playerStatGrid > div.sortStatHighlight {
+  position: relative;
+
+  border:
+    1px solid rgba(222, 181, 88, 0.62);
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(222, 181, 88, 0.11),
+      #11151b 62%
+    );
+
+  box-shadow:
+    inset 0 0 0 1px
+      rgba(222, 181, 88, 0.05);
+}
+
+.playerStatGrid >
+div.sortStatHighlight > span {
+  color: #c7a755;
+}
+
+.playerStatGrid >
+div.sortStatHighlight > strong {
+  color: #f0c75e;
+}
+
+/* TOTAL PTS lives in the card header
+   rather than the stat grid. */
+.playerStatsHeadline.sortStatHighlight {
+  min-width: 92px;
+  padding: 9px 11px;
+
+  border:
+    1px solid rgba(222, 181, 88, 0.62);
+  border-radius: 12px;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(222, 181, 88, 0.12),
+      rgba(17, 21, 27, 0.78)
+    );
+}
+
+.playerStatsHeadline.sortStatHighlight
+strong {
+  color: #f0c75e;
+}
+
+.playerStatsHeadline.sortStatHighlight
+span {
+  color: #c7a755;
+}
+
+/* ==============================
+   MVP TAB
+================================ */
+
+.mvpPage {
+  display: grid;
+  gap: 18px;
+}
+
+.mvpIntro {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 30px;
+
+  padding: 4px 2px 2px;
+}
+
+.mvpIntro > div:first-child > span {
+  color: #e0b65c;
+
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.11em;
+}
+
+.mvpIntro h2 {
+  margin: 5px 0 6px;
+
+  font-size: 31px;
+}
+
+.mvpIntro p {
+  max-width: 650px;
+  margin: 0;
+
+  color: #8994a2;
+  line-height: 1.5;
+}
+
+.mvpFormula {
+  display: grid;
+  grid-template-columns:
+    repeat(2, minmax(0, auto));
+  gap: 6px 14px;
+
+  padding: 14px 16px;
+
+  border: 1px solid #303844;
+  border-radius: 14px;
+
+  background: #151a21;
+}
+
+.mvpFormula > span {
+  grid-column: 1 / -1;
+
+  color: #7c8795;
+
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+
+.mvpFormula strong {
+  color: #c9d2dc;
+
+  font-size: 12px;
+}
+
+.mvpEligibility {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 22px;
+
+  padding: 14px 16px;
+
+  border: 1px solid #3a3322;
+  border-radius: 14px;
+
+  background: #1b1913;
+}
+
+.mvpEligibility span {
+  flex: 0 0 auto;
+
+  color: #d9ae4b;
+
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+
+.mvpEligibility p {
+  margin: 0;
+
+  color: #9a8d6c;
+
+  font-size: 12px;
+  line-height: 1.45;
+  text-align: right;
+}
+
+.mvpLeaderboard {
+  display: grid;
+  gap: 13px;
+}
+
+.mvpCard {
+  padding: 20px;
+
+  border: 1px solid #2d3641;
+  border-radius: 18px;
+
+  background: #171c24;
+}
+
+.mvpCard.mvpLeader {
+  border-color: #5d4d27;
+
+  box-shadow:
+    inset 4px 0 0 #d9ae4b;
+}
+
+.mvpCard > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+
+  margin-bottom: 16px;
+}
+
+.mvpIdentity {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+}
+
+.mvpIdentity > span {
+  display: grid;
+  place-items: center;
+
+  width: 42px;
+  height: 42px;
+
+  border-radius: 12px;
+
+  background: #252d37;
+  color: #9aa6b5;
+
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.mvpIdentity h3 {
+  margin: 0 0 3px;
+
+  font-size: 26px;
+}
+
+.mvpIdentity small {
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.09em;
+}
+
+.mvpProvisional {
+  color: #c99963;
+}
+
+.mvpQualified {
+  color: #75c895;
+}
+
+.mvpScore {
+  display: grid;
+  justify-items: end;
+}
+
+.mvpScore strong {
+  color: #e0b65c;
+
+  font-size: 36px;
+  line-height: 1;
+}
+
+.mvpScore span {
+  margin-top: 3px;
+
+  color: #9d8245;
+
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+
+.mvpComponents {
+  display: grid;
+  grid-template-columns:
+    repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.mvpComponents > div {
+  min-width: 0;
+
+  padding: 14px;
+
+  border-radius: 13px;
+
+  background: #11151b;
+}
+
+.mvpComponents span {
+  display: block;
+
+  margin-bottom: 5px;
+
+  color: #788493;
+
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.09em;
+}
+
+.mvpComponents strong {
+  display: block;
+
+  margin-bottom: 4px;
+
+  font-size: 23px;
+}
+
+.mvpComponents small {
+  color: #7f8b99;
+
+  font-size: 10px;
+  line-height: 1.35;
+}
+
+.mvpSample {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+
+  margin-top: 11px;
+}
+
+.mvpSample span {
+  padding: 5px 8px;
+
+  border-radius: 8px;
+
+  background: #222a34;
+  color: #8d99a7;
+
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.mvpMethodNote {
+  padding: 15px 17px;
+
+  border: 1px solid #2c3540;
+  border-radius: 14px;
+
+  background: #131820;
+}
+
+.mvpMethodNote strong {
+  color: #9aa6b5;
+
+  font-size: 10px;
+  letter-spacing: 0.09em;
+}
+
+.mvpMethodNote p {
+  margin: 6px 0 0;
+
+  color: #778493;
+
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+@media (max-width: 850px) {
+  .mvpIntro {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .mvpComponents {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+
+  .mvpEligibility {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .mvpEligibility p {
+    text-align: left;
+  }
+}
+
+@media (max-width: 600px) {
+  .historyTabs {
+    grid-template-columns:
+      repeat(2, 1fr);
+  }
+
+  .mvpComponents {
+    grid-template-columns: 1fr;
+  }
+
+  .mvpCard > header {
+    align-items: flex-start;
+  }
+
+  .mvpScore strong {
+    font-size: 30px;
+  }
+}
+
+/* ==============================
+   MVP QUALIFICATION TICKS
+================================ */
+
+.mvpSample span.complete {
+  background: #1d3025;
+  color: #7fd19a;
+}
+
+/* ==============================
+   MVP PODIUM
+================================ */
+
+.mvpPodiumSection {
+  padding: 22px 22px 0;
+
+  border: 1px solid #303844;
+  border-radius: 18px;
+
+  background:
+    radial-gradient(
+      circle at 50% 0%,
+      rgba(217, 174, 75, 0.11),
+      transparent 46%
+    ),
+    #151a21;
+}
+
+.mvpPodiumHeader {
+  text-align: center;
+}
+
+.mvpPodiumHeader > span,
+.mvpLeaderboardHeader > span {
+  color: #d9ae4b;
+
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.11em;
+}
+
+.mvpPodiumHeader h3,
+.mvpLeaderboardHeader h3 {
+  margin: 4px 0 0;
+
+  font-size: 25px;
+}
+
+.mvpPodium {
+  display: grid;
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr));
+  align-items: end;
+  gap: 14px;
+
+  max-width: 900px;
+  margin: 30px auto 0;
+}
+
+.mvpPodiumSlot {
+  display: grid;
+  grid-template-rows:
+    auto auto auto;
+  align-items: end;
+
+  min-width: 0;
+}
+
+.mvpPodiumPlayer {
+  position: relative;
+
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+
+  padding: 17px 12px 14px;
+
+  border: 1px solid #313a46;
+  border-radius: 15px 15px 0 0;
+
+  background: #1b212a;
+
+  text-align: center;
+}
+
+.mvpPodiumPlayer > strong {
+  max-width: 100%;
+
+  overflow: hidden;
+
+  font-size: 22px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mvpPodiumPlayer > small {
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 0.09em;
+}
+
+.mvpMedal {
+  display: grid;
+  place-items: center;
+
+  width: 38px;
+  height: 38px;
+
+  margin-top: -37px;
+
+  border: 3px solid #151a21;
+  border-radius: 50%;
+
+  background: #596473;
+  color: #f5f7fa;
+
+  font-size: 16px;
+  font-weight: 950;
+}
+
+.mvpPodiumScore {
+  display: grid;
+  justify-items: center;
+
+  padding: 13px 10px;
+
+  border-right: 1px solid #313a46;
+  border-left: 1px solid #313a46;
+
+  background: #11151b;
+}
+
+.mvpPodiumScore strong {
+  font-size: 31px;
+  line-height: 1;
+}
+
+.mvpPodiumScore span {
+  margin-top: 4px;
+
+  color: #7e8997;
+
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+
+.mvpPodiumBlock {
+  display: grid;
+  place-items: center;
+
+  min-height: 128px;
+
+  border-radius: 0 0 10px 10px;
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255,255,255,0.045),
+      rgba(255,255,255,0.01)
+    ),
+    #29323d;
+}
+
+.mvpPodiumBlock span {
+  color: #cbd3dc;
+
+  font-size: 33px;
+  font-weight: 950;
+}
+
+/* #1 in the middle, tallest and gold */
+
+.mvpPodiumSlot.rank1
+.mvpPodiumPlayer {
+  border-color: #6b582a;
+
+  background:
+    linear-gradient(
+      180deg,
+      #262317,
+      #1d1d1b
+    );
+}
+
+.mvpPodiumSlot.rank1
+.mvpMedal {
+  background: #d9ae4b;
+  color: #1a160b;
+}
+
+.mvpPodiumSlot.rank1
+.mvpPodiumScore strong {
+  color: #e8bd57;
+}
+
+.mvpPodiumSlot.rank1
+.mvpPodiumBlock {
+  min-height: 190px;
+
+  background:
+    linear-gradient(
+      180deg,
+      #6c5624,
+      #3c311b
+    );
+}
+
+.mvpPodiumSlot.rank1
+.mvpPodiumBlock span {
+  color: #f1c969;
+}
+
+/* #2 silver */
+
+.mvpPodiumSlot.rank2
+.mvpMedal {
+  background: #9ca8b5;
+  color: #171b20;
+}
+
+.mvpPodiumSlot.rank2
+.mvpPodiumScore strong {
+  color: #c8d0d9;
+}
+
+.mvpPodiumSlot.rank2
+.mvpPodiumBlock {
+  min-height: 145px;
+
+  background:
+    linear-gradient(
+      180deg,
+      #48535f,
+      #303a45
+    );
+}
+
+/* #3 bronze */
+
+.mvpPodiumSlot.rank3
+.mvpMedal {
+  background: #ba8058;
+  color: #1b120c;
+}
+
+.mvpPodiumSlot.rank3
+.mvpPodiumScore strong {
+  color: #d69a70;
+}
+
+.mvpPodiumSlot.rank3
+.mvpPodiumBlock {
+  min-height: 112px;
+
+  background:
+    linear-gradient(
+      180deg,
+      #5d4031,
+      #352a25
+    );
+}
+
+.mvpLeaderboardSection {
+  display: grid;
+  gap: 13px;
+
+  margin-top: 2px;
+}
+
+.mvpLeaderboardHeader {
+  padding: 0 2px;
+}
+
+/* Make the #1 detailed card a little
+   quieter now that the podium is the hero. */
+
+.mvpCard.mvpLeader {
+  border-color: #3c4652;
+
+  box-shadow: none;
+}
+
+/* Tablet / phone */
+
+@media (max-width: 760px) {
+  .mvpPodiumSection {
+    padding: 18px 12px 0;
+  }
+
+  .mvpPodium {
+    gap: 7px;
+
+    margin-top: 28px;
+  }
+
+  .mvpPodiumPlayer {
+    padding:
+      14px 7px 11px;
+  }
+
+  .mvpPodiumPlayer > strong {
+    font-size: 17px;
+  }
+
+  .mvpMedal {
+    width: 32px;
+    height: 32px;
+
+    margin-top: -31px;
+
+    font-size: 13px;
+  }
+
+  .mvpPodiumScore strong {
+    font-size: 24px;
+  }
+
+  .mvpPodiumBlock span {
+    font-size: 27px;
+  }
+
+  .mvpPodiumSlot.rank1
+  .mvpPodiumBlock {
+    min-height: 155px;
+  }
+
+  .mvpPodiumSlot.rank2
+  .mvpPodiumBlock {
+    min-height: 118px;
+  }
+
+  .mvpPodiumSlot.rank3
+  .mvpPodiumBlock {
+    min-height: 90px;
+  }
+}
+
+@media (max-width: 520px) {
+  .mvpPodium {
+    grid-template-columns:
+      repeat(3, minmax(0, 1fr));
+  }
+
+  .mvpPodiumPlayer > strong {
+    font-size: 14px;
+  }
+
+  .mvpPodiumPlayer > small {
+    font-size: 6px;
+  }
+
+  .mvpPodiumScore {
+    padding:
+      10px 4px;
+  }
+
+  .mvpPodiumScore strong {
+    font-size: 20px;
+  }
+}
+
+
+/* ==============================
+   STANDARD ROUND — QUICK RANK
+   Round CSS.
+================================ */
+
+.standardModeBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+
+  max-width: 760px;
+  margin: 0 auto 18px;
+  padding: 14px 16px;
+
+  border: 1px solid #2c3540;
+  border-radius: 15px;
+
+  background: #151a21;
+}
+
+.standardModeBar > div {
+  display: grid;
+  gap: 3px;
+}
+
+.standardModeBar > div > span {
+  color: #7f8b99;
+
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+
+.standardModeBar > div > strong {
+  font-size: 16px;
+}
+
+.standardModeButton {
+  flex: 0 0 auto;
+
+  min-height: 40px;
+  padding: 0 14px;
+
+  border: 1px solid #3a4552;
+  border-radius: 10px;
+
+  background: #252d38;
+  color: #dfe5eb;
+
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.quickRankPanel {
+  position: relative;
+
+  max-width: 760px;
+  margin: 0 auto 18px;
+}
+
+.quickRankList {
+  display: grid;
+
+  margin: 0;
+  padding: 0;
+
+  list-style: none;
+}
+
+.quickRankItem {
+  position: relative;
+
+  margin: 0;
+  padding: 0;
+
+  list-style: none;
+
+  touch-action: none;
+}
+
+.quickRankCard {
+  display: grid;
+  grid-template-columns:
+    54px minmax(0, 1fr) auto 30px;
+  align-items: center;
+  gap: 13px;
+
+  min-height: 84px;
+  padding: 12px 16px;
+
+  border: 1px solid #303a46;
+  border-radius: 16px;
+
+  background: #1a2028;
+
+  cursor: grab;
+  user-select: none;
+}
+
+.quickRankCard:active {
+  cursor: grabbing;
+}
+
+.quickRankNumber {
+  display: grid;
+  place-items: center;
+
+  width: 42px;
+  height: 42px;
+
+  border-radius: 12px;
+
+  background: #252e39;
+  color: #9ba8b6;
+
+  font-size: 17px;
+  font-weight: 950;
+}
+
+.quickRankPlayer {
+  display: grid;
+  gap: 3px;
+
+  min-width: 0;
+}
+
+.quickRankPlayer strong {
+  overflow: hidden;
+
+  font-size: 22px;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.quickRankPlayer span {
+  color: #778493;
+
+  font-size: 9px;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.quickRankPoints {
+  display: grid;
+  justify-items: end;
+}
+
+.quickRankPoints strong {
+  font-size: 25px;
+}
+
+.quickRankPoints span {
+  color: #788493;
+
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+
+.quickRankDrag {
+  color: #647181;
+
+  font-size: 20px;
+  font-weight: 900;
+}
+
+/*
+  The small divider between cards is
+  the "connect these two" control.
+*/
+.rankTieConnector {
+  position: relative;
+  z-index: 3;
+
+  display: grid;
+  place-items: center;
+
+  width: calc(100% - 36px);
+  height: 24px;
+  margin: -1px 18px;
+
+  border: 0;
+
+  background: transparent;
+}
+
+.rankTieConnector::before {
+  content: '';
+
+  position: absolute;
+
+  left: 0;
+  right: 0;
+  top: 50%;
+
+  height: 1px;
+
+  background: #27303a;
+}
+
+.rankTieConnector > span {
+  position: relative;
+  z-index: 1;
+
+  display: grid;
+  place-items: center;
+
+  min-width: 30px;
+  height: 20px;
+  padding: 0 7px;
+
+  border: 1px solid #34404d;
+  border-radius: 999px;
+
+  background: #11161c;
+  color: #7e8997;
+
+  font-size: 10px;
+  font-weight: 950;
+  letter-spacing: 0.05em;
+}
+
+.rankTieConnector.active {
+  height: 30px;
+
+  margin-top: -4px;
+  margin-bottom: -4px;
+
+  border-right: 2px solid #856fd0;
+  border-left: 2px solid #856fd0;
+
+  background:
+    rgba(133, 111, 208, 0.08);
+}
+
+.rankTieConnector.active::before {
+  background: #856fd0;
+}
+
+.rankTieConnector.active > span {
+  border-color: #856fd0;
+
+  background: #302747;
+  color: #c9b8f3;
+}
+
+.quickRankCard.tiedWithNext,
+.quickRankCard.tiedWithPrevious {
+  border-color: #6757a1;
+
+  background:
+    linear-gradient(
+      90deg,
+      rgba(116, 91, 180, 0.08),
+      #1a2028 45%
+    );
+}
+
+.quickRankCard.tiedWithNext {
+  border-bottom-right-radius: 8px;
+  border-bottom-left-radius: 8px;
+}
+
+.quickRankCard.tiedWithPrevious {
+  border-top-right-radius: 8px;
+  border-top-left-radius: 8px;
+}
+
+.quickRankCard.tiedWithNext
+.quickRankPlayer span,
+.quickRankCard.tiedWithPrevious
+.quickRankPlayer span {
+  color: #aa98db;
+}
+
+.quickRankHint {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 16px;
+
+  margin-top: 13px;
+
+  color: #74808e;
+
+  font-size: 10px;
+  font-weight: 750;
+}
+
+.quickRankToast {
+  position: sticky;
+  bottom: 18px;
+  z-index: 10;
+
+  width: fit-content;
+  max-width: calc(100% - 24px);
+
+  margin: 14px auto 0;
+  padding: 9px 13px;
+
+  border: 1px solid #5d4b8d;
+  border-radius: 999px;
+
+  background: #251f34;
+  color: #cdbcf3;
+
+  font-size: 11px;
+  font-weight: 850;
+  text-align: center;
+}
+
+/* The old exact-score mode remains
+   secondary, not the default. */
+
+.nextScorePlayer:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+@media (max-width: 620px) {
+  .standardModeBar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .standardModeButton {
+    width: 100%;
+  }
+
+  .quickRankCard {
+    grid-template-columns:
+      44px minmax(0, 1fr) auto 24px;
+
+    min-height: 76px;
+    padding: 10px 12px;
+  }
+
+  .quickRankNumber {
+    width: 36px;
+    height: 36px;
+
+    font-size: 15px;
+  }
+
+  .quickRankPlayer strong {
+    font-size: 18px;
+  }
+
+  .quickRankPoints strong {
+    font-size: 21px;
+  }
+}
+
+/* ==============================
+   PENALTY CONFIRMATION MODAL
+================================ */
+
+.penaltyConfirmOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+
+  display: grid;
+  place-items: center;
+
+  padding: 22px;
+
+  background: rgba(5, 8, 12, 0.76);
+  backdrop-filter: blur(8px);
+}
+
+.penaltyConfirmDialog {
+  width: min(100%, 520px);
+  padding: 28px;
+
+  border: 1px solid #4a3035;
+  border-radius: 22px;
+
+  background: #171c24;
+
+  box-shadow:
+    0 24px 70px rgba(0, 0, 0, 0.45);
+}
+
+.penaltyConfirmLabel {
+  color: #dc7d87;
+
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+
+.penaltyConfirmDialog h2 {
+  margin: 8px 0 22px;
+
+  font-size: 30px;
+  line-height: 1.15;
+}
+
+.penaltyConfirmPoints {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 12px;
+
+  margin-bottom: 22px;
+}
+
+.penaltyConfirmPoints > div:not(
+  .penaltyConfirmArrow
+) {
+  padding: 16px;
+
+  border-radius: 14px;
+
+  background: #11151b;
+}
+
+.penaltyConfirmPoints span {
+  display: block;
+
+  margin-bottom: 5px;
+
+  color: #7e8997;
+
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+
+.penaltyConfirmPoints strong {
+  font-size: 30px;
+}
+
+.penaltyConfirmArrow {
+  color: #697583;
+
+  font-size: 22px;
+  font-weight: 900;
+}
+
+.penaltyConfirmActions {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr;
+  gap: 10px;
+}
+
+.penaltyConfirmActions button {
+  min-height: 58px;
+
+  border-radius: 14px;
+
+  font-size: 15px;
+  font-weight: 850;
+}
+
+.penaltyCancelButton {
+  border: 1px solid #39434f;
+
+  background: #232a33;
+  color: #b5bfca;
+}
+
+.penaltyConfirmButton {
+  border: 0;
+
+  background: #6a3037;
+  color: #f4dfe2;
+}
+
+.penaltyConfirmButton:hover {
+  background: #793740;
+}
+
+.penaltyConfirmActions button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (max-width: 520px) {
+  .penaltyConfirmDialog {
+    padding: 22px;
+  }
+
+  .penaltyConfirmDialog h2 {
+    font-size: 25px;
+  }
+
+  .penaltyConfirmActions {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ==============================
+   MAIN SCOREBOARD POLISH
+================================ */
+
+/* ---------- HEADER ---------- */
+
+.gameHeader.gameHeaderPolished {
+  display: grid;
+  grid-template-columns:
+    minmax(190px, 1fr)
+    auto
+    minmax(190px, 1fr);
+
+  align-items: center;
+  gap: 24px;
+
+  margin-bottom: 30px;
+}
+
+.gameRoundHero {
+  display: flex;
+  align-items: baseline;
+  gap: 11px;
+
+  justify-self: start;
+}
+
+.gameRoundHero > span {
+  color: #758292;
+
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: 0.14em;
+}
+
+.gameRoundHero > strong {
+  color: #f5f7fa;
+
+  font-size: 48px;
+  font-weight: 950;
+  line-height: 0.95;
+  letter-spacing: -0.045em;
+}
+
+.gameBrand {
+  justify-self: center;
+
+  text-align: center;
+}
+
+.gameBrand h1 {
+  margin: 0 !important;
+
+  font-size: 45px !important;
+  font-weight: 950;
+  line-height: 1 !important;
+  letter-spacing: -0.045em !important;
+}
+
+.gameHeaderPolished
+.gameHeaderActions {
+  justify-self: end;
+
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.gameHeaderPolished
+.gameHeaderActions button {
+  min-height: 46px;
+  padding: 0 17px;
+
+  border-radius: 13px;
+
+  font-size: 13px;
+  font-weight: 800;
+}
+
+/* ---------- SCOREBOARD ---------- */
+
+.standingRow.leader {
+  border-color: #4b4330;
+
+  background:
+    linear-gradient(
+      90deg,
+      rgba(215, 174, 81, 0.075),
+      #171c24 25%
+    );
+}
+
+.standingRow.leader::before {
+  content: '';
+
+  position: absolute;
+  top: 17px;
+  bottom: 17px;
+  left: -1px;
+
+  width: 4px;
+
+  border-radius: 0 999px 999px 0;
+
+  background: #d9ae4b;
+}
+
+.standingRow.leader
+.standingRank {
+  background: #342d1e;
+  color: #e0b75b;
+}
+
+.standingNameLine {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  min-width: 0;
+}
+
+.standingNameLine h2 {
+  margin: 0;
+
+  overflow: hidden;
+
+  font-size: 26px;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---------- WAITING ---------- */
+
+.gameWaiting {
+  min-height: 56px;
+
+  margin-top: 12px;
+  padding: 13px 18px;
+
+  border-radius: 13px;
+}
+
+.gameWaiting span {
+  font-size: 10px;
+}
+
+.gameWaiting strong {
+  color: #aeb8c4;
+
+  font-size: 14px;
+}
+
+/* ---------- MAIN ACTIONS ---------- */
+
+.gameActions > button {
+  min-height: 72px;
+
+  border-radius: 17px;
+
+  font-size: 17px;
+  font-weight: 900;
+}
+
+.gameActions .penaltyAction {
+  grid-column: 3;
+
+  justify-self: end;
+
+  width: min(100%, 185px);
+  min-height: 48px;
+
+  margin-top: 2px;
+
+  border-radius: 13px;
+
+  font-size: 13px;
+}
+
+/* ---------- NEW SESSION BRAND ---------- */
+
+/* ---------- TABLET / MOBILE ---------- */
+
+@media (max-width: 820px) {
+  .gameHeader.gameHeaderPolished {
+    grid-template-columns:
+      1fr auto;
+    gap: 16px;
+  }
+
+  .gameBrand {
+    grid-column: 1 / -1;
+    grid-row: 1;
+
+    justify-self: center;
+  }
+
+  .gameRoundHero {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .gameHeaderPolished
+  .gameHeaderActions {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  .gameBrand h1 {
+    font-size: 39px !important;
+  }
+
+  .gameRoundHero > strong {
+    font-size: 40px;
+  }
+}
+
+@media (max-width: 620px) {
+  .gameHeaderPolished
+  .gameHeaderActions {
+    gap: 5px;
+  }
+
+  .gameHeaderPolished
+  .gameHeaderActions button {
+    min-height: 40px;
+    padding: 0 10px;
+
+    font-size: 11px;
+  }
+
+  .standingRow {
+    grid-template-columns:
+      42px minmax(0, 1fr) 72px;
+
+    min-height: 90px;
+    padding: 13px;
+  }
+
+  .standingRank {
+    width: 33px;
+    height: 33px;
+
+    font-size: 15px;
+  }
+
+  .standingNameLine {
+    gap: 6px;
+  }
+
+  .standingNameLine h2 {
+    font-size: 20px;
+  }
+
+  .standingPlayer p {
+    font-size: 9px;
+  }
+
+  .standingPoints strong {
+    font-size: 38px;
+  }
+
+  .gameActions {
+    grid-template-columns:
+      1fr !important;
+  }
+
+  .gameActions .penaltyAction {
+    grid-column: 1;
+
+    justify-self: stretch;
+
+    width: 100%;
+  }
+}
+
+/* ==============================
+   DELETE SAVED SESSION
+================================ */
+
+.historyDeleteArea {
+  display: flex;
+  justify-content: flex-end;
+
+  margin-top: 11px;
+}
+
+.historyDeleteArea > span {
+  color: #697583;
+
+  font-size: 10px;
+  font-weight: 750;
+}
+
+.historyDeleteButton {
+  min-height: 38px;
+  padding: 0 13px;
+
+  border: 1px solid #51353a;
+  border-radius: 10px;
+
+  background: transparent;
+  color: #bd727b;
+
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.historyDeleteButton:hover {
+  border-color: #70434a;
+
+  background: #291b1e;
+  color: #e0929b;
+}
+
+/* Confirmation */
+
+.historyDeleteOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+
+  display: grid;
+  place-items: center;
+
+  padding: 22px;
+
+  background:
+    rgba(5, 8, 12, 0.78);
+
+  backdrop-filter:
+    blur(8px);
+}
+
+.historyDeleteDialog {
+  width: min(
+    100%,
+    540px
+  );
+
+  padding: 28px;
+
+  border:
+    1px solid #51343a;
+  border-radius: 22px;
+
+  background: #171c24;
+
+  box-shadow:
+    0 24px 70px
+    rgba(0, 0, 0, 0.48);
+}
+
+.historyDeleteLabel {
+  color: #dc7d87;
+
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+
+.historyDeleteDialog h2 {
+  margin: 7px 0 8px;
+
+  font-size: 30px;
+}
+
+.historyDeleteDialog > p {
+  margin:
+    0 0 20px;
+
+  color: #8b97a5;
+
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.historyDeleteSummary {
+  display: grid;
+  grid-template-columns:
+    repeat(2, 1fr);
+  gap: 9px;
+
+  margin-bottom: 20px;
+}
+
+.historyDeleteSummary > div {
+  padding: 14px 15px;
+
+  border-radius: 13px;
+
+  background: #11151b;
+}
+
+.historyDeleteSummary span {
+  display: block;
+
+  margin-bottom: 4px;
+
+  color: #778493;
+
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+
+.historyDeleteSummary strong {
+  font-size: 20px;
+}
+
+.historyDeleteActions {
+  display: grid;
+  grid-template-columns:
+    1fr 1.4fr;
+  gap: 10px;
+}
+
+.historyDeleteActions button {
+  min-height: 58px;
+
+  border-radius: 14px;
+
+  font-size: 14px;
+  font-weight: 850;
+}
+
+.historyDeleteCancel {
+  border:
+    1px solid #39434f;
+
+  background: #232a33;
+  color: #b5bfca;
+}
+
+.historyDeleteConfirm {
+  border: 0;
+
+  background: #6a3037;
+  color: #f4dfe2;
+}
+
+.historyDeleteConfirm:hover {
+  background: #793740;
+}
+
+.historyDeleteActions
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (max-width: 520px) {
+  .historyDeleteDialog {
+    padding: 22px;
+  }
+
+  .historyDeleteActions {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ==============================
+   PLAYER IDENTITY + NICKNAMES
+================================ */
+
+/* Player library now has Edit + Delete */
+.playerSelectActions {
+  display: grid;
+  grid-template-columns:
+    1fr 1fr;
+
+  border-left:
+    1px solid #29313c;
+}
+
+.playerSelectActions button {
+  min-width: 0;
+
+  border: 0;
+
+  background: transparent;
+  color: #687382;
+
+  font-size: 20px;
+}
+
+.playerSelectActions button +
+.playerSelectActions button {
+  border-left:
+    1px solid #29313c;
+}
+
+.editPlayer:hover {
+  color: #9ebcf1;
+}
+
+.playerSelectActions
+.deletePlayer {
+  border-left: 0;
+}
+
+.playerSelectActions
+.deletePlayer:hover {
+  color: #df8790;
+}
+
+/* Selected player may choose one
+   saved name for this session. */
+.sessionAliasPicker {
+  grid-column: 1 / -1;
+
+  display: grid;
+  grid-template-columns:
+    auto minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+
+  padding: 10px 14px;
+
+  border-top:
+    1px solid #303a47;
+
+  background: #121923;
+}
+
+.sessionAliasPicker > span {
+  color: #8290a0;
+
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+
+.sessionAliasPicker select {
+  width: 100%;
+  min-height: 38px;
+
+  padding: 0 11px;
+
+  border:
+    1px solid #3b4858;
+  border-radius: 10px;
+
+  background: #1d2631;
+  color: #f4f6f8;
+
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+/* Player editor */
+.playerEditorOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+
+  display: grid;
+  place-items: center;
+
+  padding: 22px;
+
+  background:
+    rgba(5, 8, 12, 0.78);
+
+  backdrop-filter:
+    blur(8px);
+}
+
+.playerEditorDialog {
+  width: min(
+    100%,
+    560px
+  );
+
+  padding: 28px;
+
+  border:
+    1px solid #33404e;
+  border-radius: 22px;
+
+  background: #171c24;
+
+  box-shadow:
+    0 24px 70px
+    rgba(0, 0, 0, 0.48);
+}
+
+.playerEditorLabel {
+  color: #86aee5;
+
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+
+.playerEditorDialog h2 {
+  margin:
+    6px 0 21px;
+
+  font-size: 31px;
+}
+
+.playerEditorField,
+.playerEditorNicknames {
+  display: grid;
+  gap: 8px;
+}
+
+.playerEditorField > span,
+.playerEditorNicknames > span {
+  color: #7f8b99;
+
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+
+.playerEditorField input,
+.nicknameAddRow input {
+  min-height: 48px;
+  padding: 0 13px;
+
+  border:
+    1px solid #35404d;
+  border-radius: 12px;
+
+  outline: none;
+
+  background: #11151b;
+  color: #f5f7fa;
+
+  font: inherit;
+  font-size: 15px;
+}
+
+.playerEditorField input:focus,
+.nicknameAddRow input:focus {
+  border-color: #7298c8;
+}
+
+.playerEditorNicknames {
+  margin-top: 19px;
+}
+
+.playerEditorNicknames > p {
+  margin: 2px 0;
+
+  color: #687483;
+
+  font-size: 12px;
+}
+
+.nicknameChipList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.nicknameChip {
+  display: inline-flex;
+  align-items: center;
+
+  overflow: hidden;
+
+  border:
+    1px solid #3a4755;
+  border-radius: 10px;
+
+  background: #202832;
+}
+
+.nicknameChip strong {
+  padding: 7px 9px;
+
+  font-size: 12px;
+}
+
+.nicknameChip button {
+  align-self: stretch;
+
+  min-width: 31px;
+
+  border: 0;
+  border-left:
+    1px solid #3a4755;
+
+  background: transparent;
+  color: #8491a0;
+
+  font-size: 16px;
+}
+
+.nicknameChip button:hover {
+  color: #e18b93;
+}
+
+.nicknameAddRow {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1fr) 82px;
+  gap: 8px;
+
+  margin-top: 2px;
+}
+
+.nicknameAddRow button {
+  border: 0;
+  border-radius: 12px;
+
+  background: #2d3947;
+  color: #eef2f6;
+
+  font-weight: 850;
+}
+
+.playerEditorNote {
+  margin:
+    18px 0 0;
+
+  padding: 11px 13px;
+
+  border-radius: 11px;
+
+  background: #121820;
+  color: #7d8998;
+
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.playerEditorActions {
+  display: grid;
+  grid-template-columns:
+    1fr 1.4fr;
+  gap: 9px;
+
+  margin-top: 19px;
+}
+
+.playerEditorActions button {
+  min-height: 55px;
+
+  border-radius: 13px;
+
+  font-size: 14px;
+  font-weight: 850;
+}
+
+.playerEditorCancel {
+  border:
+    1px solid #39434f;
+
+  background: #232a33;
+  color: #b5bfca;
+}
+
+.playerEditorSave {
+  border: 0;
+
+  background: #e8edf2;
+  color: #101419;
+}
+
+@media (max-width: 600px) {
+  .playerSelect {
+    grid-template-columns:
+      minmax(0, 1fr) 82px;
+  }
+
+  .sessionAliasPicker {
+    grid-template-columns: 1fr;
+    gap: 5px;
+  }
+
+  .playerEditorDialog {
+    padding: 22px;
+  }
+
+  .playerEditorActions {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ==============================
+   CARD SCORE TRIVIA
+================================ */
+
+.cardTriviaSection {
+  margin-top: 30px;
+}
+
+.cardTriviaGrid {
+  display: grid;
+  grid-template-columns:
+    repeat(
+      3,
+      minmax(0, 1fr)
+    );
+  gap: 12px;
+}
+
+.cardTriviaCard {
+  position: relative;
+
+  overflow: hidden;
+
+  min-height: 235px;
+  padding: 20px;
+
+  border:
+    1px solid #30404e;
+  border-radius: 18px;
+
+  background:
+    linear-gradient(
+      145deg,
+      #17202a,
+      #14191f
+    );
+}
+
+.cardTriviaCard::before {
+  content: '';
+
+  position: absolute;
+  top: 0;
+  left: 18px;
+  right: 18px;
+
+  height: 2px;
+
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      #74a8d8,
+      transparent
+    );
+}
+
+.cardTriviaCard > span {
+  display: block;
+
+  margin-bottom: 13px;
+
+  color: #8eb9e2;
+
+  font-size: 18px;
+  font-weight: 950;
+  letter-spacing: 0.02em;
+}
+
+.cardTriviaWinners {
+  display: grid;
+  gap: 7px;
+}
+
+.cardTriviaWinner h3 {
+  margin: 0;
+
+  color: #f2f5f8;
+
+  font-size: 21px;
+  line-height: 1.08;
+}
+
+.cardTriviaWinner small {
+  display: block;
+
+  margin-top: 4px;
+
+  color: #738294;
+
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.cardTriviaCard > strong {
+  display: block;
+
+  margin-top: 17px;
+
+  color: #dcecff;
+
+  font-size: 30px;
+  line-height: 1;
+}
+
+.cardTriviaCard > p {
+  margin:
+    12px 0 0;
+
+  color: #7d8a99;
+
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.cardTriviaEmpty {
+  padding: 24px;
+
+  border:
+    1px dashed #34414f;
+  border-radius: 16px;
+
+  color: #788594;
+
+  text-align: center;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.cardTriviaNote {
+  margin-top: 12px;
+  padding: 11px 14px;
+
+  border-radius: 12px;
+
+  background: #11171e;
+  color: #6e7b89;
+
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+@media (max-width: 900px) {
+  .cardTriviaGrid {
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0, 1fr)
+      );
+  }
+}
+
+@media (max-width: 600px) {
+  .cardTriviaGrid {
+    grid-template-columns:
+      1fr;
+  }
+
+  .cardTriviaCard {
+    min-height: 0;
+  }
+}
+
+/* ==============================
+   TABLET QUICK-RANK DRAG FIX
+   Prevent browser pull-to-refresh
+   from stealing reorder gestures.
+================================ */
+
+/*
+  JIMRAMI is an app-like interface.
+  Native pull-to-refresh is more
+  harmful than useful here.
+*/
+/*
+  The entire Quick Rank interaction
+  belongs to the reorder gesture,
+  not page scrolling.
+*/
+.quickRankPanel,
+.quickRankList,
+.quickRankItem,
+.quickRankCard {
+  touch-action: none !important;
+  overscroll-behavior: none;
+}
+
+/*
+  Avoid long-press text/image selection
+  while dragging on Android.
+*/
+.quickRankList,
+.quickRankItem,
+.quickRankCard {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* ==============================
+   SCOREBOARD — LAST WINNER,
+   TALLIES, JIM STARS & STATUS
+================================ */
+
+/* ---------- PREVIOUS WINNER ---------- */
+
+.previousWinnerBar {
+  display: grid;
+  grid-template-columns:
+    minmax(150px, auto)
+    minmax(0, 1fr)
+    38px;
+  align-items: center;
+  gap: 18px;
+
+  margin-bottom: 12px;
+  padding: 11px 15px;
+
+  border:
+    1px solid #343c47;
+  border-radius: 13px;
+
+  background:
+    linear-gradient(
+      90deg,
+      #151b22,
+      #12171d
+    );
+}
+
+.previousWinnerLabel {
+  display: grid;
+  gap: 2px;
+}
+
+.previousWinnerLabel > span {
+  color: #7d8997;
+
+  font-size: 9px;
+  font-weight: 950;
+  letter-spacing: 0.11em;
+}
+
+.previousWinnerLabel > small {
+  color: #65717f;
+
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.previousWinnerBar > strong {
+  overflow: hidden;
+
+  color: #f2f5f8;
+
+  font-size: 18px;
+  font-weight: 950;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.previousWinnerIcon {
+  display: grid;
+  place-items: center;
+
+  width: 32px;
+  height: 32px;
+
+  border-radius: 10px;
+
+  font-size: 15px;
+  font-weight: 950;
+}
+
+.previousWinnerIcon.standard {
+  background: #1c2b3a;
+  color: #83b9e8;
+}
+
+.previousWinnerIcon.jim {
+  background: #332a16;
+  color: #e2b64e;
+}
+
+/* ---------- PLAYING / WAITING ---------- */
+
+.playerStatusTag {
+  flex: 0 0 auto;
+
+  padding: 5px 8px;
+
+  border-radius: 7px;
+
+  font-size: 8px;
+  font-weight: 950;
+  letter-spacing: 0.1em;
+}
+
+.playerStatusTag.playing {
+  border:
+    1px solid #28533a;
+
+  background: #183324;
+  color: #72cf93;
+}
+
+.playerStatusTag.waiting {
+  border:
+    1px solid #5a4920;
+
+  background: #342a16;
+  color: #e2bd61;
+}
+
+/* ---------- ACHIEVEMENTS ---------- */
+
+.standingAchievements {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 11px;
+
+  min-height: 22px;
+  margin-top: 6px;
+}
+
+.standardWinTally {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+
+  min-width: 0;
+}
+
+.winMetaLabel {
+  color: #718092;
+
+  font-size: 8px;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+}
+
+.tallyGroups {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+}
+
+.tallyGroup {
+  position: relative;
+
+  display: flex;
+  align-items: center;
+  gap: 3px;
+
+  height: 18px;
+  min-width: 4px;
+}
+
+.tallyMark {
+  display: block;
+
+  width: 2px;
+  height: 15px;
+
+  border-radius: 2px;
+
+  background: #8fb7df;
+
+  transform:
+    rotate(-2deg);
+}
+
+.tallyStrike {
+  position: absolute;
+  top: 8px;
+  left: -2px;
+
+  display: block;
+
+  width: 22px;
+  height: 2px;
+
+  border-radius: 2px;
+
+  background: #8fb7df;
+
+  transform:
+    rotate(-31deg);
+  transform-origin: center;
+}
+
+.jimWinStars {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+
+  max-width: 170px;
+
+  line-height: 1;
+}
+
+.jimWinStars > span {
+  color: #e3b64b;
+
+  font-size: 15px;
+
+  filter:
+    drop-shadow(
+      0 0 4px
+      rgba(227, 182, 75, 0.15)
+    );
+}
+
+/* ---------- SMALLER SCREENS ---------- */
+
+@media (max-width: 620px) {
+  .previousWinnerBar {
+    grid-template-columns:
+      1fr auto;
+    gap: 8px 12px;
+  }
+
+  .previousWinnerLabel {
+    grid-column: 1;
+  }
+
+  .previousWinnerBar > strong {
+    grid-column: 1;
+    grid-row: 2;
+
+    font-size: 17px;
+  }
+
+  .previousWinnerIcon {
+    grid-column: 2;
+    grid-row: 1 / 3;
+  }
+
+  .standingAchievements {
+    gap: 8px;
+  }
+
+  .winMetaLabel {
+    font-size: 7px;
+  }
+
+  .tallyMark {
+    height: 13px;
+  }
+
+  .tallyGroup {
+    height: 16px;
+  }
+
+  .tallyStrike {
+    top: 7px;
+
+    width: 20px;
+  }
+
+  .jimWinStars > span {
+    font-size: 13px;
+  }
+
+  .playerStatusTag {
+    padding: 4px 6px;
+
+    font-size: 7px;
+  }
+}
+
+/* ==============================
+   SCORE TRANSITION — CURRENT
+================================ */
+
+/* Kill visual leftovers from the
+   previous transition experiment. */
+.cleanTransitionPage {
+  gap: 20px;
+}
+
+.cleanTransitionHeader {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+
+  margin-bottom: 18px;
+}
+
+.cleanTransitionHeader > div {
+  display: grid;
+  gap: 4px;
+}
+
+.cleanTransitionHeader span {
+  color: #758398;
+
+  font-size: 10px;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+}
+
+.cleanTransitionHeader h1 {
+  margin: 0;
+
+  color: #f4f7fb;
+
+  font-size: 42px;
+  font-weight: 1000;
+  line-height: 1;
+}
+
+.cleanTransitionHeader button {
+  min-height: 40px;
+  padding: 0 14px;
+
+  border: 1px solid #364252;
+  border-radius: 11px;
+
+  background: #202936;
+  color: #eef3f8;
+
+  font-size: 11px;
+  font-weight: 900;
+}
+
+/* ---------- BOARD ---------- */
+
+.cleanTransitionBoard {
+  position: relative;
+
+  width: 100%;
+}
+
+.cleanTransitionRow {
+  position: absolute;
+  left: 0;
+  right: 0;
+
+  box-sizing: border-box;
+
+  display: grid;
+  grid-template-columns:
+    50px
+    minmax(0, 1fr)
+    92px;
+
+  align-items: center;
+  gap: 16px;
+
+  height: 94px;
+  padding: 15px 20px;
+
+  overflow: visible;
+
+  border: 1px solid #2a3441;
+  border-radius: 17px;
+
+  background: #171e27;
+
+  transition:
+    top 900ms
+      cubic-bezier(
+        0.22,
+        1,
+        0.36,
+        1
+      ),
+    border-color
+      300ms ease,
+    transform
+      300ms ease;
+}
+
+.cleanTransitionRow.settled {
+  border-color: #344151;
+}
+
+.cleanTransitionRank {
+  color: #8291a5;
+
+  font-size: 23px;
+  font-weight: 950;
+
+  text-align: center;
+}
+
+.cleanTransitionMain {
+  min-width: 0;
+}
+
+.cleanTransitionNameLine {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+
+  min-width: 0;
+}
+
+.cleanTransitionNameLine h2 {
+  margin: 0;
+
+  overflow: hidden;
+
+  color: #f6f8fb;
+
+  font-size: 22px;
+  font-weight: 950;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---------- STATUS ---------- */
+
+.cleanTransitionPage
+.playerStatusTag {
+  flex: 0 0 auto;
+
+  padding: 4px 7px;
+
+  border-radius: 7px;
+
+  font-size: 7px;
+  font-weight: 950;
+  letter-spacing: 0.09em;
+}
+
+.cleanTransitionPage
+.playerStatusTag.playing {
+  border: 1px solid #28533a;
+
+  background: #183324;
+  color: #72cf93;
+}
+
+.cleanTransitionPage
+.playerStatusTag.waiting {
+  border: 1px solid #5a4920;
+
+  background: #342a16;
+  color: #e2bd61;
+}
+
+/* ---------- ACHIEVEMENTS ---------- */
+
+.cleanTransitionMeta {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+
+  min-height: 17px;
+  margin-top: 6px;
+}
+
+.scoreTally {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.scoreTallyGroup {
+  position: relative;
+
+  display: flex;
+  align-items: center;
+  gap: 3px;
+
+  height: 16px;
+}
+
+.scoreTallyMark {
+  display: block;
+
+  width: 2px;
+  height: 13px;
+
+  border-radius: 2px;
+
+  background: #8eb7e0;
+}
+
+.scoreTallyStrike {
+  position: absolute;
+  top: 7px;
+  left: -2px;
+
+  width: 20px;
+  height: 2px;
+
+  border-radius: 2px;
+
+  background: #8eb7e0;
+
+  transform:
+    rotate(-31deg);
+}
+
+.scoreJimStars {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.scoreJimStars > span {
+  color: #e3b64b;
+
+  font-size: 13px;
+  line-height: 1;
+}
+
+.scoreTally.pop,
+.scoreJimStars.pop {
+  animation:
+    achievementPop
+    650ms
+    cubic-bezier(
+      0.22,
+      1.4,
+      0.36,
+      1
+    );
+}
+
+@keyframes achievementPop {
+  0% {
+    transform:
+      scale(0.72);
+    opacity: 0.35;
+  }
+
+  60% {
+    transform:
+      scale(1.18);
+    opacity: 1;
+  }
+
+  100% {
+    transform:
+      scale(1);
+    opacity: 1;
+  }
+}
+
+/* ---------- POINTS ---------- */
+
+.cleanTransitionPoints {
+  display: grid;
+  justify-items: end;
+  align-content: center;
+  gap: 2px;
+}
+
+.cleanTransitionPoints strong {
+  color: #f4f7fa;
+
+  font-size: 44px;
+  font-weight: 1000;
+  line-height: 0.9;
+}
+
+.cleanTransitionPoints span {
+  color: #8290a2;
+
+  font-size: 8px;
+  font-weight: 950;
+  letter-spacing: 0.1em;
+}
+
+/* ---------- REWARD POP ---------- */
+
+.cleanRewardBubble {
+  position: absolute;
+  top: 10px;
+  right: 104px;
+  z-index: 5;
+
+  display: flex;
+  align-items: center;
+  gap: 7px;
+
+  padding: 5px 9px;
+
+  border-radius: 10px;
+
+  pointer-events: none;
+
+  animation:
+    rewardIn
+      300ms ease-out,
+    rewardOut
+      600ms ease-in
+      7.0s forwards;
+}
+
+.cleanRewardBubble.gain {
+  border: 1px solid #2c6546;
+
+  background: #183a29;
+  color: #83d7a1;
+}
+
+.cleanRewardBubble.loss {
+  border: 1px solid #71404a;
+
+  background: #41242a;
+  color: #ef99a4;
+}
+
+.cleanRewardBubble strong {
+  font-size: 17px;
+  font-weight: 1000;
+  line-height: 1;
+}
+
+.rewardTally {
+  color: #9cc3ea;
+
+  font-size: 17px;
+  font-weight: 1000;
+  line-height: 1;
+}
+
+.rewardStar {
+  color: #e3b64b;
+
+  font-size: 15px;
+  line-height: 1;
+}
+
+@keyframes rewardIn {
+  from {
+    opacity: 0;
+    transform:
+      translateY(5px)
+      scale(0.88);
+  }
+
+  to {
+    opacity: 1;
+    transform:
+      translateY(0)
+      scale(1);
+  }
+}
+
+@keyframes rewardOut {
+  to {
+    opacity: 0;
+    transform:
+      translateY(-8px)
+      scale(0.96);
+  }
+}
+
+/* ---------- TABLET ---------- */
+
+@media (
+  max-width: 700px
+) {
+  .cleanTransitionHeader h1 {
+    font-size: 35px;
+  }
+
+  .cleanTransitionRow {
+    grid-template-columns:
+      38px
+      minmax(0, 1fr)
+      70px;
+
+    gap: 9px;
+
+    padding:
+      13px 12px;
+  }
+
+  .cleanTransitionRank {
+    font-size: 18px;
+  }
+
+  .cleanTransitionNameLine h2 {
+    font-size: 18px;
+  }
+
+  .cleanTransitionPoints strong {
+    font-size: 35px;
+  }
+
+  .cleanRewardBubble {
+    right: 76px;
+  }
+}
+
+/* Very small phones: stack History tabs only when truly necessary. */
+@media (max-width: 420px) {
+  .historyTabs {
+    grid-template-columns:
+      1fr;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+:root {
+  font-family:
+    Inter,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+
+  color: #f5f7fa;
+  background: #0d1015;
+  font-synthesis: none;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  min-width: 320px;
+  min-height: 100%;
+  margin: 0;
+  overscroll-behavior-y: none;
+}
+
+body {
+  background: #0d1015;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+.app {
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 28px;
+}
+
+/* HEADER */
+
+.setupHeader {
+  display: grid;
+  grid-template-columns:
+    1fr auto 1fr;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 28px;
+}
+
+.setupHeader > h1 {
+  grid-column: 2;
+  justify-self: center;
+
+  margin: 0;
+  font-size: 44px;
+  letter-spacing: -0.045em;
+  text-align: center;
+}
+
+.setupHeaderActions {
+  grid-column: 3;
+  justify-self: end;
+}
+
+.setupHeader span {
+  color: #8a95a4;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+@media (max-width: 700px) {
+  .setupHeader {
+    grid-template-columns:
+      1fr auto;
+    gap: 14px;
+  }
+
+  .setupHeader > h1 {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+
+  .setupHeaderActions {
+    grid-column: 2;
+    grid-row: 2;
+  }
+}
+
+/* ADD PLAYER */
+
+.addPlayer {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.addPlayer input {
+  min-width: 0;
+  min-height: 60px;
+  padding: 0 18px;
+  border: 1px solid #303844;
+  border-radius: 15px;
+  outline: none;
+  background: #171c24;
+  color: white;
+  font-size: 18px;
+}
+
+.addPlayer input:focus {
+  border-color: #8faeff;
+}
+
+.addPlayer button {
+  min-width: 140px;
+  border: 0;
+  border-radius: 15px;
+  background: #f2f4f6;
+  color: #101419;
+  font-weight: 800;
+}
+
+/* PLAYER LIST */
+
+.playerLibrary {
+  display: grid;
+  gap: 11px;
+}
+
+.emptyPlayers {
+  padding: 30px;
+  border: 1px dashed #303844;
+  border-radius: 16px;
+  color: #7f8997;
+  text-align: center;
+}
+
+.playerSelect {
+  display: grid;
+  grid-template-columns: 1fr 94px;
+  min-height: 78px;
+  overflow: hidden;
+  border: 2px solid #272e38;
+  border-radius: 17px;
+  background: #171c24;
+}
+
+.playerSelect.selected {
+  border-color: #8faeff;
+  background: #1b2230;
+}
+
+.playerSelectMain {
+  display: grid;
+  grid-template-columns: 48px 1fr auto;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+  padding: 14px 18px;
+  border: 0;
+  background: transparent;
+  color: white;
+  text-align: left;
+}
+
+.playerSelectMain strong {
+  overflow: hidden;
+  font-size: 21px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.playerSelectMain > span {
+  color: #778493;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.playerSelect.selected .playerSelectMain > span {
+  color: #aebcce;
+}
+
+.selectionNumber {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border: 1px solid #38414e;
+  border-radius: 11px;
+  color: #8b96a5;
+  font-weight: 900;
+}
+
+.playerSelect.selected .selectionNumber {
+  background: #f3f5f7;
+  color: #101419;
+}
+
+.deletePlayer {
+  border: 0;
+  border-left: 1px solid #29313c;
+  background: transparent;
+  color: #687382;
+  font-size: 25px;
+}
+
+.deletePlayer:hover {
+  color: white;
+}
+
+/* SESSION SUMMARY */
+
+.sessionSummary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.sessionSummary > div {
+  padding: 17px;
+  border: 1px solid #272e38;
+  border-radius: 15px;
+  background: #13171d;
+}
+
+.sessionSummary span {
+  display: block;
+  margin-bottom: 5px;
+  color: #778392;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.sessionSummary strong {
+  font-size: 27px;
+}
+
+/* START */
+
+.startSession {
+  width: 100%;
+  min-height: 72px;
+  margin-top: 16px;
+  border: 0;
+  border-radius: 17px;
+  background: #f2f4f6;
+  color: #101419;
+  font-size: 18px;
+  font-weight: 850;
+}
+
+.startSession:disabled {
+  background: #242a33;
+  color: #606b78;
+  cursor: not-allowed;
+}
+
+@media (max-width: 600px) {
+  .app {
+    padding: 18px;
+  }
+
+  .addPlayer {
+    grid-template-columns: 1fr;
+  }
+
+  .addPlayer button {
+    min-height: 56px;
+  }
+
+  .playerSelectMain {
+    grid-template-columns: 42px 1fr;
+  }
+
+  .playerSelectMain > span {
+    grid-column: 2;
+  }
+}
+/* ---------- ACTIVE GAME ---------- */
+
+.gameHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 28px;
+}
+
+.gameHeader h1 {
+  margin: 0 0 8px;
+  font-size: 48px;
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+
+.gameRound {
+  color: #808b99;
+  font-size: 17px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+
+.endSession {
+  min-height: 48px;
+  padding: 0 18px;
+  border: 1px solid #39414c;
+  border-radius: 13px;
+  background: transparent;
+  color: #aab3be;
+  font-weight: 750;
+}
+
+.gameScoreboard {
+  display: grid;
+  gap: 10px;
+}
+
+.standingRow {
+  position: relative;
+
+  display: grid;
+  grid-template-columns:
+    54px minmax(0, 1fr) 105px;
+  align-items: center;
+
+  min-height: 104px;
+  padding: 16px 22px;
+
+  border: 1px solid #282f39;
+  border-radius: 18px;
+  background: #171c24;
+
+  transition:
+    border-color 160ms ease,
+    background 160ms ease;
+}
+
+.standingRank {
+  display: grid;
+  place-items: center;
+
+  width: 38px;
+  height: 38px;
+
+  border-radius: 11px;
+
+  background: #202731;
+  color: #8390a0;
+
+  font-size: 18px;
+  font-weight: 950;
+}
+
+.standingPlayer {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.standingPlayer > div {
+  min-width: 0;
+}
+
+.standingPlayer h2 {
+  margin: 0;
+  font-size: 27px;
+}
+
+.standingPlayer p {
+  margin: 6px 0 0;
+
+  color: #758293;
+
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: 0.035em;
+}
+
+.standingPoints {
+  display: grid;
+  justify-items: end;
+  align-content: center;
+  gap: 2px;
+}
+
+.standingPoints strong {
+  font-size: 49px;
+  line-height: 0.9;
+}
+
+.standingPoints span {
+  color: #7a8796;
+
+  font-size: 9px;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+}
+
+.gameWaiting {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+
+  min-height: 56px;
+  margin-top: 12px;
+  padding: 13px 18px;
+
+  border: 1px solid #2b3440;
+  border-radius: 13px;
+  background: #151b22;
+}
+
+.gameWaiting span {
+  color: #778596;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+
+.gameWaiting strong {
+  color: #edf2f7;
+  font-size: 14px;
+  text-align: right;
+}
+
+.gameActions {
+  display: grid !important;
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr)) !important;
+
+  gap: 10px !important;
+  margin-top: 20px;
+}
+
+.gameActions button {
+  min-height: 76px;
+  border: 0;
+  border-radius: 18px;
+  background: #f2f4f6;
+  color: #101419;
+  font-size: 18px;
+  font-weight: 850;
+}
+
+.gameActions .jimAction {
+  background: #d9ae4b;
+}
+
+.gameActions button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.nextFeature {
+  margin: 12px 0 0;
+  color: #626d79;
+  font-size: 12px;
+  text-align: center;
+}
+
+@media (max-width: 600px) {
+  .standingRow {
+    grid-template-columns:
+      42px minmax(0, 1fr) auto;
+    padding: 16px;
+  }
+
+  .standingPlayer h2 {
+    font-size: 22px;
+  }
+
+  .standingPoints strong {
+    font-size: 40px;
   }
 
   .gameActions {
@@ -1124,148 +7132,6 @@ button {
 }
 
 /* ==============================
-   SCORE TRANSITION
-================================ */
-
-.scoreTransitionPage {
-  max-width: 1100px;
-}
-
-.transitionHeader {
-  display: flex;
-  align-items: baseline;
-  justify-content: flex-end;
-
-  gap: 12px;
-  margin-bottom: 22px;
-}
-
-.transitionHeader span {
-  color: #8994a2;
-
-  font-size: 18px;
-  font-weight: 900;
-  letter-spacing: 0.1em;
-}
-
-.transitionHeader strong {
-  font-size: 58px;
-  line-height: 1;
-}
-
-.transitionScoreboard {
-  display: grid;
-  gap: 12px;
-}
-
-.transitionPlayer {
-  display: grid;
-  grid-template-columns:
-    64px minmax(0, 1fr) auto;
-
-  align-items: center;
-
-  min-height: 112px;
-  padding: 18px 24px;
-
-  border: 1px solid #282f39;
-  border-radius: 18px;
-
-  background: #171c24;
-}
-
-.transitionRank {
-  color: #747f8e;
-
-  font-size: 30px;
-  font-weight: 850;
-}
-
-.transitionIdentity {
-  min-width: 0;
-}
-
-.transitionNameRow {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.transitionNameRow h2 {
-  margin: 0;
-
-  font-size: 27px;
-}
-
-.transitionIdentity p {
-  margin: 6px 0 0;
-
-  color: #8994a2;
-
-  font-size: 14px;
-}
-
-.pointDelta {
-  display: inline-grid;
-  place-items: center;
-
-  min-width: 42px;
-  height: 30px;
-
-  padding: 0 9px;
-
-  border-radius: 10px;
-
-  font-size: 16px;
-  font-weight: 950;
-}
-
-.pointDelta.positive {
-  background: #20372a;
-  color: #81d499;
-}
-
-.pointDelta.negative {
-  background: #432428;
-  color: #ee8993;
-}
-
-.transitionPoints {
-  display: flex;
-  align-items: baseline;
-  gap: 7px;
-}
-
-.transitionPoints strong {
-  font-size: 52px;
-  line-height: 1;
-}
-
-.transitionPoints span {
-  color: #8994a2;
-
-  font-size: 12px;
-  font-weight: 900;
-}
-
-@media (max-width: 600px) {
-  .transitionPlayer {
-    grid-template-columns:
-      42px minmax(0, 1fr) auto;
-
-    padding: 16px;
-  }
-
-  .transitionNameRow h2 {
-    font-size: 22px;
-  }
-
-  .transitionPoints strong {
-    font-size: 40px;
-  }
-}
-
-/* ==============================
    PENALTY
 ================================ */
 
@@ -1821,7 +7687,7 @@ button {
 .historyTabs {
   display: grid;
   grid-template-columns:
-    repeat(3, 1fr);
+    repeat(4, 1fr);
   gap: 7px;
 
   margin-bottom: 22px;
@@ -2091,7 +7957,7 @@ button {
 
   color: #7c8795;
 
-  font-size: 10px;
+  font-size: 14px;
   font-weight: 900;
   letter-spacing: 0.1em;
 }
@@ -2121,7 +7987,7 @@ button {
 
   color: #778392;
 
-  font-size: 9px;
+  font-size: 13px;
   font-weight: 900;
   letter-spacing: 0.07em;
 }
@@ -2149,7 +8015,7 @@ button {
 .hideStageBreakdown > span {
   color: #a891c5;
 
-  font-size: 9px;
+  font-size: 13px;
   font-weight: 900;
   letter-spacing: 0.08em;
 }
@@ -2163,6 +8029,7 @@ button {
 
 .hideStageBreakdown small {
   color: #8f7ba8;
+  font-size: 11px;
 }
 
 .hideStageBreakdown strong {
@@ -2258,9 +8125,18 @@ button {
       repeat(2, 1fr);
   }
 
+  .playerStatSectionLabel {
+    font-size: 13px;
+  }
+
   .playerStatGrid {
     grid-template-columns:
       repeat(2, minmax(0, 1fr));
+  }
+
+  .playerStatGrid span,
+  .hideStageBreakdown > span {
+    font-size: 11px;
   }
 
   .awardGrid {
@@ -2269,10 +8145,6 @@ button {
 }
 
 @media (max-width: 520px) {
-  .historyTabs {
-    grid-template-columns: 1fr;
-  }
-
   .historySessionSummary {
     align-items: flex-start;
   }
@@ -2376,7 +8248,6 @@ button {
 
 /* ==============================
    AWARD COLORS + BIGGER TITLES
-   Append after the existing
    History / Session Awards CSS.
 ================================ */
 
@@ -2474,7 +8345,6 @@ button {
 
 /* ==============================
    HISTORY V3
-   Append after the existing
    History / Awards CSS.
 ================================ */
 
@@ -2678,7 +8548,7 @@ button {
 /* Bigger award identity */
 
 .awardCard > span {
-  font-size: 16px;
+  font-size: 25px;
 }
 
 .awardCard h3 {
@@ -2747,7 +8617,7 @@ button {
   }
 
   .awardCard > span {
-    font-size: 14px;
+    font-size: 25px;
   }
 
   .awardCard h3 {
@@ -2757,7 +8627,6 @@ button {
 
 /* ==============================
    COMBINED ALL-TIME AWARDS
-   Append after History V3 CSS.
 ================================ */
 
 .combinedAwardCard {
@@ -2866,7 +8735,6 @@ button {
 
 /* ==============================
    CLEAN SINGLE-SESSION WINNERS
-   Append after existing History CSS.
 ================================ */
 
 .sessionRecordWinners {
@@ -2941,7 +8809,6 @@ button {
 
 /* ==============================
    CLEAN ALL-TIME TIED WINNERS
-   Append after the existing
    combined award CSS.
 ================================ */
 
@@ -3013,7 +8880,6 @@ button {
 
 /* ==============================
    PER-SESSION AWARDS
-   Append after current History CSS.
 ================================ */
 
 .historySessionActions {
@@ -3107,7 +8973,6 @@ button {
 
 /* ==============================
    PLAYER SORT STAT HIGHLIGHT
-   Append after current History CSS.
 ================================ */
 
 /* Grid statistic selected by the
@@ -3170,14 +9035,7 @@ span {
 
 /* ==============================
    MVP TAB
-   Append after current History CSS.
 ================================ */
-
-/* 4 tabs now */
-.historyTabs {
-  grid-template-columns:
-    repeat(4, 1fr);
-}
 
 .mvpPage {
   display: grid;
@@ -3504,7 +9362,6 @@ span {
 
 /* ==============================
    MVP QUALIFICATION TICKS
-   Append after MVP CSS.
 ================================ */
 
 .mvpSample span.complete {
@@ -3514,7 +9371,6 @@ span {
 
 /* ==============================
    MVP PODIUM
-   Append after the current MVP CSS.
 ================================ */
 
 .mvpPodiumSection {
@@ -3869,7 +9725,6 @@ span {
 
 /* ==============================
    STANDARD ROUND — QUICK RANK
-   Append after current Standard
    Round CSS.
 ================================ */
 
@@ -4226,7 +10081,6 @@ span {
 
 /* ==============================
    PENALTY CONFIRMATION MODAL
-   Append after current Penalty CSS.
 ================================ */
 
 .penaltyConfirmOverlay {
@@ -4367,7 +10221,6 @@ span {
 
 /* ==============================
    MAIN SCOREBOARD POLISH
-   Append after current index.css.
 ================================ */
 
 /* ---------- HEADER ---------- */
@@ -4447,24 +10300,6 @@ span {
 
 /* ---------- SCOREBOARD ---------- */
 
-.gameScoreboard {
-  gap: 10px;
-}
-
-.standingRow {
-  position: relative;
-
-  grid-template-columns:
-    54px minmax(0, 1fr) 105px;
-
-  min-height: 104px;
-  padding: 16px 22px;
-
-  transition:
-    border-color 160ms ease,
-    background 160ms ease;
-}
-
 .standingRow.leader {
   border-color: #4b4330;
 
@@ -4491,34 +10326,10 @@ span {
   background: #d9ae4b;
 }
 
-.standingRank {
-  display: grid;
-  place-items: center;
-
-  width: 38px;
-  height: 38px;
-
-  border-radius: 11px;
-
-  background: #202731;
-  color: #8390a0;
-
-  font-size: 18px;
-  font-weight: 950;
-}
-
 .standingRow.leader
 .standingRank {
   background: #342d1e;
   color: #e0b75b;
-}
-
-.standingPlayer {
-  min-width: 0;
-}
-
-.standingPlayer > div {
-  min-width: 0;
 }
 
 .standingNameLine {
@@ -4538,52 +10349,6 @@ span {
 
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.standingPlayer p {
-  margin: 6px 0 0;
-
-  color: #758293;
-
-  font-size: 11px;
-  font-weight: 750;
-  letter-spacing: 0.035em;
-}
-
-.playingTag {
-  flex: 0 0 auto;
-
-  padding: 5px 8px;
-
-  border: 1px solid #344150;
-  border-radius: 7px;
-
-  background: #25303c;
-  color: #abc0d8;
-
-  font-size: 8px;
-  font-weight: 950;
-  letter-spacing: 0.1em;
-}
-
-.standingPoints {
-  display: grid;
-  justify-items: end;
-  align-content: center;
-  gap: 2px;
-}
-
-.standingPoints strong {
-  font-size: 49px;
-  line-height: 0.9;
-}
-
-.standingPoints span {
-  color: #7a8796;
-
-  font-size: 9px;
-  font-weight: 950;
-  letter-spacing: 0.12em;
 }
 
 /* ---------- WAITING ---------- */
@@ -4608,16 +10373,6 @@ span {
 }
 
 /* ---------- MAIN ACTIONS ---------- */
-
-.gameActions {
-  display: grid !important;
-  grid-template-columns:
-    repeat(3, minmax(0, 1fr)) !important;
-
-  gap: 10px !important;
-
-  margin-top: 20px;
-}
 
 .gameActions > button {
   min-height: 72px;
@@ -4644,10 +10399,6 @@ span {
 }
 
 /* ---------- NEW SESSION BRAND ---------- */
-
-.setupHeader > h1 {
-  letter-spacing: -0.045em;
-}
 
 /* ---------- TABLET / MOBILE ---------- */
 
@@ -4745,114 +10496,7 @@ span {
 }
 
 /* ==============================
-   SCOREBOARD WIN META CHIPS
-   Append after scoreboard polish CSS.
-================================ */
-
-.standingMeta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-
-  margin-top: 7px;
-}
-
-.standingMeta > span {
-  display: inline-flex;
-  align-items: center;
-
-  min-height: 24px;
-  padding: 0 8px;
-
-  border-radius: 8px;
-
-  font-size: 9px;
-  font-weight: 900;
-  letter-spacing: 0.06em;
-}
-
-/* Standard = cool blue */
-.standingMetaStandard {
-  border: 1px solid #34485f;
-
-  background: #1f2c3a;
-  color: #8fb7e3;
-}
-
-/* Jim = warm gold */
-.standingMetaJim {
-  border: 1px solid #5b4b27;
-
-  background: #302817;
-  color: #e0b65c;
-}
-
-@media (max-width: 620px) {
-  .standingMeta {
-    gap: 4px;
-  }
-
-  .standingMeta > span {
-    min-height: 21px;
-    padding: 0 6px;
-
-    font-size: 8px;
-  }
-}
-
-/* Bigger award titles */
-.awardCard > span {
-  font-size: 25px;
-}
-
-.combinedAwardCard > span {
-  font-size: 25px;
-}
-
-@media (max-width: 600px) {
-  .awardCard > span,
-  .combinedAwardCard > span {
-    font-size: 25px;
-  }
-}
-
-/* ==============================
-   PLAYER STATS — BIGGER LABELS
-================================ */
-
-.playerStatSectionLabel {
-  font-size: 14px;
-}
-
-.playerStatGrid span {
-  font-size: 13px;
-}
-
-.hideStageBreakdown > span {
-  font-size: 13px;
-}
-
-.hideStageBreakdown small {
-  font-size: 11px;
-}
-
-@media (max-width: 600px) {
-  .playerStatSectionLabel {
-    font-size: 13px;
-  }
-
-  .playerStatGrid span {
-    font-size: 11px;
-  }
-
-  .hideStageBreakdown > span {
-    font-size: 11px;
-  }
-}
-
-/* ==============================
    DELETE SAVED SESSION
-   Append after current History CSS.
 ================================ */
 
 .historyDeleteArea {
@@ -5038,15 +10682,9 @@ button:disabled {
 
 /* ==============================
    PLAYER IDENTITY + NICKNAMES
-   Append after current index.css.
 ================================ */
 
 /* Player library now has Edit + Delete */
-.playerSelect {
-  grid-template-columns:
-    minmax(0, 1fr) 94px;
-}
-
 .playerSelectActions {
   display: grid;
   grid-template-columns:
@@ -5367,7 +11005,6 @@ button:disabled {
 
 /* ==============================
    CARD SCORE TRIVIA
-   Append after current History CSS.
 ================================ */
 
 .cardTriviaSection {
@@ -5526,5 +11163,911 @@ button:disabled {
 
   .cardTriviaCard {
     min-height: 0;
+  }
+}
+
+/* ==============================
+   TABLET QUICK-RANK DRAG FIX
+   Prevent browser pull-to-refresh
+   from stealing reorder gestures.
+================================ */
+
+/*
+  JIMRAMI is an app-like interface.
+  Native pull-to-refresh is more
+  harmful than useful here.
+*/
+/*
+  The entire Quick Rank interaction
+  belongs to the reorder gesture,
+  not page scrolling.
+*/
+.quickRankPanel,
+.quickRankList,
+.quickRankItem,
+.quickRankCard {
+  touch-action: none !important;
+  overscroll-behavior: none;
+}
+
+/*
+  Avoid long-press text/image selection
+  while dragging on Android.
+*/
+.quickRankList,
+.quickRankItem,
+.quickRankCard {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* ==============================
+   SCOREBOARD — LAST WINNER,
+   TALLIES, JIM STARS & STATUS
+================================ */
+
+/* ---------- PREVIOUS WINNER ---------- */
+
+.previousWinnerBar {
+  display: grid;
+  grid-template-columns:
+    minmax(150px, auto)
+    minmax(0, 1fr)
+    38px;
+  align-items: center;
+  gap: 18px;
+
+  margin-bottom: 12px;
+  padding: 11px 15px;
+
+  border:
+    1px solid #343c47;
+  border-radius: 13px;
+
+  background:
+    linear-gradient(
+      90deg,
+      #151b22,
+      #12171d
+    );
+}
+
+.previousWinnerLabel {
+  display: grid;
+  gap: 2px;
+}
+
+.previousWinnerLabel > span {
+  color: #7d8997;
+
+  font-size: 9px;
+  font-weight: 950;
+  letter-spacing: 0.11em;
+}
+
+.previousWinnerLabel > small {
+  color: #65717f;
+
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.previousWinnerBar > strong {
+  overflow: hidden;
+
+  color: #f2f5f8;
+
+  font-size: 18px;
+  font-weight: 950;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.previousWinnerIcon {
+  display: grid;
+  place-items: center;
+
+  width: 32px;
+  height: 32px;
+
+  border-radius: 10px;
+
+  font-size: 15px;
+  font-weight: 950;
+}
+
+.previousWinnerIcon.standard {
+  background: #1c2b3a;
+  color: #83b9e8;
+}
+
+.previousWinnerIcon.jim {
+  background: #332a16;
+  color: #e2b64e;
+}
+
+/* ---------- PLAYING / WAITING ---------- */
+
+.playerStatusTag {
+  flex: 0 0 auto;
+
+  padding: 5px 8px;
+
+  border-radius: 7px;
+
+  font-size: 8px;
+  font-weight: 950;
+  letter-spacing: 0.1em;
+}
+
+.playerStatusTag.playing {
+  border:
+    1px solid #28533a;
+
+  background: #183324;
+  color: #72cf93;
+}
+
+.playerStatusTag.waiting {
+  border:
+    1px solid #5a4920;
+
+  background: #342a16;
+  color: #e2bd61;
+}
+
+/* ---------- ACHIEVEMENTS ---------- */
+
+.standingAchievements {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 11px;
+
+  min-height: 22px;
+  margin-top: 6px;
+}
+
+.standardWinTally {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+
+  min-width: 0;
+}
+
+.winMetaLabel {
+  color: #718092;
+
+  font-size: 8px;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+}
+
+.tallyGroups {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+}
+
+.tallyGroup {
+  position: relative;
+
+  display: flex;
+  align-items: center;
+  gap: 3px;
+
+  height: 18px;
+  min-width: 4px;
+}
+
+.tallyMark {
+  display: block;
+
+  width: 2px;
+  height: 15px;
+
+  border-radius: 2px;
+
+  background: #8fb7df;
+
+  transform:
+    rotate(-2deg);
+}
+
+.tallyStrike {
+  position: absolute;
+  top: 8px;
+  left: -2px;
+
+  display: block;
+
+  width: 22px;
+  height: 2px;
+
+  border-radius: 2px;
+
+  background: #8fb7df;
+
+  transform:
+    rotate(-31deg);
+  transform-origin: center;
+}
+
+.jimWinStars {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+
+  max-width: 170px;
+
+  line-height: 1;
+}
+
+.jimWinStars > span {
+  color: #e3b64b;
+
+  font-size: 15px;
+
+  filter:
+    drop-shadow(
+      0 0 4px
+      rgba(227, 182, 75, 0.15)
+    );
+}
+
+/* ---------- SMALLER SCREENS ---------- */
+
+@media (max-width: 620px) {
+  .previousWinnerBar {
+    grid-template-columns:
+      1fr auto;
+    gap: 8px 12px;
+  }
+
+  .previousWinnerLabel {
+    grid-column: 1;
+  }
+
+  .previousWinnerBar > strong {
+    grid-column: 1;
+    grid-row: 2;
+
+    font-size: 17px;
+  }
+
+  .previousWinnerIcon {
+    grid-column: 2;
+    grid-row: 1 / 3;
+  }
+
+  .standingAchievements {
+    gap: 8px;
+  }
+
+  .winMetaLabel {
+    font-size: 7px;
+  }
+
+  .tallyMark {
+    height: 13px;
+  }
+
+  .tallyGroup {
+    height: 16px;
+  }
+
+  .tallyStrike {
+    top: 7px;
+
+    width: 20px;
+  }
+
+  .jimWinStars > span {
+    font-size: 13px;
+  }
+
+  .playerStatusTag {
+    padding: 4px 6px;
+
+    font-size: 7px;
+  }
+}
+
+/* ==============================
+   SCORE TRANSITION — CURRENT
+================================ */
+
+/* Kill visual leftovers from the
+   previous transition experiment. */
+.cleanTransitionPage {
+  gap: 20px;
+}
+
+.cleanTransitionHeader {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+
+  margin-bottom: 6px;
+}
+
+.cleanTransitionHeader > div {
+  display: grid;
+  gap: 4px;
+}
+
+.cleanTransitionHeader span {
+  color: #758398;
+
+  font-size: 10px;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+}
+
+.cleanTransitionHeader h1 {
+  margin: 0;
+
+  color: #f4f7fb;
+
+  font-size: 42px;
+  font-weight: 1000;
+  line-height: 1;
+}
+
+.cleanTransitionHeader button {
+  min-height: 40px;
+  padding: 0 14px;
+
+  border: 1px solid #364252;
+  border-radius: 11px;
+
+  background: #202936;
+  color: #eef3f8;
+
+  font-size: 11px;
+  font-weight: 900;
+}
+
+/* ---------- BOARD ---------- */
+
+.cleanTransitionBoard {
+  position: relative;
+
+  width: 100%;
+}
+
+.cleanTransitionRow {
+  position: absolute;
+  left: 0;
+  right: 0;
+
+  box-sizing: border-box;
+
+  display: grid;
+  grid-template-columns:
+    50px
+    minmax(0, 1fr)
+    92px;
+
+  align-items: center;
+  gap: 16px;
+
+  height: 94px;
+  padding: 15px 20px;
+
+  overflow: visible;
+
+  border: 1px solid #2a3441;
+  border-radius: 17px;
+
+  background: #171e27;
+
+  transition:
+    top 900ms
+      cubic-bezier(
+        0.22,
+        1,
+        0.36,
+        1
+      ),
+    border-color
+      300ms ease,
+    transform
+      300ms ease;
+}
+
+.cleanTransitionRow.settled {
+  border-color: #344151;
+}
+
+.cleanTransitionRank {
+  color: #8291a5;
+
+  font-size: 23px;
+  font-weight: 950;
+
+  text-align: center;
+}
+
+.cleanTransitionMain {
+  min-width: 0;
+}
+
+.cleanTransitionNameLine {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+
+  min-width: 0;
+}
+
+.cleanTransitionNameLine h2 {
+  margin: 0;
+
+  overflow: hidden;
+
+  color: #f6f8fb;
+
+  font-size: 22px;
+  font-weight: 950;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---------- STATUS ---------- */
+
+.cleanTransitionPage
+.playerStatusTag {
+  flex: 0 0 auto;
+
+  padding: 4px 7px;
+
+  border-radius: 7px;
+
+  font-size: 7px;
+  font-weight: 950;
+  letter-spacing: 0.09em;
+}
+
+.cleanTransitionPage
+.playerStatusTag.playing {
+  border: 1px solid #28533a;
+
+  background: #183324;
+  color: #72cf93;
+}
+
+.cleanTransitionPage
+.playerStatusTag.waiting {
+  border: 1px solid #5a4920;
+
+  background: #342a16;
+  color: #e2bd61;
+}
+
+/* ---------- ACHIEVEMENTS ---------- */
+
+.cleanTransitionMeta {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+
+  min-height: 17px;
+  margin-top: 6px;
+}
+
+.scoreTally {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.scoreTallyGroup {
+  position: relative;
+
+  display: flex;
+  align-items: center;
+  gap: 3px;
+
+  height: 16px;
+}
+
+.scoreTallyMark {
+  display: block;
+
+  width: 2px;
+  height: 13px;
+
+  border-radius: 2px;
+
+  background: #8eb7e0;
+}
+
+.scoreTallyStrike {
+  position: absolute;
+  top: 7px;
+  left: -2px;
+
+  width: 20px;
+  height: 2px;
+
+  border-radius: 2px;
+
+  background: #8eb7e0;
+
+  transform:
+    rotate(-31deg);
+}
+
+.scoreJimStars {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.scoreJimStars > span {
+  color: #e3b64b;
+
+  font-size: 13px;
+  line-height: 1;
+}
+
+.scoreTally.pop,
+.scoreJimStars.pop {
+  animation:
+    achievementPop
+    650ms
+    cubic-bezier(
+      0.22,
+      1.4,
+      0.36,
+      1
+    );
+}
+
+@keyframes achievementPop {
+  0% {
+    transform:
+      scale(0.72);
+    opacity: 0.35;
+  }
+
+  60% {
+    transform:
+      scale(1.18);
+    opacity: 1;
+  }
+
+  100% {
+    transform:
+      scale(1);
+    opacity: 1;
+  }
+}
+
+/* ---------- POINTS ---------- */
+
+.cleanTransitionPoints {
+  display: grid;
+  justify-items: end;
+  align-content: center;
+  gap: 2px;
+}
+
+.cleanTransitionPoints strong {
+  color: #f4f7fa;
+
+  font-size: 44px;
+  font-weight: 1000;
+  line-height: 0.9;
+}
+
+.cleanTransitionPoints span {
+  color: #8290a2;
+
+  font-size: 8px;
+  font-weight: 950;
+  letter-spacing: 0.1em;
+}
+
+/* ---------- REWARD POP ---------- */
+
+.cleanRewardBubble {
+  position: absolute;
+  top: 10px;
+  right: 104px;
+  z-index: 5;
+
+  display: flex;
+  align-items: center;
+  gap: 7px;
+
+  padding: 5px 9px;
+
+  border-radius: 10px;
+
+  pointer-events: none;
+
+  animation:
+    rewardIn
+      300ms ease-out,
+    rewardOut
+      600ms ease-in
+      3.9s forwards;
+}
+
+.cleanRewardBubble.gain {
+  border: 1px solid #2c6546;
+
+  background: #183a29;
+  color: #83d7a1;
+}
+
+.cleanRewardBubble.loss {
+  border: 1px solid #71404a;
+
+  background: #41242a;
+  color: #ef99a4;
+}
+
+.cleanRewardBubble strong {
+  font-size: 17px;
+  font-weight: 1000;
+  line-height: 1;
+}
+
+.rewardTally {
+  color: #9cc3ea;
+
+  font-size: 17px;
+  font-weight: 1000;
+  line-height: 1;
+}
+
+.rewardStar {
+  color: #e3b64b;
+
+  font-size: 15px;
+  line-height: 1;
+}
+
+@keyframes rewardIn {
+  from {
+    opacity: 0;
+    transform:
+      translateY(5px)
+      scale(0.88);
+  }
+
+  to {
+    opacity: 1;
+    transform:
+      translateY(0)
+      scale(1);
+  }
+}
+
+@keyframes rewardOut {
+  to {
+    opacity: 0;
+    transform:
+      translateY(-8px)
+      scale(0.96);
+  }
+}
+
+/* ---------- TABLET ---------- */
+
+@media (
+  max-width: 700px
+) {
+  .cleanTransitionHeader h1 {
+    font-size: 35px;
+  }
+
+  .cleanTransitionRow {
+    grid-template-columns:
+      38px
+      minmax(0, 1fr)
+      70px;
+
+    gap: 9px;
+
+    padding:
+      13px 12px;
+  }
+
+  .cleanTransitionRank {
+    font-size: 18px;
+  }
+
+  .cleanTransitionNameLine h2 {
+    font-size: 18px;
+  }
+
+  .cleanTransitionPoints strong {
+    font-size: 35px;
+  }
+
+  .cleanRewardBubble {
+    right: 76px;
+  }
+}
+
+/* Very small phones: stack History tabs only when truly necessary. */
+@media (max-width: 420px) {
+  .historyTabs {
+    grid-template-columns:
+      1fr;
+  }
+}
+
+/* ==============================
+   AWARD INFO TOOLTIPS
+   Safe append-only patch
+================================ */
+
+.awardTitleRow {
+  position: relative;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+
+  margin-bottom: 10px;
+}
+
+.awardTitleText {
+  min-width: 0;
+
+  color: var(--award-color, #d9ae4b);
+
+  font-size: 25px;
+  font-weight: 950;
+  line-height: 1.05;
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+}
+
+.awardInfoWrap {
+  position: relative;
+
+  flex: 0 0 auto;
+}
+
+.awardInfoButton {
+  display: grid;
+  place-items: center;
+
+  width: 25px;
+  height: 25px;
+  padding: 0;
+
+  border: 1px solid #46505d;
+  border-radius: 50%;
+
+  outline: none;
+
+  background: #11171e;
+  color: var(--award-color, #d9ae4b);
+
+  font-family: Georgia, serif;
+  font-size: 14px;
+  font-style: italic;
+  font-weight: 700;
+  line-height: 1;
+
+  cursor: help;
+
+  transition:
+    transform 140ms ease,
+    border-color 140ms ease,
+    background 140ms ease;
+}
+
+.awardInfoButton:hover,
+.awardInfoButton:focus-visible {
+  transform: scale(1.08);
+
+  border-color:
+    var(--award-color, #d9ae4b);
+
+  background: #1d242d;
+}
+
+.awardInfoTooltip {
+  position: absolute;
+  top: calc(100% + 9px);
+  right: 0;
+  z-index: 40;
+
+  width: min(310px, 70vw);
+  padding: 11px 13px;
+
+  border: 1px solid #3a4653;
+  border-radius: 11px;
+
+  background: #0f141a;
+  color: #aeb9c6;
+
+  box-shadow:
+    0 14px 34px
+    rgba(0, 0, 0, 0.38);
+
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 1.45;
+  letter-spacing: 0;
+  text-align: left;
+  text-transform: none;
+
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+
+  transform: translateY(-4px);
+
+  transition:
+    opacity 130ms ease,
+    transform 130ms ease,
+    visibility 130ms ease;
+}
+
+/* Desktop hover + tablet tap/focus */
+.awardInfoWrap:hover
+.awardInfoTooltip,
+.awardInfoWrap:focus-within
+.awardInfoTooltip {
+  opacity: 1;
+  visibility: visible;
+
+  transform: translateY(0);
+}
+
+/* Make the cards less vertically cluttered */
+.combinedAwardCard {
+  padding-top: 21px;
+}
+
+.combinedAwardMetrics {
+  margin-top: 4px;
+}
+
+.rateAwardCard {
+  min-height: 150px;
+}
+
+.sessionOwnAwardGrid
+.awardCard {
+  min-height: 155px;
+}
+
+/* Hide old direct title styling only where
+   the new title-row component is present. */
+.awardCard:has(.awardTitleRow) > span {
+  display: none;
+}
+
+@media (max-width: 600px) {
+  .awardTitleText {
+    font-size: 22px;
+  }
+
+  .awardInfoButton {
+    width: 27px;
+    height: 27px;
+  }
+
+  .awardInfoTooltip {
+    width: min(285px, 78vw);
   }
 }

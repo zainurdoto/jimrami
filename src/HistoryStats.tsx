@@ -135,6 +135,39 @@ type CardScoreTriviaRecord = {
   }[]
 }
 
+function AwardTitleInfo({
+  title,
+  description,
+}: {
+  title: string
+  description: string
+}) {
+  return (
+    <div className="awardTitleRow">
+      <span className="awardTitleText">
+        {title}
+      </span>
+
+      <div className="awardInfoWrap">
+        <button
+          type="button"
+          className="awardInfoButton"
+          aria-label={`About ${title}`}
+        >
+          i
+        </button>
+
+        <div
+          className="awardInfoTooltip"
+          role="tooltip"
+        >
+          {description}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function percentage(
   wins: number,
   attempts: number
@@ -3596,9 +3629,14 @@ export default function HistoryStats({
                       award.title
                     }
                   >
-                    <span>
-                      {award.title}
-                    </span>
+                    <AwardTitleInfo
+                      title={
+                        award.title
+                      }
+                      description={
+                        award.description
+                      }
+                    />
 
                     {award.winnerLines ? (
                       <div className="sessionRecordWinners">
@@ -3638,11 +3676,6 @@ export default function HistoryStats({
                       {award.value}
                     </strong>
 
-                    <p>
-                      {
-                        award.description
-                      }
-                    </p>
                   </article>
                 )
               )}
@@ -5010,15 +5043,14 @@ export default function HistoryStats({
                       award.title
                     }
                   >
-                    <span>
-                      {award.title}
-                    </span>
-
-                    <p className="combinedAwardDescription">
-                      {
+                    <AwardTitleInfo
+                      title={
+                        award.title
+                      }
+                      description={
                         award.description
                       }
-                    </p>
+                    />
 
                     <div className="combinedAwardMetrics">
                       <div className="combinedAwardMetric">
@@ -5170,9 +5202,14 @@ export default function HistoryStats({
                       award.title
                     }
                   >
-                    <span>
-                      {award.title}
-                    </span>
+                    <AwardTitleInfo
+                      title={
+                        award.title
+                      }
+                      description={
+                        award.description
+                      }
+                    />
 
                     {award.winnerLines ? (
                       <div className="sessionRecordWinners">
@@ -5216,11 +5253,6 @@ export default function HistoryStats({
                       </small>
                     )}
 
-                    <p>
-                      {
-                        award.description
-                      }
-                    </p>
                   </article>
                 )
               )}

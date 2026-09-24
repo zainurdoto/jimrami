@@ -1,37 +1,24 @@
 import {
   useEffect,
-  useRef,
+  useMemo,
   useState,
 } from 'react'
 
-import { motion } from 'motion/react'
-
-import {
-  type Player,
-  type SessionPlayer,
+import type {
+  Player,
+  SessionPlayer,
 } from './db'
 
-export type ScoreChange = {
+export type ScoreTransitionChange = {
   sessionPlayerId: number
   amount: number
 }
 
 export type ScoreTransitionData = {
-  /*
-    Optional for compatibility with
-    the transitions we already built.
-
-    Existing Standard and Jim rounds
-    do not need to be changed.
-  */
-  type?: 'round' | 'penalty'
-
   roundNumber: number
-
   before: SessionPlayer[]
   after: SessionPlayer[]
-
-  changes: ScoreChange[]
+  changes: ScoreTransitionChange[]
 }
 
 type Props = {
@@ -40,82 +27,427 @@ type Props = {
   onDone: () => void
 }
 
-const UPDATE_DELAY = 3200
+const UPDATE_DELAY = 2500
+const ROUND_FINISH_DELAY = 8000
+const PENALTY_FINISH_DELAY = 4500
 
-const ROUND_FINISH_DELAY = 10000
+// Wait after the point-number animation finishes
+// before revealing the new tally / Jim star.
+const ACHIEVEMENT_AFTER_POINTS_DELAY = 1250
 
-const PENALTY_FINISH_DELAY = 6500
+// How long the +3 / +7 / -1 bubble stays visible.
+// This is now the ONLY timing control for that bubble.
+const REWARD_BUBBLE_DURATION = 5500
+
+
+// Smooth count from old points to new points
+// when the ranking update starts.
+const POINT_COUNT_DURATION = 700
+
+const ROW_HEIGHT = 94
+const ROW_GAP = 10
+
+function byScore(
+  a: SessionPlayer,
+  b: SessionPlayer
+) {
+  return (
+    b.points - a.points ||
+    a.rotationOrder -
+      b.rotationOrder
+  )
+}
+
+function Tally({
+  count,
+  pop = false,
+}: {
+  count: number
+  pop?: boolean
+}) {
+  if (count <= 0) {
+    return null
+  }
+
+  const groups =
+    Array.from(
+      {
+        length:
+          Math.ceil(
+            count / 5
+          ),
+      },
+      (_, index) =>
+        Math.min(
+          5,
+          count -
+            index * 5
+        )
+    )
+
+  return (
+    <div
+      className={`scoreTally ${
+        pop
+          ? 'pop'
+          : ''
+      }`}
+      title={`${count} Standard ${
+        count === 1
+          ? 'win'
+          : 'wins'
+      }`}
+    >
+      {groups.map(
+        (
+          groupSize,
+          groupIndex
+        ) => (
+          <span
+            className="scoreTallyGroup"
+            key={
+              groupIndex
+            }
+          >
+            {Array.from(
+              {
+                length:
+                  Math.min(
+                    groupSize,
+                    4
+                  ),
+              },
+              (
+                _,
+                markIndex
+              ) => (
+                <i
+                  className="scoreTallyMark"
+                  key={
+                    markIndex
+                  }
+                />
+              )
+            )}
+
+            {groupSize ===
+              5 && (
+              <i className="scoreTallyStrike" />
+            )}
+          </span>
+        )
+      )}
+    </div>
+  )
+}
+
+function Stars({
+  count,
+  pop = false,
+}: {
+  count: number
+  pop?: boolean
+}) {
+  if (count <= 0) {
+    return null
+  }
+
+  return (
+    <div
+      className={`scoreJimStars ${
+        pop
+          ? 'pop'
+          : ''
+      }`}
+      title={`${count} Jim ${
+        count === 1
+          ? 'win'
+          : 'wins'
+      }`}
+    >
+      {Array.from(
+        {
+          length: count,
+        },
+        (_, index) => (
+          <span key={index}>
+            ★
+          </span>
+        )
+      )}
+    </div>
+  )
+}
+
+function AnimatedPoints({
+  from,
+  to,
+  animate,
+}: {
+  from: number
+  to: number
+  animate: boolean
+}) {
+  const [
+    value,
+    setValue,
+  ] =
+    useState(from)
+
+  const [
+    running,
+    setRunning,
+  ] =
+    useState(false)
+
+  useEffect(
+    () => {
+      if (!animate) {
+        setValue(from)
+        setRunning(false)
+        return
+      }
+
+      if (from === to) {
+        setValue(to)
+        setRunning(false)
+        return
+      }
+
+      let frameId = 0
+      const startedAt =
+        performance.now()
+
+      setRunning(true)
+
+      const tick = (
+        now: number
+      ) => {
+        const progress =
+          Math.min(
+            1,
+            (now - startedAt) /
+              POINT_COUNT_DURATION
+          )
+
+        /*
+          Ease-out cubic:
+          moves quickly at first,
+          then settles smoothly.
+        */
+        const eased =
+          1 -
+          Math.pow(
+            1 - progress,
+            3
+          )
+
+        const nextValue =
+          Math.round(
+            from +
+              (to - from) *
+                eased
+          )
+
+        setValue(nextValue)
+
+        if (progress < 1) {
+          frameId =
+            requestAnimationFrame(
+              tick
+            )
+        } else {
+          setValue(to)
+          setRunning(false)
+        }
+      }
+
+      frameId =
+        requestAnimationFrame(
+          tick
+        )
+
+      return () => {
+        cancelAnimationFrame(
+          frameId
+        )
+      }
+    },
+    [
+      from,
+      to,
+      animate,
+    ]
+  )
+
+  const change =
+    to - from
+
+  return (
+    <strong
+      style={{
+        display:
+          'inline-block',
+
+        color:
+          running
+            ? change > 0
+              ? '#8fd6a3'
+              : '#ef99a4'
+            : undefined,
+
+        transform:
+          running
+            ? 'scale(1.08)'
+            : 'scale(1)',
+
+        transition:
+          'transform 180ms ease, color 220ms ease',
+      }}
+    >
+      {value}
+    </strong>
+  )
+}
 
 export default function ScoreTransition({
   data,
   players,
   onDone,
 }: Props) {
-  const [updated, setUpdated] =
+  const [
+    settled,
+    setSettled,
+  ] =
     useState(false)
 
-  /*
-    Keep the latest onDone function
-    without restarting the timers if
-    the parent component rerenders.
-  */
-  const onDoneRef =
-    useRef(onDone)
+  const [
+    showReward,
+    setShowReward,
+  ] =
+    useState(true)
 
-  useEffect(() => {
-    onDoneRef.current =
-      onDone
-  }, [onDone])
+  const [
+    revealAchievements,
+    setRevealAchievements,
+  ] =
+    useState(false)
 
-  /*
-    Current Penalty.tsx sends exactly
-    one score change of -1.
-
-    This lets the transition recognise
-    penalties immediately without
-    requiring changes elsewhere.
-
-    The explicit `type` field also
-    leaves us a cleaner option later.
-  */
-  const isPenalty =
-    data.type === 'penalty' ||
-    (
-      data.changes.length === 1 &&
-      data.changes[0]?.amount === -1
+  const changeMap =
+    useMemo(
+      () =>
+        new Map(
+          data.changes.map(
+            (change) => [
+              change.sessionPlayerId,
+              change.amount,
+            ]
+          )
+        ),
+      [data.changes]
     )
+
+
+  const afterMap =
+    useMemo(
+      () =>
+        new Map(
+          data.after.map(
+            (player) => [
+              player.id,
+              player,
+            ]
+          )
+        ),
+      [data.after]
+    )
+
+  const beforeRanking =
+    useMemo(
+      () =>
+        [...data.before].sort(
+          byScore
+        ),
+      [data.before]
+    )
+
+  const afterRanking =
+    useMemo(
+      () =>
+        [...data.after].sort(
+          byScore
+        ),
+      [data.after]
+    )
+
+  const isPenalty =
+    data.changes.length ===
+      1 &&
+    data.changes[0].amount <
+      0
 
   const finishDelay =
     isPenalty
       ? PENALTY_FINISH_DELAY
       : ROUND_FINISH_DELAY
 
-  useEffect(() => {
-    setUpdated(false)
+  useEffect(
+    () => {
+      const settleTimer =
+        window.setTimeout(
+          () =>
+            setSettled(true),
+          UPDATE_DELAY
+        )
 
-    const updateTimer =
-      window.setTimeout(() => {
-        setUpdated(true)
-      }, UPDATE_DELAY)
+      const achievementTimer =
+        window.setTimeout(
+          () =>
+            setRevealAchievements(
+              true
+            ),
+          UPDATE_DELAY +
+            POINT_COUNT_DURATION +
+            ACHIEVEMENT_AFTER_POINTS_DELAY
+        )
 
-    const finishTimer =
-      window.setTimeout(() => {
-        onDoneRef.current()
-      }, finishDelay)
+      const rewardTimer =
+        window.setTimeout(
+          () =>
+            setShowReward(false),
+          UPDATE_DELAY +
+            REWARD_BUBBLE_DURATION
+        )
 
-    return () => {
-      window.clearTimeout(
-        updateTimer
-      )
+      const finishTimer =
+        window.setTimeout(
+          onDone,
+          finishDelay
+        )
 
-      window.clearTimeout(
-        finishTimer
-      )
-    }
-  }, [
-    data,
-    finishDelay,
-  ])
+      return () => {
+        window.clearTimeout(
+          settleTimer
+        )
+
+        window.clearTimeout(
+          achievementTimer
+        )
+
+        window.clearTimeout(
+          rewardTimer
+        )
+
+        window.clearTimeout(
+          finishTimer
+        )
+      }
+    },
+    [
+      finishDelay,
+      onDone,
+    ]
+  )
 
   function getName(
     playerId: number
@@ -123,182 +455,260 @@ export default function ScoreTransition({
     return (
       players.find(
         (player) =>
-          player.id === playerId
-      )?.name ?? 'Unknown'
+          player.id ===
+          playerId
+      )?.name ??
+      'Unknown'
     )
   }
 
-  function getChange(
-    sessionPlayerId: number
-  ) {
-    return (
-      data.changes.find(
-        (change) =>
-          change.sessionPlayerId ===
-          sessionPlayerId
-      )?.amount ?? 0
+  const rows =
+    data.before.map(
+      (beforePlayer) => {
+        const afterPlayer =
+          afterMap.get(
+            beforePlayer.id
+          ) ??
+          beforePlayer
+
+        const beforeIndex =
+          beforeRanking.findIndex(
+            (player) =>
+              player.id ===
+              beforePlayer.id
+          )
+
+        const afterIndex =
+          afterRanking.findIndex(
+            (player) =>
+              player.id ===
+              beforePlayer.id
+          )
+
+        return {
+          id:
+            beforePlayer.id,
+
+          beforePlayer,
+
+          afterPlayer,
+
+          beforeIndex,
+
+          afterIndex,
+
+          amount:
+            changeMap.get(
+              beforePlayer.id
+            ) ?? 0,
+
+          standardDelta:
+            (afterPlayer.wins ??
+              0) -
+            (beforePlayer.wins ??
+              0),
+
+          jimDelta:
+            (afterPlayer.jimWins ??
+              0) -
+            (beforePlayer.jimWins ??
+              0),
+        }
+      }
     )
-  }
 
-  /*
-    Before 3.2 seconds:
-    display old scores/ranking.
-
-    After 3.2 seconds:
-    display new scores/ranking.
-  */
-  const source =
-    updated
-      ? data.after
-      : data.before
-
-  const ranking =
-    [...source].sort(
-      (a, b) =>
-        b.points - a.points ||
-        a.rotationOrder -
-          b.rotationOrder
-    )
+  const boardHeight =
+    rows.length *
+      ROW_HEIGHT +
+    Math.max(
+      0,
+      rows.length - 1
+    ) *
+      ROW_GAP
 
   return (
-    <main className="app scoreTransitionPage">
-      <header className="transitionHeader">
-        {isPenalty ? (
-          <>
-            <span>
-              PENALTY
-            </span>
+    <main className="app cleanTransitionPage">
+      <header className="cleanTransitionHeader">
+        <div>
+          <span>
+            {isPenalty
+              ? 'PENALTY'
+              : 'ROUND UPDATE'}
+          </span>
 
-            <strong>
-              -1
-            </strong>
-          </>
-        ) : (
-          <>
-            <span>
-              ROUND
-            </span>
+          <h1>
+            Round{' '}
+            {
+              data.roundNumber
+            }
+          </h1>
+        </div>
 
-            <strong>
-              {data.roundNumber}
-            </strong>
-          </>
-        )}
+        <button
+          onClick={onDone}
+        >
+          Skip
+        </button>
       </header>
 
-      <section className="transitionScoreboard">
-        {ranking.map(
-          (
-            sessionPlayer,
-            index
-          ) => {
-            const change =
-              getChange(
-                sessionPlayer.id
+      <section
+        className="cleanTransitionBoard"
+        style={{
+          height:
+            `${boardHeight}px`,
+        }}
+      >
+        {rows.map(
+          (row) => {
+            const livePlayer =
+              settled
+                ? row.afterPlayer
+                : row.beforePlayer
+
+            const achievementPlayer =
+              revealAchievements
+                ? row.afterPlayer
+                : row.beforePlayer
+
+            const liveIndex =
+              settled
+                ? row.afterIndex
+                : row.beforeIndex
+
+            const top =
+              liveIndex *
+              (
+                ROW_HEIGHT +
+                ROW_GAP
               )
 
-            const isPlaying =
-              sessionPlayer
-                .rotationOrder < 4
-
             return (
-              <motion.article
-                layout
+              <article
+                className={`cleanTransitionRow ${
+                  settled
+                    ? 'settled'
+                    : ''
+                }`}
                 key={
-                  sessionPlayer.id
+                  row.id
                 }
-                className="transitionPlayer"
-                transition={{
-                  type: 'spring',
-                  stiffness: 260,
-                  damping: 30,
+                style={{
+                  top:
+                    `${top}px`,
                 }}
               >
-                <div className="transitionRank">
-                  {index + 1}
+                <div className="cleanTransitionRank">
+                  {
+                    liveIndex +
+                    1
+                  }
                 </div>
 
-                <div className="transitionIdentity">
-                  <div className="transitionNameRow">
+                <div className="cleanTransitionMain">
+                  <div className="cleanTransitionNameLine">
                     <h2>
                       {getName(
-                        sessionPlayer.playerId
+                        livePlayer.playerId
                       )}
                     </h2>
 
-                    {change !== 0 && (
-                      <motion.span
-                        className={
-                          change > 0
-                            ? 'pointDelta positive'
-                            : 'pointDelta negative'
-                        }
-                        initial={{
-                          scale: 0.4,
-                          opacity: 0,
-                        }}
-                        animate={{
-                          scale: 1,
-                          opacity: 1,
-                        }}
-                        transition={{
-                          type: 'spring',
-                          stiffness: 500,
-                          damping: 22,
-                        }}
-                      >
-                        {change > 0
-                          ? `+${change}`
-                          : change}
-                      </motion.span>
-                    )}
                   </div>
 
-                  <p>
-                    {sessionPlayer.wins}{' '}
-                    standard
-                    {' • '}
-                    ★{' '}
-                    {sessionPlayer.jimWins ??
-                      0}{' '}
-                    Jim
+                  {(achievementPlayer.wins >
+                    0 ||
+                    (achievementPlayer.jimWins ??
+                      0) >
+                      0) && (
+                    <div className="cleanTransitionMeta">
+                      {achievementPlayer.wins >
+                        0 && (
+                        <Tally
+                          count={
+                            achievementPlayer.wins
+                          }
+                          pop={
+                            revealAchievements &&
+                            row.standardDelta >
+                              0
+                          }
+                        />
+                      )}
 
-                    {isPlaying && (
-                      <>
-                        {' • '}
-                        playing
-                      </>
-                    )}
-                  </p>
+                      {(achievementPlayer.jimWins ??
+                        0) >
+                        0 && (
+                        <Stars
+                          count={
+                            achievementPlayer.jimWins ??
+                            0
+                          }
+                          pop={
+                            revealAchievements &&
+                            row.jimDelta >
+                              0
+                          }
+                        />
+                      )}
+                    </div>
+                  )}
                 </div>
 
-                <div className="transitionPoints">
-                  <motion.strong
-                    key={
-                      sessionPlayer.points
-                    }
-                    initial={{
-                      opacity: 0.3,
-                      y: 5,
-                    }}
-                    animate={{
-                      opacity: 1,
-                      y: 0,
-                    }}
-                    transition={{
-                      duration: 0.35,
+                {showReward &&
+                  row.amount !==
+                    0 && (
+                  <div
+                    className={`cleanRewardBubble ${
+                      row.amount >
+                      0
+                        ? 'gain'
+                        : 'loss'
+                    }`}
+                    style={{
+                      animation:
+                        'rewardIn 300ms ease-out',
                     }}
                   >
-                    {
-                      sessionPlayer.points
+                    <strong>
+                      {row.amount >
+                      0
+                        ? `+${row.amount}`
+                        : row.amount}
+                    </strong>
+
+                    {row.standardDelta >
+                      0 && (
+                      <span className="rewardTally">
+                        │
+                      </span>
+                    )}
+
+                    {row.jimDelta >
+                      0 && (
+                      <span className="rewardStar">
+                        ★
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                <div className="cleanTransitionPoints">
+                  <AnimatedPoints
+                    from={
+                      row.beforePlayer.points
                     }
-                  </motion.strong>
+                    to={
+                      row.afterPlayer.points
+                    }
+                    animate={
+                      settled
+                    }
+                  />
 
                   <span>
                     PTS
                   </span>
                 </div>
-              </motion.article>
+              </article>
             )
           }
         )}

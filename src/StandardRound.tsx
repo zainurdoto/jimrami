@@ -1327,6 +1327,22 @@ export default function StandardRound({
                 handleReorder
               }
               className="quickRankList"
+              style={{
+                touchAction: 'none',
+              }}
+              onTouchMove={
+                (event) => {
+                  /*
+                    Android browsers can
+                    treat a downward drag
+                    near the top of the
+                    page as pull-to-refresh.
+                    Keep the gesture owned
+                    by Quick Rank instead.
+                  */
+                  event.preventDefault()
+                }
+              }
             >
               {rankedPlayers.map(
                 (
@@ -1348,6 +1364,9 @@ export default function StandardRound({
                         player.id
                       }
                       className="quickRankItem"
+                      style={{
+                        touchAction: 'none',
+                      }}
                     >
                       <div
                         className={`quickRankCard ${
