@@ -1125,7 +1125,7 @@ if (
   <h1 className="jimramiBrandLockup">
     <img
       className="jimramiLogo"
-      src="/Jim_Jawi.svg"
+       src={`${import.meta.env.BASE_URL}Jim_Jawi.svg`}
       alt=""
     />
 
@@ -1378,7 +1378,7 @@ if (
 <h1 className="jimramiBrandLockup">
   <img
     className="jimramiLogo"
-    src="/Jim_Jawi.svg"
+     src={`${import.meta.env.BASE_URL}Jim_Jawi.svg`}
     alt=""
   />
 

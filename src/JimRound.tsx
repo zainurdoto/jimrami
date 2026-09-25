@@ -240,7 +240,7 @@ function JimProgressWheel({
         >
           <img
             className="jimModeLogo jimModeLogoGhost"
-            src="/Jim_Mode.svg"
+            src={`${import.meta.env.BASE_URL}Jim_Mode.svg`}
             alt=""
           />
 
@@ -261,7 +261,7 @@ function JimProgressWheel({
                 <div key={index}>
                   <img
                     className="jimModeLogo jimModeLogoBand"
-                    src="/Jim_Mode.svg"
+                    src={`${import.meta.env.BASE_URL}Jim_Mode.svg`}
                     alt=""
                     style={{
                       clipPath:
@@ -282,7 +282,7 @@ function JimProgressWheel({
                     >
                       <img
                         className="jimModeLogo jimModeLogoCaughtBand"
-                        src="/Jim_Mode.svg"
+                        src={`${import.meta.env.BASE_URL}Jim_Mode.svg`}
                         alt=""
                         style={{
                           clipPath:
@@ -299,7 +299,7 @@ function JimProgressWheel({
           {outcome === 'win' && (
             <img
               className="jimModeLogo jimModeLogoWinTint"
-              src="/Jim_Mode.svg"
+              src={`${import.meta.env.BASE_URL}Jim_Mode.svg`}
               alt=""
             />
           )}
