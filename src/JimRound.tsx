@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import {
   db,
@@ -34,6 +34,7 @@ type JimProgressWheelProps = {
   currentStage: number
   hideStage: number | null
   outcome?: 'win' | 'caught'
+  caughtTintActive?: boolean
 }
 
 function wheelPoint(
@@ -92,6 +93,7 @@ function JimProgressWheel({
   currentStage,
   hideStage,
   outcome,
+  caughtTintActive = false,
 }: JimProgressWheelProps) {
   /*
     Stage 1 begins at the upper-left
@@ -170,16 +172,16 @@ function JimProgressWheel({
 
               return (
                 <g key={stage}>
-                        {hidden && (
-                          <path
-                            className="jimWheelHideOutline"
-                            d={wheelArc(
-                              118,
-                              centerAngle - 23.2,
-                              centerAngle + 23.2
-                            )}
-                          />
-                        )}
+                  {hidden && (
+                    <path
+                      className="jimWheelHideOutline"
+                      d={wheelArc(
+                        118,
+                        centerAngle - 23.2,
+                        centerAngle + 23.2
+                      )}
+                    />
+                  )}
 
                   <path
                     className={[
@@ -256,18 +258,50 @@ function JimProgressWheel({
                 index * (100 / 6)
 
               return (
-                <img
-                  key={index}
-                  className="jimModeLogo jimModeLogoBand"
-                  src="/Jim_Mode.svg"
-                  alt=""
-                  style={{
-                    clipPath:
-                      `inset(${bandTop}% 0 ${bandBottom}% 0)`,
-                  }}
-                />
+                <div key={index}>
+                  <img
+                    className="jimModeLogo jimModeLogoBand"
+                    src="/Jim_Mode.svg"
+                    alt=""
+                    style={{
+                      clipPath:
+                        `inset(${bandTop}% 0 ${bandBottom}% 0)`,
+                    }}
+                  />
+
+                  {outcome === 'caught' && (
+                    <span
+                      className={[
+                        'jimModeCaughtBandFade',
+                        caughtTintActive
+                          ? 'active'
+                          : '',
+                      ]
+                        .filter(Boolean)
+                        .join(' ')}
+                    >
+                      <img
+                        className="jimModeLogo jimModeLogoCaughtBand"
+                        src="/Jim_Mode.svg"
+                        alt=""
+                        style={{
+                          clipPath:
+                            `inset(${bandTop}% 0 ${bandBottom}% 0)`,
+                        }}
+                      />
+                    </span>
+                  )}
+                </div>
               )
             }
+          )}
+
+          {outcome === 'win' && (
+            <img
+              className="jimModeLogo jimModeLogoWinTint"
+              src="/Jim_Mode.svg"
+              alt=""
+            />
           )}
         </div>
       </div>
@@ -360,6 +394,39 @@ export default function JimRound({
 
   const [saving, setSaving] =
     useState(false)
+
+  const [
+    caughtTintActive,
+    setCaughtTintActive,
+  ] =
+    useState(false)
+
+  /*
+    Enter the caught screen first in its
+    normal white state, then flip this
+    flag on a moment later. That gives
+    CSS a real before/after state to
+    transition between.
+  */
+  useEffect(() => {
+    if (phase !== 'caught') {
+      setCaughtTintActive(false)
+      return
+    }
+
+    setCaughtTintActive(false)
+
+    const timer =
+      window.setTimeout(
+        () => {
+          setCaughtTintActive(true)
+        },
+        90
+      )
+
+    return () =>
+      window.clearTimeout(timer)
+  }, [phase])
 
   const playing =
     [...sessionPlayers]
@@ -1052,12 +1119,15 @@ export default function JimRound({
             </div>
 
             <div className="jimProgress jimProgressWheelCard">
-                <JimProgressWheel
-                  stepsSurvived={stepsSurvived}
-                  currentStage={currentStage}
-                  hideStage={hideStage}
-                  outcome="caught"
-                />
+              <JimProgressWheel
+                stepsSurvived={stepsSurvived}
+                currentStage={currentStage}
+                hideStage={hideStage}
+                outcome="caught"
+                caughtTintActive={
+                  caughtTintActive
+                }
+              />
             </div>
 
             <div className="jimSectionTitle jimCaughtPrompt">

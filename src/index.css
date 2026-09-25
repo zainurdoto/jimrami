@@ -12778,3 +12778,280 @@ button:disabled {
 .jimWheelProgress.win {
   margin-top: 12px !important;
 }
+
+/* ==================================================
+   JIM OUTCOME COLOR ANIMATIONS
+   Append at the VERY BOTTOM of index.css
+
+   WIN:
+   white -> gold
+
+   CAUGHT:
+   white -> red
+================================================== */
+
+/* ------------------------------
+   WIN: WHITE -> GOLD
+------------------------------ */
+
+.jimWheel.outcome-win
+.jimModeLogo:not(.jimModeLogoWinTint) {
+  animation: none !important;
+
+  filter:
+    brightness(0)
+    invert(1)
+    drop-shadow(
+      0 0 4px
+      rgba(255,255,255,0.08)
+    ) !important;
+}
+
+.jimWheel.outcome-win
+.jimModeLogoWinTint {
+  opacity: 0;
+
+  filter:
+    brightness(0)
+    saturate(100%)
+    invert(84%)
+    sepia(43%)
+    saturate(760%)
+    hue-rotate(352deg)
+    brightness(102%)
+    contrast(94%) !important;
+
+  animation:
+    jimWinGoldFadeIn
+    1000ms
+    ease-out
+    120ms
+    forwards !important;
+}
+
+@keyframes jimWinGoldFadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+/* ------------------------------
+   CAUGHT: WHITE -> RED
+------------------------------ */
+
+/*
+  Override the older caught rule that
+  instantly turned every logo layer red.
+  The existing logo stays white first.
+*/
+.jimWheel.outcome-caught
+.jimModeLogo:not(.jimModeLogoCaughtTint) {
+  animation: none !important;
+
+  filter:
+    brightness(0)
+    invert(1)
+    drop-shadow(
+      0 0 3px
+      rgba(255,255,255,0.06)
+    ) !important;
+}
+
+/*
+  Keep the unfinished ghost layer dim,
+  even while the red overlay animates.
+*/
+.jimWheel.outcome-caught
+.jimModeLogoGhost {
+  opacity: 0.12 !important;
+}
+
+/*
+  Red copy fades over the existing Jim.
+  Slightly quicker than the win animation
+  so being caught feels more immediate.
+*/
+.jimWheel.outcome-caught
+.jimModeLogoCaughtTint {
+  opacity: 0;
+
+  filter:
+    brightness(0)
+    saturate(100%)
+    invert(67%)
+    sepia(22%)
+    saturate(1550%)
+    hue-rotate(305deg)
+    brightness(101%)
+    contrast(94%) !important;
+
+  animation:
+    jimCaughtRedFadeIn
+    650ms
+    ease-out
+    forwards !important;
+}
+
+@keyframes jimCaughtRedFadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 0.82;
+  }
+}
+/* =========================================
+   FIX CAUGHT JIM RED FADE
+========================================= */
+
+.jimWheel.outcome-caught
+.jimModeLogo.jimModeLogoCaughtBand {
+  opacity: 0 !important;
+
+  filter:
+    brightness(0)
+    saturate(100%)
+    invert(67%)
+    sepia(22%)
+    saturate(1550%)
+    hue-rotate(305deg)
+    brightness(101%)
+    contrast(94%) !important;
+
+  animation:
+    jimCaughtBandRedFadeFix
+    650ms
+    ease-out
+    forwards !important;
+}
+
+@keyframes jimCaughtBandRedFadeFix {
+  0% {
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 0.88;
+  }
+}
+
+/* ==================================================
+   CAUGHT JIM — RELIABLE WHITE -> RED BAND FADE
+   Append at the VERY BOTTOM of index.css
+
+   Why this works:
+   older CSS has !important rules directly on
+   .jimModeLogo, which can block animations on
+   the image itself. This animates a NEW WRAPPER
+   around each completed band instead.
+================================================== */
+
+/* The wrapper covers the same center-emblem area. */
+.jimModeCaughtBandFade {
+  position: absolute;
+  inset: 0;
+
+  opacity: 0;
+
+  pointer-events: none;
+
+  /*
+    Child remains white.
+    This filter tints the rendered child red.
+  */
+  filter:
+    brightness(0)
+    saturate(100%)
+    invert(67%)
+    sepia(22%)
+    saturate(1550%)
+    hue-rotate(305deg)
+    brightness(101%)
+    contrast(94%);
+
+  animation:
+    jimCaughtWrapperFade
+    700ms
+    ease-out
+    forwards;
+}
+
+/* Make sure the caught copy itself is visible.
+   Any older image-level animation rules no longer matter. */
+.jimModeCaughtBandFade
+.jimModeLogoCaughtBand {
+  opacity: 1 !important;
+
+  animation: none !important;
+
+  filter:
+    brightness(0)
+    invert(1) !important;
+}
+
+@keyframes jimCaughtWrapperFade {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 0.88;
+  }
+}
+
+/* ==================================================
+   CAUGHT JIM — STATE-DRIVEN WHITE -> RED TRANSITION
+   Append at the VERY BOTTOM of index.css
+
+   This intentionally disables the earlier caught
+   keyframe attempts. React now gives the tint a real
+   OFF -> ON state, so the browser has something
+   definite to transition.
+================================================== */
+
+.jimWheel.outcome-caught
+.jimModeCaughtBandFade {
+  opacity: 0 !important;
+
+  animation: none !important;
+
+  transition:
+    opacity 700ms ease-out !important;
+
+  filter:
+    brightness(0)
+    saturate(100%)
+    invert(67%)
+    sepia(22%)
+    saturate(1550%)
+    hue-rotate(305deg)
+    brightness(101%)
+    contrast(94%);
+}
+
+.jimWheel.outcome-caught
+.jimModeCaughtBandFade.active {
+  opacity: 0.88 !important;
+}
+
+/*
+  The image itself stays white.
+  The wrapper above applies the red tint
+  to the rendered completed band.
+*/
+.jimWheel.outcome-caught
+.jimModeCaughtBandFade
+.jimModeLogoCaughtBand {
+  opacity: 1 !important;
+
+  animation: none !important;
+
+  filter:
+    brightness(0)
+    invert(1) !important;
+}
