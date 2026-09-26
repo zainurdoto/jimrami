@@ -13055,3 +13055,609 @@ button:disabled {
     brightness(0)
     invert(1) !important;
 }
+
+/* =========================================
+   HISTORY — ROUND DETAILS
+   Append to the very bottom of index.css
+========================================= */
+
+.historySessionBottomActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+
+  margin-top: 11px;
+}
+
+.historyMoreDetailsButton {
+  min-height: 38px;
+  padding: 0 13px;
+
+  border: 1px solid #3a4654;
+  border-radius: 10px;
+
+  background: transparent;
+  color: #9aa8b8;
+
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.historyMoreDetailsButton:hover {
+  border-color: #536173;
+
+  background: #202730;
+  color: #d7dee7;
+}
+
+.historyActiveDeleteNote {
+  color: #697583;
+
+  font-size: 10px;
+  font-weight: 750;
+}
+
+.historyRoundDetails {
+  margin-top: 14px;
+  padding-top: 16px;
+
+  border-top: 1px solid #2b333e;
+}
+
+.historyRoundDetailsHeader {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+
+  margin-bottom: 11px;
+  padding: 0 2px;
+}
+
+.historyRoundDetailsHeader > div {
+  display: grid;
+  gap: 3px;
+}
+
+.historyRoundDetailsHeader span {
+  color: #788493;
+
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.11em;
+}
+
+.historyRoundDetailsHeader strong {
+  font-size: 17px;
+}
+
+.historyRoundDetailsHeader > small {
+  color: #687482;
+
+  font-size: 10px;
+  font-weight: 750;
+}
+
+.historyRoundList {
+  display: grid;
+  gap: 8px;
+}
+
+.historyRoundCard {
+  overflow: hidden;
+
+  border: 1px solid #2b333e;
+  border-radius: 13px;
+
+  background: #11161c;
+}
+
+.historyRoundCard > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+
+  min-height: 43px;
+  padding: 8px 12px;
+
+  border-bottom: 1px solid #252d36;
+}
+
+.historyRoundCard > header > div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.historyRoundCard > header span {
+  color: #aab4c0;
+
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+}
+
+.historyRoundCard > header b {
+  padding: 4px 7px;
+
+  border-radius: 7px;
+
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.historyRoundCard.standard > header b {
+  background: #222d3a;
+  color: #9db6d2;
+}
+
+.historyRoundCard.jim > header b {
+  background: #332b19;
+  color: #e0b65c;
+}
+
+.historyRoundCard > header > small {
+  color: #667280;
+
+  font-size: 9px;
+  font-weight: 750;
+}
+
+.historyRoundResults {
+  display: grid;
+}
+
+.historyRoundResult {
+  display: grid;
+  grid-template-columns:
+    28px minmax(0, 1fr) auto 38px;
+  align-items: center;
+  gap: 8px;
+
+  min-height: 39px;
+  padding: 6px 12px;
+
+  border-top: 1px solid #202730;
+}
+
+.historyRoundResult:first-child {
+  border-top: 0;
+}
+
+.historyRoundResult > span {
+  color: #788594;
+
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.historyRoundResult > strong {
+  overflow: hidden;
+
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.historyRoundResult > small {
+  color: #6f7c89;
+
+  font-size: 9px;
+  font-weight: 750;
+}
+
+.historyRoundResult > b {
+  text-align: right;
+
+  color: #b8c2cc;
+
+  font-size: 12px;
+}
+
+.historyJimSummary {
+  display: grid;
+  gap: 5px;
+
+  padding: 11px 12px 12px;
+}
+
+.historyJimSummary > strong {
+  font-size: 14px;
+}
+
+.historyJimSummary > span {
+  color: #8f9aa7;
+
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: 0.035em;
+}
+
+.historyJimSummary > div {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+
+  margin-top: 2px;
+}
+
+.historyJimSummary small,
+.historyJimSummary b {
+  padding: 4px 7px;
+
+  border-radius: 7px;
+
+  background: #1d242c;
+
+  font-size: 9px;
+  font-weight: 850;
+}
+
+.historyJimSummary small {
+  color: #8793a0;
+}
+
+.historyJimSummary b.positive {
+  background: #20362a;
+  color: #83d69b;
+}
+
+.historyJimSummary b.negative {
+  background: #382127;
+  color: #e78a94;
+}
+
+.historyJimSummary b.catcherPoint {
+  background: #1d3327;
+  color: #79cc92;
+}
+
+.historyRoundCard.jim.won {
+  border-color: #4b432a;
+}
+
+.historyRoundCard.jim.caught {
+  border-color: #493036;
+}
+
+.historyRoundMissing {
+  margin: 0;
+  padding: 12px;
+
+  color: #788493;
+
+  font-size: 11px;
+}
+
+@media (max-width: 620px) {
+  .historySessionBottomActions {
+    align-items: stretch;
+    justify-content: flex-end;
+  }
+
+  .historyRoundResult {
+    grid-template-columns:
+      24px minmax(0, 1fr) auto;
+  }
+
+  .historyRoundResult > small {
+    display: none;
+  }
+
+  .historyRoundDetailsHeader {
+    align-items: flex-start;
+  }
+}
+
+/* =========================================
+   HISTORY — ROUND EDITOR
+========================================= */
+
+.historyRoundHeaderActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.historyRoundHeaderActions > small {
+  color: #667280;
+
+  font-size: 9px;
+  font-weight: 750;
+}
+
+.historyRoundEditButton {
+  min-height: 28px;
+  padding: 0 9px;
+
+  border: 1px solid #465362;
+  border-radius: 8px;
+
+  background: #202730;
+  color: #b9c4cf;
+
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.historyRoundEditButton:hover {
+  border-color: #647386;
+
+  color: #f0f3f7;
+}
+
+.roundEditPanel {
+  display: grid;
+  gap: 12px;
+
+  padding: 14px;
+
+  border-top: 1px solid #303945;
+
+  background: #171d25;
+}
+
+.roundEditHeading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.roundEditHeading > div {
+  display: grid;
+  gap: 3px;
+}
+
+.roundEditHeading span,
+.roundEditField > span,
+.roundEditOutcome > span,
+.roundEditTie > span {
+  color: #7f8b99;
+
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+
+.roundEditHeading strong {
+  font-size: 15px;
+}
+
+.roundEditHeading > button {
+  width: 30px;
+  height: 30px;
+
+  padding: 0;
+
+  border: 1px solid #3c4653;
+  border-radius: 9px;
+
+  background: #222a34;
+  color: #aeb9c5;
+
+  font-size: 18px;
+  line-height: 1;
+}
+
+.roundEditOrder {
+  display: grid;
+  gap: 6px;
+}
+
+.roundEditOrderRow {
+  display: grid;
+  grid-template-columns:
+    28px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+
+  min-height: 44px;
+  padding: 6px 8px 6px 10px;
+
+  border: 1px solid #2d3641;
+  border-radius: 10px;
+
+  background: #11161c;
+}
+
+.roundEditOrderRow > span {
+  color: #7f8b99;
+
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.roundEditOrderRow > strong {
+  overflow: hidden;
+
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.roundEditOrderRow > div {
+  display: flex;
+  gap: 5px;
+}
+
+.roundEditOrderRow button {
+  width: 32px;
+  height: 30px;
+
+  padding: 0;
+
+  border: 1px solid #3b4653;
+  border-radius: 8px;
+
+  background: #252d37;
+  color: #c3ccd6;
+
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.roundEditOrderRow button:disabled {
+  opacity: 0.28;
+}
+
+.roundEditTie,
+.roundEditOutcome {
+  display: grid;
+  gap: 7px;
+}
+
+.roundEditTie > div,
+.roundEditOutcome > div {
+  display: grid;
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.roundEditOutcome > div {
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+}
+
+.roundEditTie button,
+.roundEditOutcome button {
+  min-height: 38px;
+  padding: 0 8px;
+
+  border: 1px solid #38434f;
+  border-radius: 9px;
+
+  background: #202730;
+  color: #8996a4;
+
+  font-size: 10px;
+  font-weight: 850;
+}
+
+.roundEditTie button.active {
+  border-color: #65778b;
+
+  background: #2a3542;
+  color: #e3e8ed;
+}
+
+.roundEditOutcome button.active.caught {
+  border-color: #674149;
+
+  background: #382329;
+  color: #e68a95;
+}
+
+.roundEditOutcome button.active.won {
+  border-color: #645633;
+
+  background: #38301d;
+  color: #e2bd64;
+}
+
+.roundEditField {
+  display: grid;
+  gap: 6px;
+}
+
+.roundEditField select {
+  width: 100%;
+  min-height: 42px;
+  padding: 0 11px;
+
+  border: 1px solid #37424e;
+  border-radius: 10px;
+
+  outline: 0;
+
+  background: #11161c;
+  color: #e8edf2;
+
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.roundEditField select:focus {
+  border-color: #607085;
+}
+
+.roundEditNote {
+  margin: 0;
+  padding: 9px 10px;
+
+  border: 1px solid #343e49;
+  border-radius: 9px;
+
+  background: #141a21;
+  color: #7f8c99;
+
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.roundEditMessage {
+  margin: 0;
+
+  color: #e28a94;
+
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.roundEditActions {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 0.8fr)
+    minmax(0, 1.2fr);
+  gap: 7px;
+}
+
+.roundEditActions button {
+  min-height: 42px;
+
+  border-radius: 10px;
+
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.roundEditCancel {
+  border: 1px solid #3b4652;
+
+  background: #232a33;
+  color: #aab5c0;
+}
+
+.roundEditSave {
+  border: 1px solid #56677a;
+
+  background: #303c4a;
+  color: #f0f4f7;
+}
+
+.roundEditActions button:disabled {
+  opacity: 0.45;
+}
+
+@media (max-width: 620px) {
+  .historyRoundCard > header {
+    align-items: flex-start;
+  }
+
+  .historyRoundHeaderActions {
+    flex: 0 0 auto;
+  }
+
+  .roundEditTie > div {
+    grid-template-columns: 1fr;
+  }
+}
+

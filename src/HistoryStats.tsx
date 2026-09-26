@@ -11,6 +11,7 @@ import {
 } from './db'
 
 import TitleRace from './TitleRace'
+import RoundEditor from './RoundEditor'
 
 type Props = {
   players: Player[]
@@ -326,12 +327,6 @@ function getAwardTone(
 
       'Jim Slayer Record':
         'slayer',
-
-      'Win Streak':
-        'session',
-
-      'Win Streak Record':
-        'session',
     }
 
   return (
@@ -828,6 +823,22 @@ export default function HistoryStats({
     )
 
   const [
+    roundDetailsSessionId,
+    setRoundDetailsSessionId,
+  ] =
+    useState<number | null>(
+      null
+    )
+
+  const [
+    editingRoundId,
+    setEditingRoundId,
+  ] =
+    useState<number | null>(
+      null
+    )
+
+  const [
     raceSessionId,
     setRaceSessionId,
   ] =
@@ -942,165 +953,6 @@ export default function HistoryStats({
     return (
       participant?.displayName ??
       getName(playerId)
-    )
-  }
-
-
-  /*
-    WIN STREAK RULES
-
-    A round win is:
-    - Standard: position 1
-    - Jim succeeds: the Jim player
-    - Jim is caught: the catcher
-
-    A player's streak only changes when
-    that round has a recorded result for
-    them. Waiting rounds therefore pause
-    the streak.
-  */
-  function buildWinStreaksForSession(
-    sessionId: number
-  ) {
-    const orderedRounds =
-      (rounds ?? [])
-        .filter(
-          (round) =>
-            round.sessionId ===
-            sessionId
-        )
-        .sort(
-          (a, b) =>
-            a.roundNumber -
-            b.roundNumber
-        )
-
-    const current =
-      new Map<number, number>()
-
-    const best =
-      new Map<number, number>()
-
-    function recordResult(
-      playerId: number,
-      won: boolean
-    ) {
-      if (!won) {
-        current.set(
-          playerId,
-          0
-        )
-
-        return
-      }
-
-      const next =
-        (current.get(
-          playerId
-        ) ?? 0) + 1
-
-      current.set(
-        playerId,
-        next
-      )
-
-      best.set(
-        playerId,
-        Math.max(
-          best.get(
-            playerId
-          ) ?? 0,
-          next
-        )
-      )
-    }
-
-    orderedRounds.forEach(
-      (round) => {
-        if (
-          round.type ===
-          'standard'
-        ) {
-          const results =
-            (roundResults ?? [])
-              .filter(
-                (result) =>
-                  result.roundId ===
-                  round.id
-              )
-
-          results.forEach(
-            (result) => {
-              recordResult(
-                result.playerId,
-                result.position === 1
-              )
-            }
-          )
-
-          return
-        }
-
-        const result =
-          (jimResults ?? []).find(
-            (entry) =>
-              entry.roundId ===
-              round.id
-          )
-
-        if (!result) {
-          return
-        }
-
-        recordResult(
-          result.jimPlayerId,
-          result.won
-        )
-
-        if (
-          !result.won &&
-          result.caughtByPlayerId !==
-            undefined
-        ) {
-          recordResult(
-            result.caughtByPlayerId,
-            true
-          )
-        }
-
-        if (
-          result.won &&
-          result.outPlayerId !==
-            undefined &&
-          result.outPlayerId !==
-            result.jimPlayerId
-        ) {
-          recordResult(
-            result.outPlayerId,
-            false
-          )
-        }
-      }
-    )
-
-    const participants =
-      (sessionPlayers ?? [])
-        .filter(
-          (entry) =>
-            entry.sessionId ===
-            sessionId
-        )
-
-    return participants.map(
-      (participant) => ({
-        playerId:
-          participant.playerId,
-
-        streak:
-          best.get(
-            participant.playerId
-          ) ?? 0,
-      })
     )
   }
 
@@ -2388,7 +2240,6 @@ export default function HistoryStats({
         !sessions ||
         !rounds ||
         !sessionPlayers ||
-        !roundResults ||
         !jimResults
       ) {
         return []
@@ -2631,105 +2482,15 @@ export default function HistoryStats({
         }
       }
 
-      const winStreakAward:
-        Award = {
-          title:
-            'Win Streak Record',
-
-          description:
-            'Longest run of consecutive recorded round wins in one completed session. Standard wins, successful Jim, and catching Jim all count. Rounds with no recorded result for the player pause the streak (i.e. bystander during Jim round).',
-
-          winners: '—',
-
-          value:
-            'No 2-win streak yet',
-
-          hasData: false,
-        }
-
-      if (
-        completed.length > 0
-      ) {
-        const streakEntries =
-          completed.flatMap(
-            (session) =>
-              buildWinStreaksForSession(
-                session.id
-              ).map(
-                (entry) => ({
-                  session,
-                  playerId:
-                    entry.playerId,
-                  value:
-                    entry.streak,
-                })
-              )
-          )
-
-        const maximum =
-          Math.max(
-            0,
-            ...streakEntries.map(
-              (entry) =>
-                entry.value
-            )
-          )
-
-        if (maximum >= 2) {
-          const winners =
-            streakEntries.filter(
-              (entry) =>
-                entry.value ===
-                maximum
-            )
-
-          winStreakAward.winners =
-            [
-              ...new Set(
-                winners.map(
-                  (winner) =>
-                    getName(
-                      winner.playerId
-                    )
-                )
-              ),
-            ].join(' • ')
-
-          winStreakAward.winnerLines =
-            winners.map(
-              (winner) => ({
-                name:
-                  getName(
-                    winner.playerId
-                  ),
-
-                meta:
-                  formatDate(
-                    winner.session
-                      .startedAt
-                  ),
-              })
-            )
-
-          winStreakAward.value =
-            `${maximum} straight wins`
-
-          winStreakAward.hasData =
-            true
-        }
-      }
-
       return [
         durationAward,
         roundAward,
         jimSlayerAward,
-        winStreakAward,
       ]
     }, [
       sessions,
       rounds,
       sessionPlayers,
-      roundResults,
       jimResults,
       playerNameMap,
     ])
@@ -3280,65 +3041,6 @@ export default function HistoryStats({
           topPoints === 1
             ? '1 point'
             : `${topPoints} points`,
-
-        hasData: true,
-      })
-    }
-
-    const winStreaks =
-      buildWinStreaksForSession(
-        sessionId
-      )
-
-    const longestStreak =
-      Math.max(
-        0,
-        ...winStreaks.map(
-          (entry) =>
-            entry.streak
-        )
-      )
-
-    if (longestStreak >= 2) {
-      const streakWinners =
-        winStreaks.filter(
-          (entry) =>
-            entry.streak ===
-            longestStreak
-        )
-
-      awards.push({
-        title:
-          'Win Streak',
-
-        description:
-          'Longest run of consecutive recorded round wins in this session. Standard wins, successful Jim, and catching Jim all count. Rounds with no recorded result for the player pause the streak (i.e. bystander during Jim round).',
-
-        winners:
-          streakWinners
-            .map(
-              (winner) =>
-                sessionName(
-                  winner.playerId
-                )
-            )
-            .join(' • '),
-
-        winnerLines:
-          streakWinners.map(
-            (winner) => ({
-              name:
-                sessionName(
-                  winner.playerId
-                ),
-
-              meta:
-                `${winner.streak} consecutive wins`,
-            })
-          ),
-
-        value:
-          `${longestStreak} straight wins`,
 
         hasData: true,
       })
@@ -4261,6 +3963,19 @@ export default function HistoryStats({
                   expandedSessionId ===
                   session.id
 
+                const roundDetailsOpen =
+                  roundDetailsSessionId ===
+                  session.id
+
+                const orderedSessionRounds =
+                  [...sessionRounds].sort(
+                    (a, b) =>
+                      a.roundNumber -
+                        b.roundNumber ||
+                      a.createdAt.getTime() -
+                        b.createdAt.getTime()
+                  )
+
                 return (
                   <article
                     className="historySession"
@@ -4463,7 +4178,33 @@ export default function HistoryStats({
                           </div>
                         )}
 
-                        <div className="historyDeleteArea">
+                        <div className="historySessionBottomActions">
+                          {sessionRounds.length >
+                            0 && (
+                            <button
+                              className="historyMoreDetailsButton"
+                              onClick={() => {
+                                if (
+                                  roundDetailsOpen
+                                ) {
+                                  setEditingRoundId(
+                                    null
+                                  )
+                                }
+
+                                setRoundDetailsSessionId(
+                                  roundDetailsOpen
+                                    ? null
+                                    : session.id
+                                )
+                              }}
+                            >
+                              {roundDetailsOpen
+                                ? 'Hide Round Details'
+                                : 'View More Details'}
+                            </button>
+                          )}
+
                           {session.status ===
                           'ended' ? (
                             <button
@@ -4477,11 +4218,401 @@ export default function HistoryStats({
                               Delete Session
                             </button>
                           ) : (
-                            <span>
+                            <span className="historyActiveDeleteNote">
                               End this session before deleting it.
                             </span>
                           )}
                         </div>
+
+                        {roundDetailsOpen && (
+                          <section className="historyRoundDetails">
+                            <div className="historyRoundDetailsHeader">
+                              <div>
+                                <span>
+                                  ROUND HISTORY
+                                </span>
+
+                                <strong>
+                                  {
+                                    orderedSessionRounds.length
+                                  }{' '}
+                                  rounds
+                                </strong>
+                              </div>
+
+                              <small>
+                                Oldest to newest
+                              </small>
+                            </div>
+
+                            <div className="historyRoundList">
+                              {orderedSessionRounds.map(
+                                (round) => {
+                                  if (
+                                    round.type ===
+                                    'standard'
+                                  ) {
+                                    const results =
+                                      roundResults
+                                        .filter(
+                                          (result) =>
+                                            result.roundId ===
+                                            round.id
+                                        )
+                                        .sort(
+                                          (a, b) =>
+                                            a.position -
+                                              b.position ||
+                                            b.pointsAwarded -
+                                              a.pointsAwarded
+                                        )
+
+                                    return (
+                                      <article
+                                        className="historyRoundCard standard"
+                                        key={
+                                          round.id
+                                        }
+                                      >
+                                        <header>
+                                          <div>
+                                            <span>
+                                              ROUND{' '}
+                                              {
+                                                round.roundNumber
+                                              }
+                                            </span>
+
+                                            <b>
+                                              STANDARD
+                                            </b>
+                                          </div>
+
+                                          <div className="historyRoundHeaderActions">
+                                            <small>
+                                              {round.createdAt.toLocaleTimeString(
+                                                undefined,
+                                                {
+                                                  hour:
+                                                    'numeric',
+                                                  minute:
+                                                    '2-digit',
+                                                }
+                                              )}
+                                            </small>
+
+                                            <button
+                                              type="button"
+                                              className="historyRoundEditButton"
+                                              onClick={() =>
+                                                setEditingRoundId(
+                                                  editingRoundId ===
+                                                    round.id
+                                                    ? null
+                                                    : round.id
+                                                )
+                                              }
+                                            >
+                                              {editingRoundId ===
+                                              round.id
+                                                ? 'Close'
+                                                : 'Edit'}
+                                            </button>
+                                          </div>
+                                        </header>
+
+                                        <div className="historyRoundResults">
+                                          {results.map(
+                                            (
+                                              result
+                                            ) => (
+                                              <div
+                                                className="historyRoundResult"
+                                                key={
+                                                  result.id
+                                                }
+                                              >
+                                                <span>
+                                                  {
+                                                    result.position
+                                                  }
+                                                </span>
+
+                                                <strong>
+                                                  {getSessionName(
+                                                    session.id,
+                                                    result.playerId
+                                                  )}
+                                                </strong>
+
+                                                {typeof result.cardScore ===
+                                                  'number' && (
+                                                  <small>
+                                                    {
+                                                      result.cardScore
+                                                    }{' '}
+                                                    cards
+                                                  </small>
+                                                )}
+
+                                                <b>
+                                                  {result.pointsAwarded >
+                                                  0
+                                                    ? '+'
+                                                    : ''}
+                                                  {
+                                                    result.pointsAwarded
+                                                  }
+                                                </b>
+                                              </div>
+                                            )
+                                          )}
+                                        </div>
+
+                                        {editingRoundId ===
+                                          round.id && (
+                                          <RoundEditor
+                                            round={
+                                              round
+                                            }
+                                            sessionPlayers={
+                                              participants
+                                            }
+                                            roundResults={
+                                              results
+                                            }
+                                            getName={(
+                                              playerId
+                                            ) =>
+                                              getSessionName(
+                                                session.id,
+                                                playerId
+                                              )
+                                            }
+                                            onClose={() =>
+                                              setEditingRoundId(
+                                                null
+                                              )
+                                            }
+                                          />
+                                        )}
+                                      </article>
+                                    )
+                                  }
+
+                                  const jimResult =
+                                    jimResults.find(
+                                      (result) =>
+                                        result.roundId ===
+                                        round.id
+                                    )
+
+                                  if (!jimResult) {
+                                    return (
+                                      <article
+                                        className="historyRoundCard jim"
+                                        key={
+                                          round.id
+                                        }
+                                      >
+                                        <header>
+                                          <div>
+                                            <span>
+                                              ROUND{' '}
+                                              {
+                                                round.roundNumber
+                                              }
+                                            </span>
+
+                                            <b>
+                                              JIM
+                                            </b>
+                                          </div>
+                                        </header>
+
+                                        <p className="historyRoundMissing">
+                                          No Jim result recorded.
+                                        </p>
+                                      </article>
+                                    )
+                                  }
+
+                                  const jimName =
+                                    getSessionName(
+                                      session.id,
+                                      jimResult.jimPlayerId
+                                    )
+
+                                  const catcherName =
+                                    jimResult.caughtByPlayerId ===
+                                    undefined
+                                      ? null
+                                      : getSessionName(
+                                          session.id,
+                                          jimResult.caughtByPlayerId
+                                        )
+
+                                  return (
+                                    <article
+                                      className={`historyRoundCard jim ${
+                                        jimResult.won
+                                          ? 'won'
+                                          : 'caught'
+                                      }`}
+                                      key={
+                                        round.id
+                                      }
+                                    >
+                                      <header>
+                                        <div>
+                                          <span>
+                                            ROUND{' '}
+                                            {
+                                              round.roundNumber
+                                            }
+                                          </span>
+
+                                          <b>
+                                            JIM
+                                          </b>
+                                        </div>
+
+                                        <div className="historyRoundHeaderActions">
+                                          <small>
+                                            {round.createdAt.toLocaleTimeString(
+                                              undefined,
+                                              {
+                                                hour:
+                                                  'numeric',
+                                                minute:
+                                                  '2-digit',
+                                              }
+                                            )}
+                                          </small>
+
+                                          <button
+                                            type="button"
+                                            className="historyRoundEditButton"
+                                            onClick={() =>
+                                              setEditingRoundId(
+                                                editingRoundId ===
+                                                  round.id
+                                                  ? null
+                                                  : round.id
+                                              )
+                                            }
+                                          >
+                                            {editingRoundId ===
+                                            round.id
+                                              ? 'Close'
+                                              : 'Edit'}
+                                          </button>
+                                        </div>
+                                      </header>
+
+                                      <div className="historyJimSummary">
+                                        <strong>
+                                          {jimName}
+                                        </strong>
+
+                                        <span>
+                                          {jimResult.won
+                                            ? 'SURVIVED ALL 6 STAGES'
+                                            : `CAUGHT${
+                                                catcherName
+                                                  ? ` BY ${catcherName}`
+                                                  : ''
+                                              }`}
+                                        </span>
+
+                                        <div>
+                                          <small>
+                                            {jimResult.won
+                                              ? '6 stages survived'
+                                              : `${jimResult.stepsSurvived} stages survived`}
+                                          </small>
+
+                                          {typeof jimResult.hideStage ===
+                                            'number' && (
+                                            <small>
+                                              Hide:{' '}
+                                              {
+                                                jimResult.hideStage
+                                              }
+                                            </small>
+                                          )}
+
+                                          <b
+                                            className={
+                                              jimResult.won
+                                                ? 'positive'
+                                                : 'negative'
+                                            }
+                                          >
+                                            {jimResult.jimPointsAwarded >
+                                            0
+                                              ? '+'
+                                              : ''}
+                                            {
+                                              jimResult.jimPointsAwarded
+                                            }
+                                          </b>
+
+                                          {!jimResult.won &&
+                                            catcherName && (
+                                            <b className="catcherPoint">
+                                              Catcher{' '}
+                                              {jimResult.catcherPointsAwarded >
+                                              0
+                                                ? '+'
+                                                : ''}
+                                              {
+                                                jimResult.catcherPointsAwarded
+                                              }
+                                            </b>
+                                          )}
+                                        </div>
+                                      </div>
+
+                                      {editingRoundId ===
+                                        round.id && (
+                                        <RoundEditor
+                                          round={
+                                            round
+                                          }
+                                          sessionPlayers={
+                                            participants
+                                          }
+                                          roundResults={
+                                            []
+                                          }
+                                          jimResult={
+                                            jimResult
+                                          }
+                                          getName={(
+                                            playerId
+                                          ) =>
+                                            getSessionName(
+                                              session.id,
+                                              playerId
+                                            )
+                                          }
+                                          onClose={() =>
+                                            setEditingRoundId(
+                                              null
+                                            )
+                                          }
+                                        />
+                                      )}
+                                    </article>
+                                  )
+                                }
+                              )}
+                            </div>
+                          </section>
+                        )}
+
+
                       </div>
                     )}
                   </article>
