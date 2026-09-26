@@ -13661,3 +13661,466 @@ button:disabled {
   }
 }
 
+/* =========================================
+   HISTORY ROUND — EDITED MARKER
+   Append to the very bottom of index.css
+========================================= */
+
+.historyRoundTypeLine {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.historyRoundTypeLine > b {
+  margin: 0;
+}
+
+.historyRoundEditedBadge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 18px;
+  padding: 0 6px;
+
+  border: 1px solid #4b5663;
+  border-radius: 999px;
+
+  background: #222a34;
+  color: #9aa6b4;
+
+  font-size: 8px;
+  font-style: normal;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  line-height: 1;
+}
+
+/* =========================================
+   ROUND EDITOR — UI POLISH
+   Append to the VERY BOTTOM of index.css
+
+   - Standard result: drag to reorder
+   - Jim result: custom choice buttons
+========================================= */
+
+/* ---------- STANDARD: DRAG RANKING ---------- */
+
+.roundEditDragList {
+  display: grid;
+  gap: 7px;
+
+  margin: 0;
+  padding: 0;
+
+  list-style: none;
+}
+
+.roundEditDragItem {
+  margin: 0;
+  padding: 0;
+
+  list-style: none;
+
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.roundEditDragItem:active {
+  cursor: grabbing;
+}
+
+.roundEditDragRow {
+  display: grid;
+  grid-template-columns:
+    32px minmax(0, 1fr) 38px;
+  align-items: center;
+  gap: 10px;
+
+  min-height: 50px;
+  padding: 7px 9px 7px 12px;
+
+  border: 1px solid #34404c;
+  border-radius: 11px;
+
+  background: #161c23;
+
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.02);
+}
+
+.roundEditDragItem:active
+.roundEditDragRow {
+  border-color: #5b6b7d;
+
+  background: #1d252f;
+
+  box-shadow:
+    0 10px 28px
+    rgba(0, 0, 0, 0.3);
+}
+
+.roundEditDragPosition {
+  display: grid;
+  place-items: center;
+
+  width: 26px;
+  height: 26px;
+
+  border-radius: 8px;
+
+  background: #222b35;
+  color: #9ca9b7;
+
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.roundEditDragRow > strong {
+  overflow: hidden;
+
+  color: #edf1f4;
+
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.roundEditDragHandle {
+  display: grid;
+  place-items: center;
+
+  width: 34px;
+  height: 34px;
+
+  border: 1px solid #3e4a57;
+  border-radius: 9px;
+
+  background: #222a34;
+  color: #aab6c2;
+
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.roundEditDragHint {
+  margin-top: -3px;
+
+  color: #6f7c89;
+
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.025em;
+}
+
+/* ---------- JIM: CUSTOM CHOICE CONTROLS ---------- */
+
+.roundEditChoiceField {
+  display: grid;
+  gap: 7px;
+}
+
+.roundEditChoiceField > span {
+  color: #7f8b99;
+
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+
+.roundEditChoiceGrid {
+  display: grid;
+  grid-template-columns:
+    repeat(
+      auto-fit,
+      minmax(120px, 1fr)
+    );
+  gap: 7px;
+}
+
+.roundEditChoiceGrid button,
+.roundEditNumberChoices button,
+.roundEditHideChoices button {
+  min-height: 42px;
+  padding: 0 12px;
+
+  border: 1px solid #38434f;
+  border-radius: 10px;
+
+  background: #1c232c;
+  color: #9da9b6;
+
+  font: inherit;
+  font-size: 11px;
+  font-weight: 850;
+
+  transition:
+    border-color 120ms ease,
+    background 120ms ease,
+    color 120ms ease,
+    transform 120ms ease;
+}
+
+.roundEditChoiceGrid button:hover,
+.roundEditNumberChoices button:hover,
+.roundEditHideChoices button:hover {
+  border-color: #536273;
+
+  background: #232c36;
+  color: #dce2e8;
+}
+
+.roundEditChoiceGrid button:active,
+.roundEditNumberChoices button:active,
+.roundEditHideChoices button:active {
+  transform: translateY(1px);
+}
+
+/* Generic selected state */
+.roundEditChoiceGrid button.active,
+.roundEditNumberChoices button.active,
+.roundEditHideChoices button.active {
+  border-color: #637487;
+
+  background: #2a3542;
+  color: #eef2f5;
+
+  box-shadow:
+    inset 0 0 0 1px
+    rgba(255, 255, 255, 0.025);
+}
+
+/* Catcher selection */
+.roundEditChoiceGrid button.active.caught {
+  border-color: #754852;
+
+  background: #3a242a;
+  color: #ef98a2;
+}
+
+/* Hide selection */
+.roundEditHideChoices button.active.hide {
+  border-color: #765a98;
+
+  background: #30253f;
+  color: #d8baf5;
+}
+
+/* 0–5 stages */
+.roundEditNumberChoices {
+  display: grid;
+  grid-template-columns:
+    repeat(6, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.roundEditNumberChoices button {
+  padding: 0;
+
+  font-size: 13px;
+}
+
+/* No Hide + stages 2–5 */
+.roundEditHideChoices {
+  display: grid;
+  grid-template-columns:
+    repeat(5, minmax(0, 1fr));
+  gap: 6px;
+}
+
+/* ---------- SMALL SCREENS ---------- */
+
+@media (max-width: 620px) {
+  .roundEditDragRow {
+    grid-template-columns:
+      30px minmax(0, 1fr) 36px;
+
+    min-height: 48px;
+  }
+
+  .roundEditChoiceGrid {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+
+  .roundEditNumberChoices {
+    grid-template-columns:
+      repeat(3, minmax(0, 1fr));
+  }
+
+  .roundEditHideChoices {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+
+  .roundEditHideChoices
+  button:first-child {
+    grid-column: 1 / -1;
+  }
+}
+
+/* =========================================
+   ROUND EDITOR — QUICK-RANK STYLE TIES
+   Append to the VERY BOTTOM of index.css
+========================================= */
+
+/* Let the connector occupy the gap between
+   the ranking cards. */
+.roundEditDragList {
+  gap: 0 !important;
+}
+
+.roundEditDragItem {
+  display: grid;
+  padding-bottom: 7px;
+}
+
+.roundEditDragItem.hasTieConnector {
+  padding-bottom: 0;
+}
+
+/* The small divider between positions is
+   now the tie control, matching Quick Rank. */
+.roundEditTieConnector {
+  position: relative;
+  z-index: 3;
+
+  display: grid;
+  place-items: center;
+
+  width: calc(100% - 36px);
+  height: 24px;
+  margin: -1px 18px;
+  padding: 0;
+
+  border: 0;
+
+  background: transparent;
+
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.roundEditTieConnector::before {
+  content: '';
+
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+
+  height: 1px;
+
+  background: #27303a;
+}
+
+.roundEditTieConnector > span {
+  position: relative;
+  z-index: 1;
+
+  display: grid;
+  place-items: center;
+
+  min-width: 30px;
+  height: 20px;
+  padding: 0 7px;
+
+  border: 1px solid #34404d;
+  border-radius: 999px;
+
+  background: #11161c;
+  color: #7e8997;
+
+  font-size: 10px;
+  font-weight: 950;
+  letter-spacing: 0.05em;
+}
+
+.roundEditTieConnector:hover > span {
+  border-color: #526071;
+  color: #a8b3c0;
+}
+
+/* Active tie: same purple connector language
+   as the normal Standard Quick Rank screen. */
+.roundEditTieConnector.active {
+  height: 30px;
+  margin-top: -4px;
+  margin-bottom: -4px;
+
+  border-right: 2px solid #856fd0;
+  border-left: 2px solid #856fd0;
+
+  background: rgba(133, 111, 208, 0.08);
+}
+
+.roundEditTieConnector.active::before {
+  background: #856fd0;
+}
+
+.roundEditTieConnector.active > span {
+  border-color: #856fd0;
+
+  background: #302747;
+  color: #c9b8f3;
+}
+
+/* Highlight the two cards belonging to the
+   active tie. */
+.roundEditDragRow.tiedWithNext,
+.roundEditDragRow.tiedWithPrevious {
+  border-color: #6757a1;
+
+  background:
+    linear-gradient(
+      90deg,
+      rgba(116, 91, 180, 0.08),
+      #161c23 45%
+    );
+}
+
+.roundEditDragRow.tiedWithNext {
+  border-bottom-right-radius: 8px;
+  border-bottom-left-radius: 8px;
+}
+
+.roundEditDragRow.tiedWithPrevious {
+  border-top-right-radius: 8px;
+  border-top-left-radius: 8px;
+}
+
+.roundEditDragRow.tiedWithNext
+.roundEditDragPosition,
+.roundEditDragRow.tiedWithPrevious
+.roundEditDragPosition {
+  background: #302747;
+  color: #c9b8f3;
+}
+
+/* Replace the old one-line hint with the
+   compact Quick Rank-style legend. */
+.roundEditDragHint {
+  display: flex !important;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 16px;
+
+  margin-top: 7px !important;
+
+  color: #74808e;
+
+  font-size: 10px !important;
+  font-weight: 750 !important;
+}
+
+@media (max-width: 620px) {
+  .roundEditTieConnector {
+    width: calc(100% - 24px);
+    margin-right: 12px;
+    margin-left: 12px;
+  }
+
+  .roundEditDragHint {
+    gap: 5px 12px;
+  }
+}

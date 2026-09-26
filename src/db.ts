@@ -50,6 +50,7 @@ export type GameRound = {
   roundNumber: number
   type: 'standard' | 'jim'
   createdAt: Date
+  editedAt?: string
 }
 
 export type RoundResult = {

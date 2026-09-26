@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { Reorder } from 'motion/react'
 
 import {
   db,
@@ -333,40 +334,12 @@ export default function RoundEditor({
   const [message, setMessage] =
     useState('')
 
-  function moveStandardPlayer(
-    index: number,
-    direction: -1 | 1
-  ) {
-    const nextIndex =
-      index + direction
-
-    if (
-      nextIndex < 0 ||
-      nextIndex >=
-        standardOrder.length
-    ) {
-      return
-    }
-
-    setStandardOrder(
-      (current) => {
-        const next = [
-          ...current,
-        ]
-
-        const temporary =
-          next[index]
-
-        next[index] =
-          next[nextIndex]
-
-        next[nextIndex] =
-          temporary
-
-        return next
-      }
+  const selectablePlayers =
+    [...sessionPlayers].sort(
+      (a, b) =>
+        a.rotationOrder -
+        b.rotationOrder
     )
-  }
 
   async function saveStandard() {
     if (
@@ -436,6 +409,14 @@ export default function RoundEditor({
 
       await recalculateSession(
         round.sessionId
+      )
+
+      await db.rounds.update(
+        round.id,
+        {
+          editedAt:
+            new Date().toISOString(),
+        }
       )
 
       onClose()
@@ -533,6 +514,14 @@ export default function RoundEditor({
         round.sessionId
       )
 
+      await db.rounds.update(
+        round.id,
+        {
+          editedAt:
+            new Date().toISOString(),
+        }
+      )
+
       onClose()
     } catch {
       setMessage(
@@ -568,123 +557,145 @@ export default function RoundEditor({
           </button>
         </div>
 
-        <div className="roundEditOrder">
+        <Reorder.Group
+          axis="y"
+          values={standardOrder}
+          onReorder={(nextOrder) => {
+            setStandardOrder(
+              nextOrder
+            )
+
+            /*
+              A tie belongs to positions,
+              so dragging clears it just
+              like the normal Quick Rank UI.
+            */
+            setTieMode('none')
+          }}
+          className="roundEditDragList"
+          style={{
+            touchAction: 'none',
+          }}
+          onTouchMove={(event) => {
+            event.preventDefault()
+          }}
+        >
           {standardOrder.map(
             (
               playerId,
               index
-            ) => (
-              <div
-                className="roundEditOrderRow"
-                key={
-                  playerId
-                }
-              >
-                <span>
-                  {index + 1}
-                </span>
+            ) => {
+              const connectorMode:
+                | '23'
+                | '34'
+                | null =
+                index === 1
+                  ? '23'
+                  : index === 2
+                  ? '34'
+                  : null
 
-                <strong>
-                  {getName(
-                    playerId
+              const tiedWithNext =
+                (tieMode === '23' &&
+                  index === 1) ||
+                (tieMode === '34' &&
+                  index === 2)
+
+              const tiedWithPrevious =
+                (tieMode === '23' &&
+                  index === 2) ||
+                (tieMode === '34' &&
+                  index === 3)
+
+              return (
+                <Reorder.Item
+                  value={playerId}
+                  key={playerId}
+                  className={`roundEditDragItem${
+                    connectorMode
+                      ? ' hasTieConnector'
+                      : ''
+                  }`}
+                  style={{
+                    touchAction: 'none',
+                  }}
+                >
+                  <div
+                    className={`roundEditDragRow${
+                      tiedWithNext
+                        ? ' tiedWithNext'
+                        : ''
+                    }${
+                      tiedWithPrevious
+                        ? ' tiedWithPrevious'
+                        : ''
+                    }`}
+                  >
+                    <span className="roundEditDragPosition">
+                      {index + 1}
+                    </span>
+
+                    <strong>
+                      {getName(
+                        playerId
+                      )}
+                    </strong>
+
+                    <span
+                      className="roundEditDragHandle"
+                      aria-hidden="true"
+                    >
+                      ↕
+                    </span>
+                  </div>
+
+                  {connectorMode && (
+                    <button
+                      type="button"
+                      className={`roundEditTieConnector${
+                        tieMode ===
+                        connectorMode
+                          ? ' active'
+                          : ''
+                      }`}
+                      aria-label={
+                        connectorMode ===
+                        '23'
+                          ? 'Tie second and third place'
+                          : 'Tie third and fourth place'
+                      }
+                      onPointerDown={(event) => {
+                        event.stopPropagation()
+                      }}
+                      onTouchStart={(event) => {
+                        event.stopPropagation()
+                      }}
+                      onClick={() => {
+                        setTieMode(
+                          tieMode ===
+                            connectorMode
+                            ? 'none'
+                            : connectorMode
+                        )
+                      }}
+                    >
+                      <span>
+                        {tieMode ===
+                        connectorMode
+                          ? 'TIED'
+                          : '='}
+                      </span>
+                    </button>
                   )}
-                </strong>
-
-                <div>
-                  <button
-                    type="button"
-                    disabled={
-                      index === 0
-                    }
-                    onClick={() =>
-                      moveStandardPlayer(
-                        index,
-                        -1
-                      )
-                    }
-                  >
-                    ↑
-                  </button>
-
-                  <button
-                    type="button"
-                    disabled={
-                      index ===
-                      standardOrder.length -
-                        1
-                    }
-                    onClick={() =>
-                      moveStandardPlayer(
-                        index,
-                        1
-                      )
-                    }
-                  >
-                    ↓
-                  </button>
-                </div>
-              </div>
-            )
+                </Reorder.Item>
+              )
+            }
           )}
-        </div>
+        </Reorder.Group>
 
-        <div className="roundEditTie">
-          <span>
-            TIE
-          </span>
-
-          <div>
-            <button
-              type="button"
-              className={
-                tieMode ===
-                'none'
-                  ? 'active'
-                  : ''
-              }
-              onClick={() =>
-                setTieMode(
-                  'none'
-                )
-              }
-            >
-              None
-            </button>
-
-            <button
-              type="button"
-              className={
-                tieMode ===
-                '23'
-                  ? 'active'
-                  : ''
-              }
-              onClick={() =>
-                setTieMode(
-                  '23'
-                )
-              }
-            >
-              2nd–3rd
-            </button>
-
-            <button
-              type="button"
-              className={
-                tieMode ===
-                '34'
-                  ? 'active'
-                  : ''
-              }
-              onClick={() =>
-                setTieMode(
-                  '34'
-                )
-              }
-            >
-              3rd–4th
-            </button>
-          </div>
+        <div className="roundEditDragHint">
+          <span>↕ Drag to reorder</span>
+          <span>= Tap to tie 2nd/3rd or 3rd/4th</span>
         </div>
 
         <p className="roundEditNote">
@@ -768,66 +779,59 @@ export default function RoundEditor({
         </button>
       </div>
 
-      <label className="roundEditField">
+      <div className="roundEditChoiceField">
         <span>
           JIM PLAYER
         </span>
 
-        <select
-          value={
-            jimPlayerId
-          }
-          onChange={(
-            event
-          ) => {
-            const next =
-              Number(
-                event.target
-                  .value
-              )
-
-            setJimPlayerId(
-              next
-            )
-
-            if (
-              catcherPlayerId ===
-              next
-            ) {
-              setCatcherPlayerId(
-                null
-              )
-            }
-
-            if (
-              outPlayerId ===
-              next &&
-              jimWon
-            ) {
-              setOutPlayerId(
-                null
-              )
-            }
-          }}
-        >
-          {sessionPlayers.map(
+        <div className="roundEditChoiceGrid">
+          {selectablePlayers.map(
             (player) => (
-              <option
-                key={
-                  player.id
-                }
-                value={
+              <button
+                type="button"
+                key={player.id}
+                className={
+                  jimPlayerId ===
                   player.playerId
+                    ? 'active'
+                    : ''
                 }
+                onClick={() => {
+                  const next =
+                    player.playerId
+
+                  setJimPlayerId(
+                    next
+                  )
+
+                  if (
+                    catcherPlayerId ===
+                    next
+                  ) {
+                    setCatcherPlayerId(
+                      null
+                    )
+                  }
+
+                  if (
+                    outPlayerId ===
+                      next &&
+                    jimWon
+                  ) {
+                    setOutPlayerId(
+                      null
+                    )
+                  }
+                }}
               >
                 {getName(
                   player.playerId
                 )}
-              </option>
+              </button>
             )
           )}
-        </select>
-      </label>
+        </div>
+      </div>
 
       <div className="roundEditOutcome">
         <span>
@@ -875,37 +879,13 @@ export default function RoundEditor({
 
       {!jimWon && (
         <>
-          <label className="roundEditField">
+          <div className="roundEditChoiceField">
             <span>
               CAUGHT BY
             </span>
 
-            <select
-              value={
-                catcherPlayerId ??
-                ''
-              }
-              onChange={(
-                event
-              ) =>
-                setCatcherPlayerId(
-                  event.target
-                    .value ===
-                    ''
-                    ? null
-                    : Number(
-                        event
-                          .target
-                          .value
-                      )
-                )
-              }
-            >
-              <option value="">
-                Choose catcher
-              </option>
-
-              {sessionPlayers
+            <div className="roundEditChoiceGrid">
+              {selectablePlayers
                 .filter(
                   (player) =>
                     player.playerId !==
@@ -913,100 +893,86 @@ export default function RoundEditor({
                 )
                 .map(
                   (player) => (
-                    <option
-                      key={
-                        player.id
-                      }
-                      value={
+                    <button
+                      type="button"
+                      key={player.id}
+                      className={
+                        catcherPlayerId ===
                         player.playerId
+                          ? 'active caught'
+                          : ''
+                      }
+                      onClick={() =>
+                        setCatcherPlayerId(
+                          player.playerId
+                        )
                       }
                     >
                       {getName(
                         player.playerId
                       )}
-                    </option>
+                    </button>
                   )
                 )}
-            </select>
-          </label>
+            </div>
+          </div>
 
-          <label className="roundEditField">
+          <div className="roundEditChoiceField">
             <span>
-              STEPS SURVIVED
+              STAGES SURVIVED
             </span>
 
-            <select
-              value={
-                stepsSurvived
-              }
-              onChange={(
-                event
-              ) =>
-                setStepsSurvived(
-                  Number(
-                    event.target
-                      .value
-                  )
-                )
-              }
-            >
-              {[
-                0,
-                1,
-                2,
-                3,
-                4,
-                5,
-              ].map(
+            <div className="roundEditNumberChoices">
+              {[0, 1, 2, 3, 4, 5].map(
                 (value) => (
-                  <option
-                    key={
+                  <button
+                    type="button"
+                    key={value}
+                    className={
+                      stepsSurvived ===
                       value
+                        ? 'active'
+                        : ''
                     }
-                    value={
-                      value
+                    onClick={() =>
+                      setStepsSurvived(
+                        value
+                      )
                     }
                   >
                     {value}
-                  </option>
+                  </button>
                 )
               )}
-            </select>
-          </label>
+            </div>
+          </div>
         </>
       )}
 
       {jimWon && (
-        <label className="roundEditField">
+        <div className="roundEditChoiceField">
           <span>
             PLAYER SENT OUT
           </span>
 
-          <select
-            value={
-              outPlayerId ??
-              ''
-            }
-            onChange={(
-              event
-            ) =>
-              setOutPlayerId(
-                event.target
-                  .value ===
-                  ''
-                  ? null
-                  : Number(
-                      event.target
-                        .value
-                    )
-              )
-            }
-          >
-            <option value="">
-              None / no waiting
-            </option>
+          <div className="roundEditChoiceGrid">
+            <button
+              type="button"
+              className={
+                outPlayerId === null
+                  ? 'active'
+                  : ''
+              }
+              onClick={() =>
+                setOutPlayerId(
+                  null
+                )
+              }
+            >
+              None
+            </button>
 
-            {sessionPlayers
+            {selectablePlayers
               .filter(
                 (player) =>
                   player.playerId !==
@@ -1014,67 +980,71 @@ export default function RoundEditor({
               )
               .map(
                 (player) => (
-                  <option
-                    key={
-                      player.id
-                    }
-                    value={
+                  <button
+                    type="button"
+                    key={player.id}
+                    className={
+                      outPlayerId ===
                       player.playerId
+                        ? 'active'
+                        : ''
+                    }
+                    onClick={() =>
+                      setOutPlayerId(
+                        player.playerId
+                      )
                     }
                   >
                     {getName(
                       player.playerId
                     )}
-                  </option>
+                  </button>
                 )
               )}
-          </select>
-        </label>
+          </div>
+        </div>
       )}
 
-      <label className="roundEditField">
+      <div className="roundEditChoiceField">
         <span>
-          HIDE STAGE
+          HIDE
         </span>
 
-        <select
-          value={
-            hideStage ?? ''
-          }
-          onChange={(
-            event
-          ) =>
-            setHideStage(
-              event.target
-                .value === ''
-                ? null
-                : Number(
-                    event.target
-                      .value
-                  )
-            )
-          }
-        >
-          <option value="">
-            No hide
-          </option>
+        <div className="roundEditHideChoices">
+          <button
+            type="button"
+            className={
+              hideStage === null
+                ? 'active'
+                : ''
+            }
+            onClick={() =>
+              setHideStage(null)
+            }
+          >
+            No Hide
+          </button>
 
           {[2, 3, 4, 5].map(
             (value) => (
-              <option
-                key={
-                  value
+              <button
+                type="button"
+                key={value}
+                className={
+                  hideStage === value
+                    ? 'active hide'
+                    : ''
                 }
-                value={
-                  value
+                onClick={() =>
+                  setHideStage(value)
                 }
               >
                 Stage {value}
-              </option>
+              </button>
             )
           )}
-        </select>
-      </label>
+        </div>
+      </div>
 
       <p className="roundEditNote">
         Saving recalculates the

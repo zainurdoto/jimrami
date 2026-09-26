@@ -4283,9 +4283,17 @@ export default function HistoryStats({
                                               }
                                             </span>
 
-                                            <b>
-                                              STANDARD
-                                            </b>
+                                            <div className="historyRoundTypeLine">
+                                              <b>
+                                                STANDARD
+                                              </b>
+
+                                              {round.editedAt && (
+                                                <em className="historyRoundEditedBadge">
+                                                  EDITED
+                                                </em>
+                                              )}
+                                            </div>
                                           </div>
 
                                           <div className="historyRoundHeaderActions">
@@ -4472,9 +4480,17 @@ export default function HistoryStats({
                                             }
                                           </span>
 
-                                          <b>
-                                            JIM
-                                          </b>
+                                          <div className="historyRoundTypeLine">
+                                            <b>
+                                              JIM
+                                            </b>
+
+                                            {round.editedAt && (
+                                              <em className="historyRoundEditedBadge">
+                                                EDITED
+                                              </em>
+                                            )}
+                                          </div>
                                         </div>
 
                                         <div className="historyRoundHeaderActions">
