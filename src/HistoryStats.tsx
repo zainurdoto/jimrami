@@ -45,6 +45,7 @@ type PlayerStat = {
 
   standardRounds: number
   standardWins: number
+  standardSecondPlaces: number
   standardWinRate: number | null
   standardLosses: number
   zeroPointRate: number | null
@@ -281,6 +282,9 @@ function getAwardTone(
       'Raja Standard':
         'standard',
 
+      'Classic Arteta':
+        'arteta',
+
       'Raja Session':
         'session',
 
@@ -470,6 +474,19 @@ function buildCountAwards(
         player.standardWins,
       (value) =>
         `${value} wins`
+    ),
+
+    makeAward(
+      'Classic Arteta',
+      'Most 2nd-place finishes in Standard rounds',
+      (player) =>
+        player.standardSecondPlaces,
+      (value) =>
+        `${value} ${
+          value === 1
+            ? '2nd place'
+            : '2nd places'
+        }`
     ),
 
     makeAward(
@@ -1494,6 +1511,13 @@ export default function HistoryStats({
                 1
             ).length
 
+          const standardSecondPlaces =
+            standard.filter(
+              (result) =>
+                result.position ===
+                2
+            ).length
+
           const standardLosses =
             standard.filter(
               (result) =>
@@ -1619,6 +1643,8 @@ export default function HistoryStats({
               standard.length,
 
             standardWins,
+
+            standardSecondPlaces,
 
             standardWinRate:
               percentage(
@@ -1957,6 +1983,12 @@ export default function HistoryStats({
         )
         .sort(
           (a, b) =>
+            Number(
+              a.provisional
+            ) -
+              Number(
+                b.provisional
+              ) ||
             b.score -
               a.score ||
             a.name.localeCompare(
@@ -1980,6 +2012,34 @@ export default function HistoryStats({
       ): player is MvpStat =>
         Boolean(player)
     )
+
+  const classicArtetaAllTimeAward =
+    useMemo<Award>(() => {
+      const award =
+        buildCountAwards(
+          playerStats
+        ).find(
+          (entry) =>
+            entry.title ===
+            'Classic Arteta'
+        )
+
+      return (
+        award ?? {
+          title:
+            'Classic Arteta',
+          description:
+            'Most 2nd-place finishes in Standard rounds',
+          winners: '—',
+          value:
+            'No 2nd-place finish yet',
+          hasData: false,
+        }
+      )
+    }, [
+      playerStats,
+    ])
+
 
   const penakutAllTimeAward =
     useMemo<Award>(() => {
@@ -5879,6 +5939,53 @@ export default function HistoryStats({
                   </article>
                 )
               )}
+
+              <article
+                className={`awardCard rateAwardCard awardTone-${getAwardTone(
+                  classicArtetaAllTimeAward.title
+                )}`}
+              >
+                <AwardTitleInfo
+                  title={
+                    classicArtetaAllTimeAward.title
+                  }
+                  description={
+                    classicArtetaAllTimeAward.description
+                  }
+                />
+
+                {classicArtetaAllTimeAward.winnerLines ? (
+                  <div className="sessionRecordWinners">
+                    {classicArtetaAllTimeAward.winnerLines.map(
+                      (
+                        winner,
+                        index
+                      ) => (
+                        <div
+                          className="sessionRecordWinner"
+                          key={`${winner.name}-${index}`}
+                        >
+                          <h3>
+                            {winner.name}
+                          </h3>
+                        </div>
+                      )
+                    )}
+                  </div>
+                ) : (
+                  <h3>
+                    {
+                      classicArtetaAllTimeAward.winners
+                    }
+                  </h3>
+                )}
+
+                <strong>
+                  {
+                    classicArtetaAllTimeAward.value
+                  }
+                </strong>
+              </article>
 
               <article
                 className={`awardCard rateAwardCard awardTone-${getAwardTone(

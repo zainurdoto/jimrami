@@ -14660,3 +14660,9 @@ button:disabled {
   padding-left: 13px;
   padding-right: 13px;
 }
+
+/* CLASSIC ARTETA — distinct warm red */
+
+.awardTone-arteta {
+  --award-color: #df646c;
+}

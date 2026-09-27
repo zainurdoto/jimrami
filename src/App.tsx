@@ -1415,6 +1415,8 @@ if (
       <main className="app">
         <header className="gameHeader gameHeaderPolished">
           <div className="gameRoundArea">
+            <LiveClock />
+
             <div className="gameRoundHero">
               <span>
                 ROUND
@@ -1426,8 +1428,6 @@ if (
                 }
               </strong>
             </div>
-
-            <LiveClock />
           </div>
 
 <div className="gameBrand">
