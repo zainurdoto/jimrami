@@ -2,7 +2,7 @@ import ScoreTransition, {
   type ScoreTransitionData,
 } from './ScoreTransition'
 import TitleRace from './TitleRace'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, type JimResult } from './db'
 import StandardRound from './StandardRound'
@@ -194,6 +194,176 @@ function JimCatchScissors({
           </span>
         )
       )}
+    </div>
+  )
+}
+
+
+function LiveClock() {
+  const [
+    now,
+    setNow,
+  ] =
+    useState(
+      () => new Date()
+    )
+
+  useEffect(
+    () => {
+      const timer =
+        window.setInterval(
+          () =>
+            setNow(
+              new Date()
+            ),
+          1000
+        )
+
+      return () =>
+        window.clearInterval(
+          timer
+        )
+    },
+    []
+  )
+
+  const hours24 =
+    now.getHours()
+
+  const period =
+    hours24 >= 12
+      ? 'PM'
+      : 'AM'
+
+  const hours12 =
+    hours24 % 12 || 12
+
+  const hours =
+    String(
+      hours12
+    ).padStart(
+      2,
+      '0'
+    )
+
+  const minutes =
+    String(
+      now.getMinutes()
+    ).padStart(
+      2,
+      '0'
+    )
+
+  const seconds =
+    String(
+      now.getSeconds()
+    ).padStart(
+      2,
+      '0'
+    )
+
+  return (
+    <div
+      className="roundLiveClock"
+      title="Current device time"
+      aria-label={`Current time ${hours}:${minutes}:${seconds} ${period}`}
+    >
+      <strong>
+        {hours}:{minutes}:{seconds}
+      </strong>
+
+      <span>
+        {period}
+      </span>
+    </div>
+  )
+}
+
+function SessionElapsed({
+  startedAt,
+}: {
+  startedAt: Date
+}) {
+  const [
+    now,
+    setNow,
+  ] =
+    useState(
+      () => Date.now()
+    )
+
+  useEffect(
+    () => {
+      const timer =
+        window.setInterval(
+          () =>
+            setNow(
+              Date.now()
+            ),
+          1000
+        )
+
+      return () =>
+        window.clearInterval(
+          timer
+        )
+    },
+    []
+  )
+
+  const totalSeconds =
+    Math.max(
+      0,
+      Math.floor(
+        (
+          now -
+          startedAt.getTime()
+        ) / 1000
+      )
+    )
+
+  const hours =
+    Math.floor(
+      totalSeconds / 3600
+    )
+
+  const minutes =
+    Math.floor(
+      (
+        totalSeconds % 3600
+      ) / 60
+    )
+
+  const seconds =
+    totalSeconds % 60
+
+  const elapsed = [
+    String(hours).padStart(
+      2,
+      '0'
+    ),
+    String(minutes).padStart(
+      2,
+      '0'
+    ),
+    String(seconds).padStart(
+      2,
+      '0'
+    ),
+  ].join(':')
+
+  return (
+    <div
+      className="sessionElapsedMini"
+      title="Time elapsed since this session started"
+    >
+      <span>
+        ELAPSED
+      </span>
+
+      <strong>
+        {elapsed}
+      </strong>
     </div>
   )
 }
@@ -1244,16 +1414,20 @@ if (
     return (
       <main className="app">
         <header className="gameHeader gameHeaderPolished">
-          <div className="gameRoundHero">
-            <span>
-              ROUND
-            </span>
+          <div className="gameRoundArea">
+            <div className="gameRoundHero">
+              <span>
+                ROUND
+              </span>
 
-            <strong>
-              {
-                activeSession.roundNumber
-              }
-            </strong>
+              <strong>
+                {
+                  activeSession.roundNumber
+                }
+              </strong>
+            </div>
+
+            <LiveClock />
           </div>
 
 <div className="gameBrand">
@@ -1270,31 +1444,39 @@ if (
   </h1>
 </div>
 
-          <div className="gameHeaderActions">
-            <button
-              className="dataButton"
-              onClick={() =>
-                setScreen('history')
-              }
-            >
-              History
-            </button>
+          <div className="gameHeaderTools">
+            <div className="gameHeaderActions">
+              <button
+                className="dataButton"
+                onClick={() =>
+                  setScreen('history')
+                }
+              >
+                History
+              </button>
 
-            <button
-              className="dataButton"
-              onClick={() =>
-                setShowDataTools(true)
-              }
-            >
-              Data
-            </button>
+              <button
+                className="dataButton"
+                onClick={() =>
+                  setShowDataTools(true)
+                }
+              >
+                Data
+              </button>
 
-            <button
-              className="endSession"
-              onClick={endSession}
-            >
-              End Session
-            </button>
+              <button
+                className="endSession"
+                onClick={endSession}
+              >
+                End Session
+              </button>
+            </div>
+
+            <SessionElapsed
+              startedAt={
+                activeSession.startedAt
+              }
+            />
           </div>
         </header>
 
