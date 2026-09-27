@@ -2,7 +2,7 @@ import ScoreTransition, {
   type ScoreTransitionData,
 } from './ScoreTransition'
 import TitleRace from './TitleRace'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, type JimResult } from './db'
 import StandardRound from './StandardRound'
@@ -364,6 +364,299 @@ function SessionElapsed({
       <strong>
         {elapsed}
       </strong>
+    </div>
+  )
+}
+
+
+function EndSessionConfirmModal({
+  onCancel,
+  onConfirm,
+}: {
+  onCancel: () => void
+  onConfirm: () => void | Promise<void>
+}) {
+  const [
+    secondsLeft,
+    setSecondsLeft,
+  ] = useState(5)
+
+  useEffect(
+    () => {
+      if (secondsLeft <= 0) {
+        return
+      }
+
+      const timer =
+        window.setTimeout(
+          () => {
+            setSecondsLeft(
+              (current) =>
+                Math.max(
+                  0,
+                  current - 1
+                )
+            )
+          },
+          1000
+        )
+
+      return () =>
+        window.clearTimeout(
+          timer
+        )
+    },
+    [secondsLeft]
+  )
+
+  const canConfirm =
+    secondsLeft === 0
+
+  return (
+    <div
+      className="penaltyConfirmOverlay"
+      onClick={onCancel}
+    >
+      <div
+        className="penaltyConfirmDialog endSessionConfirmDialog"
+        onClick={(event) =>
+          event.stopPropagation()
+        }
+      >
+        <span className="penaltyConfirmLabel">
+          END SESSION
+        </span>
+
+        <h2>
+          End this game session?
+        </h2>
+
+        <p className="endSessionConfirmNote">
+          The completed session will
+          be saved to History.
+        </p>
+
+        <div className="penaltyConfirmActions">
+          <button
+            type="button"
+            className="penaltyCancelButton"
+            onClick={onCancel}
+          >
+            Cancel
+          </button>
+
+          <button
+            type="button"
+            className="penaltyConfirmButton endSessionConfirmButton"
+            disabled={!canConfirm}
+            onClick={() => {
+              if (!canConfirm) {
+                return
+              }
+
+              void onConfirm()
+            }}
+          >
+            {canConfirm
+              ? 'End Session'
+              : `End Session (${secondsLeft})`}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+
+function SessionAliasPicker({
+  mainName,
+  options,
+  value,
+  onChange,
+}: {
+  mainName: string
+  options: string[]
+  value: string
+  onChange: (
+    value: string
+  ) => void
+}) {
+  const [
+    open,
+    setOpen,
+  ] =
+    useState(false)
+
+  const rootRef =
+    useRef<HTMLDivElement>(
+      null
+    )
+
+  useEffect(
+    () => {
+      if (!open) {
+        return
+      }
+
+      function handlePointerDown(
+        event: PointerEvent
+      ) {
+        if (
+          rootRef.current &&
+          !rootRef.current.contains(
+            event.target as Node
+          )
+        ) {
+          setOpen(false)
+        }
+      }
+
+      function handleKeyDown(
+        event: KeyboardEvent
+      ) {
+        if (
+          event.key ===
+          'Escape'
+        ) {
+          setOpen(false)
+        }
+      }
+
+      document.addEventListener(
+        'pointerdown',
+        handlePointerDown
+      )
+
+      document.addEventListener(
+        'keydown',
+        handleKeyDown
+      )
+
+      return () => {
+        document.removeEventListener(
+          'pointerdown',
+          handlePointerDown
+        )
+
+        document.removeEventListener(
+          'keydown',
+          handleKeyDown
+        )
+      }
+    },
+    [open]
+  )
+
+  function isMainName(
+    name: string
+  ) {
+    return (
+      name.toLowerCase() ===
+      mainName.toLowerCase()
+    )
+  }
+
+  return (
+    <div
+      className="sessionAliasPicker"
+      ref={rootRef}
+    >
+      <span className="sessionAliasLabel">
+        PLAYING AS
+      </span>
+
+      <div className="sessionAliasControl">
+        <button
+          type="button"
+          className={`sessionAliasTrigger ${
+            open
+              ? 'open'
+              : ''
+          }`}
+          aria-haspopup="listbox"
+          aria-expanded={open}
+          onClick={() =>
+            setOpen(
+              (current) =>
+                !current
+            )
+          }
+        >
+          <span className="sessionAliasCurrent">
+            {value}
+          </span>
+
+          <span
+            className="sessionAliasChevron"
+            aria-hidden="true"
+          >
+            {open
+              ? '▴'
+              : '▾'}
+          </span>
+        </button>
+
+        {open && (
+          <div
+            className="sessionAliasMenu"
+            role="listbox"
+            aria-label="Choose session display name"
+          >
+            {options.map(
+              (name) => {
+                const selected =
+                  name === value
+
+                const main =
+                  isMainName(
+                    name
+                  )
+
+                return (
+                  <button
+                    type="button"
+                    role="option"
+                    aria-selected={
+                      selected
+                    }
+                    className={`sessionAliasOption ${
+                      selected
+                        ? 'selected'
+                        : ''
+                    }`}
+                    key={name}
+                    onClick={() => {
+                      onChange(
+                        name
+                      )
+
+                      setOpen(
+                        false
+                      )
+                    }}
+                  >
+                    <span className="sessionAliasCheck">
+                      {selected
+                        ? '✓'
+                        : ''}
+                    </span>
+
+                    <strong>
+                      {name}
+                    </strong>
+
+                    <small>
+                      {main
+                        ? 'MAIN NAME'
+                        : 'NICKNAME'}
+                    </small>
+                  </button>
+                )
+              }
+            )}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
@@ -1730,56 +2023,14 @@ if (
 
         </footer>
         {showEndSessionConfirm && (
-          <div
-            className="penaltyConfirmOverlay"
-            onClick={() =>
+          <EndSessionConfirmModal
+            onCancel={() =>
               setShowEndSessionConfirm(
                 false
               )
             }
-          >
-            <div
-              className="penaltyConfirmDialog endSessionConfirmDialog"
-              onClick={(event) =>
-                event.stopPropagation()
-              }
-            >
-              <span className="penaltyConfirmLabel">
-                END SESSION
-              </span>
-
-              <h2>
-                End this game session?
-              </h2>
-
-              <p className="endSessionConfirmNote">
-                The completed session will
-                be saved to History.
-              </p>
-
-              <div className="penaltyConfirmActions">
-                <button
-                  type="button"
-                  className="penaltyCancelButton"
-                  onClick={() =>
-                    setShowEndSessionConfirm(
-                      false
-                    )
-                  }
-                >
-                  Cancel
-                </button>
-
-                <button
-                  type="button"
-                  className="penaltyConfirmButton endSessionConfirmButton"
-                  onClick={endSession}
-                >
-                  End Session
-                </button>
-              </div>
-            </div>
-          </div>
+            onConfirm={endSession}
+          />
         )}
 
         {showDataTools && (
@@ -1973,39 +2224,24 @@ if (
                 {selected &&
                   nameOptions.length >
                     1 && (
-                  <div className="sessionAliasPicker">
-                    <span>
-                      PLAYING AS
-                    </span>
-
-                    <select
-                      value={
-                        sessionName
-                      }
-                      onChange={
-                        (event) =>
-                          setSessionDisplayName(
-                            player.id,
-                            event.target.value
-                          )
-                      }
-                    >
-                      {nameOptions.map(
-                        (name) => (
-                          <option
-                            key={
-                              name
-                            }
-                            value={
-                              name
-                            }
-                          >
-                            {name}
-                          </option>
+                  <SessionAliasPicker
+                    mainName={
+                      player.name
+                    }
+                    options={
+                      nameOptions
+                    }
+                    value={
+                      sessionName
+                    }
+                    onChange={
+                      (name) =>
+                        setSessionDisplayName(
+                          player.id,
+                          name
                         )
-                      )}
-                    </select>
-                  </div>
+                    }
+                  />
                 )}
               </article>
             )

@@ -14666,3 +14666,374 @@ button:disabled {
 .awardTone-arteta {
   --award-color: #df646c;
 }
+
+/* =========================================
+   CUSTOM "PLAYING AS" PICKER
+   Append to the VERY BOTTOM of index.css
+
+   Replaces the browser-native <select>
+   with a JIMRAMI-styled picker.
+========================================= */
+
+.sessionAliasPicker {
+  grid-column: 1 / -1;
+
+  display: grid;
+  grid-template-columns:
+    auto minmax(0, 1fr);
+  align-items: start;
+  gap: 12px;
+
+  padding: 10px 14px;
+
+  border-top:
+    1px solid #303a47;
+
+  background: #121923;
+}
+
+.sessionAliasLabel {
+  align-self: center;
+
+  color: #8290a0;
+
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+
+.sessionAliasControl {
+  display: grid;
+  gap: 6px;
+
+  min-width: 0;
+}
+
+
+/* SELECTED VALUE */
+
+.sessionAliasTrigger {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+
+  width: 100%;
+  min-height: 42px;
+
+  padding: 0 12px;
+
+  border:
+    1px solid #3b4858;
+  border-radius: 10px;
+
+  outline: none;
+
+  background: #1d2631;
+  color: #f4f6f8;
+
+  text-align: left;
+
+  transition:
+    border-color 150ms ease,
+    background 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.sessionAliasTrigger:hover {
+  border-color: #50627a;
+  background: #202b38;
+}
+
+.sessionAliasTrigger.open {
+  border-color: #739ae0;
+
+  background: #202b38;
+
+  box-shadow:
+    0 0 0 2px
+    rgba(115, 154, 224, 0.12);
+}
+
+.sessionAliasCurrent {
+  overflow: hidden;
+
+  font-size: 14px;
+  font-weight: 850;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sessionAliasChevron {
+  color: #9eb6d3;
+
+  font-size: 12px;
+  line-height: 1;
+}
+
+
+/* EXPANDED MENU */
+
+.sessionAliasMenu {
+  display: grid;
+  gap: 4px;
+
+  padding: 5px;
+
+  border:
+    1px solid #364454;
+  border-radius: 11px;
+
+  background: #171f29;
+
+  box-shadow:
+    0 12px 28px
+    rgba(0, 0, 0, 0.28);
+}
+
+.sessionAliasOption {
+  display: grid;
+  grid-template-columns:
+    22px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 9px;
+
+  width: 100%;
+  min-height: 43px;
+
+  padding: 7px 10px;
+
+  border: 0;
+  border-radius: 8px;
+
+  background: transparent;
+  color: #dce3eb;
+
+  text-align: left;
+
+  transition:
+    background 120ms ease,
+    color 120ms ease;
+}
+
+.sessionAliasOption:hover {
+  background: #222d3a;
+  color: #ffffff;
+}
+
+.sessionAliasOption.selected {
+  background: #26364a;
+  color: #ffffff;
+}
+
+.sessionAliasCheck {
+  display: grid;
+  place-items: center;
+
+  width: 22px;
+  height: 22px;
+
+  border-radius: 7px;
+
+  color: #93baff;
+
+  font-size: 14px;
+  font-weight: 950;
+}
+
+.sessionAliasOption.selected
+.sessionAliasCheck {
+  background:
+    rgba(115, 154, 224, 0.13);
+}
+
+.sessionAliasOption strong {
+  overflow: hidden;
+
+  font-size: 14px;
+  font-weight: 850;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sessionAliasOption small {
+  color: #697889;
+
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+
+  white-space: nowrap;
+}
+
+.sessionAliasOption.selected small {
+  color: #92a9c6;
+}
+
+
+/* Disable old native-select styling if it
+   remains anywhere in cached CSS. */
+.sessionAliasPicker select {
+  display: none;
+}
+
+
+/* TABLET / SMALL SCREEN */
+
+@media (max-width: 600px) {
+  .sessionAliasPicker {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .sessionAliasLabel {
+    align-self: auto;
+  }
+
+  .sessionAliasTrigger {
+    min-height: 44px;
+  }
+
+  .sessionAliasOption {
+    min-height: 46px;
+  }
+}
+/* =========================================
+   CUSTOM PLAYING-AS PICKER — COMPACT OVERLAY
+   Append to the VERY BOTTOM of index.css
+
+   Keeps the picker compact and makes the
+   option list float instead of expanding
+   the whole player card.
+========================================= */
+
+.sessionAliasPicker {
+  grid-template-columns:
+    auto minmax(0, 1fr);
+
+  gap: 9px;
+
+  padding:
+    7px 12px;
+}
+
+.sessionAliasControl {
+  position: relative;
+
+  gap: 0;
+}
+
+.sessionAliasTrigger {
+  min-height: 36px;
+
+  padding:
+    0 10px;
+}
+
+.sessionAliasCurrent {
+  font-size: 13px;
+}
+
+.sessionAliasMenu {
+  position: absolute;
+  top: calc(100% + 5px);
+  left: 0;
+  right: 0;
+
+  z-index: 80;
+
+  gap: 2px;
+
+  padding: 4px;
+
+  border-radius: 9px;
+
+  box-shadow:
+    0 14px 32px
+    rgba(0, 0, 0, 0.42);
+}
+
+.sessionAliasOption {
+  min-height: 36px;
+
+  padding:
+    5px 8px;
+
+  grid-template-columns:
+    20px minmax(0, 1fr) auto;
+
+  gap: 7px;
+}
+
+.sessionAliasCheck {
+  width: 20px;
+  height: 20px;
+
+  font-size: 12px;
+}
+
+.sessionAliasOption strong {
+  font-size: 13px;
+}
+
+.sessionAliasOption small {
+  font-size: 7px;
+}
+
+
+/* Keep the open menu above the next player row. */
+.playerSelect:has(
+  .sessionAliasTrigger.open
+) {
+  position: relative;
+
+  z-index: 20;
+}
+
+
+/* Tablet / phone */
+@media (max-width: 600px) {
+  .sessionAliasPicker {
+    grid-template-columns:
+      auto minmax(0, 1fr);
+
+    gap: 8px;
+  }
+
+  .sessionAliasTrigger {
+    min-height: 38px;
+  }
+
+  .sessionAliasOption {
+    min-height: 38px;
+  }
+}
+
+/* =========================================
+   PLAYING-AS DROPDOWN — CLIPPING FIX
+   Append to the VERY BOTTOM of index.css
+========================================= */
+
+/*
+  .playerSelect normally uses overflow:hidden
+  for its rounded card shape.
+
+  The compact nickname menu is positioned
+  outside that card, so it was being clipped.
+  Only allow overflow while the picker is open.
+*/
+.playerSelect:has(
+  .sessionAliasTrigger.open
+) {
+  overflow: visible !important;
+  position: relative;
+  z-index: 100;
+}
+
+/* Keep the floating menu above following rows. */
+.sessionAliasMenu {
+  z-index: 200;
+}
