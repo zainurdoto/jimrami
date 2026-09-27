@@ -648,6 +648,11 @@ useState<
   ] = useState(false)
 
   const [
+    showEndSessionConfirm,
+    setShowEndSessionConfirm,
+  ] = useState(false)
+
+  const [
   transitionData,
   setTransitionData,
 ] =
@@ -1197,19 +1202,16 @@ useState<
       return
     }
 
-    const confirmed =
-      window.confirm(
-        'End this game session?'
-      )
-
-    if (!confirmed) return
-
     await db.sessions.update(
       activeSession.id,
       {
         status: 'ended',
         endedAt: new Date(),
       }
+    )
+
+    setShowEndSessionConfirm(
+      false
     )
 
     setScreen('scoreboard')
@@ -1466,7 +1468,11 @@ if (
 
               <button
                 className="endSession"
-                onClick={endSession}
+                onClick={() =>
+                  setShowEndSessionConfirm(
+                    true
+                  )
+                }
               >
                 End Session
               </button>
@@ -1723,6 +1729,59 @@ if (
 </button>
 
         </footer>
+        {showEndSessionConfirm && (
+          <div
+            className="penaltyConfirmOverlay"
+            onClick={() =>
+              setShowEndSessionConfirm(
+                false
+              )
+            }
+          >
+            <div
+              className="penaltyConfirmDialog endSessionConfirmDialog"
+              onClick={(event) =>
+                event.stopPropagation()
+              }
+            >
+              <span className="penaltyConfirmLabel">
+                END SESSION
+              </span>
+
+              <h2>
+                End this game session?
+              </h2>
+
+              <p className="endSessionConfirmNote">
+                The completed session will
+                be saved to History.
+              </p>
+
+              <div className="penaltyConfirmActions">
+                <button
+                  type="button"
+                  className="penaltyCancelButton"
+                  onClick={() =>
+                    setShowEndSessionConfirm(
+                      false
+                    )
+                  }
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="button"
+                  className="penaltyConfirmButton endSessionConfirmButton"
+                  onClick={endSession}
+                >
+                  End Session
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {showDataTools && (
   <DataTools
     onClose={() =>

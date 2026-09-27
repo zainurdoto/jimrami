@@ -38,10 +38,6 @@ const PENALTY_FINISH_DELAY = 6500
 // before revealing the new tally / Jim star.
 const ACHIEVEMENT_AFTER_POINTS_DELAY = 1250
 
-// How long the +3 / +7 / -1 bubble stays visible.
-// This is now the ONLY timing control for that bubble.
-const REWARD_BUBBLE_DURATION = 5500
-
 
 // Smooth count from old points to new points
 // when the ranking update starts.
@@ -491,13 +487,12 @@ export default function ScoreTransition({
             ACHIEVEMENT_AFTER_POINTS_DELAY
         )
 
-      const rewardTimer =
-        window.setTimeout(
-          () =>
-            setShowReward(false),
-          UPDATE_DELAY +
-            REWARD_BUBBLE_DURATION
-        )
+const rewardTimer =
+  window.setTimeout(
+    () =>
+      setShowReward(false),
+    finishDelay
+  )
 
       const finishTimer =
         window.setTimeout(
