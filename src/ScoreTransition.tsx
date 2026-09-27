@@ -26,6 +26,7 @@ type Props = {
   data: ScoreTransitionData
   players: Player[]
   jimWins: JimResult[]
+  jimCatches: JimResult[]
   onDone: () => void
 }
 
@@ -36,10 +37,6 @@ const PENALTY_FINISH_DELAY = 6500
 // Wait after the point-number animation finishes
 // before revealing the new tally / Jim star.
 const ACHIEVEMENT_AFTER_POINTS_DELAY = 1250
-
-// How long the +3 / +7 / -1 bubble stays visible.
-// This is now the ONLY timing control for that bubble.
-const REWARD_BUBBLE_DURATION = 5500
 
 
 // Smooth count from old points to new points
@@ -196,6 +193,46 @@ function Stars({
   )
 }
 
+
+function Scissors({
+  catches,
+  pop = false,
+}: {
+  catches: JimResult[]
+  pop?: boolean
+}) {
+  if (catches.length === 0) {
+    return null
+  }
+
+  return (
+    <div
+      className={`scoreJimScissors ${
+        pop
+          ? 'pop'
+          : ''
+      }`}
+      title={`${catches.length} Jim ${
+        catches.length === 1
+          ? 'catch'
+          : 'catches'
+      }`}
+    >
+      {catches.map(
+        (result) => (
+          <span
+            className="scoreJimScissor"
+            key={result.id}
+            title="Caught Jim"
+          >
+            ✂︎
+          </span>
+        )
+      )}
+    </div>
+  )
+}
+
 function AnimatedPoints({
   from,
   to,
@@ -331,6 +368,7 @@ export default function ScoreTransition({
   data,
   players,
   jimWins,
+  jimCatches,
   onDone,
 }: Props) {
   const [
@@ -409,6 +447,26 @@ export default function ScoreTransition({
       ? PENALTY_FINISH_DELAY
       : ROUND_FINISH_DELAY
 
+  /*
+    A caught Jim round has the unique
+    score-change pair -3 for Jim and +1
+    for the catcher. Reuse that existing
+    transition data, so JimRound.tsx does
+    not need to be modified.
+  */
+  const jimCatchChange =
+    data.changes.find(
+      (change) =>
+        change.amount === 1
+    )
+
+  const isCaughtJimTransition =
+    data.changes.some(
+      (change) =>
+        change.amount === -3
+    ) &&
+    jimCatchChange !== undefined
+
   useEffect(
     () => {
       const settleTimer =
@@ -429,13 +487,12 @@ export default function ScoreTransition({
             ACHIEVEMENT_AFTER_POINTS_DELAY
         )
 
-      const rewardTimer =
-        window.setTimeout(
-          () =>
-            setShowReward(false),
-          UPDATE_DELAY +
-            REWARD_BUBBLE_DURATION
-        )
+const rewardTimer =
+  window.setTimeout(
+    () =>
+      setShowReward(false),
+    finishDelay
+  )
 
       const finishTimer =
         window.setTimeout(
@@ -638,6 +695,41 @@ export default function ScoreTransition({
                   ]
                 : undefined
 
+            const allPlayerJimCatches =
+              jimCatches
+                .filter(
+                  (result) =>
+                    result.caughtByPlayerId ===
+                    row.afterPlayer.playerId
+                )
+                .sort(
+                  (a, b) =>
+                    a.roundId -
+                      b.roundId ||
+                    a.id -
+                      b.id
+                )
+
+            const caughtJimThisRound =
+              isCaughtJimTransition &&
+              jimCatchChange
+                ?.sessionPlayerId ===
+                row.id
+
+            /*
+              Hide the newly earned scissors
+              until the normal delayed
+              achievement reveal.
+            */
+            const visibleJimCatches =
+              caughtJimThisRound &&
+              !revealAchievements
+                ? allPlayerJimCatches.slice(
+                    0,
+                    -1
+                  )
+                : allPlayerJimCatches
+
             return (
               <article
                 className={`cleanTransitionRow ${
@@ -674,6 +766,8 @@ export default function ScoreTransition({
                     0 ||
                     (achievementPlayer.jimWins ??
                       0) >
+                      0 ||
+                    visibleJimCatches.length >
                       0) && (
                     <div className="cleanTransitionMeta">
                       {achievementPlayer.wins >
@@ -701,6 +795,19 @@ export default function ScoreTransition({
                             revealAchievements &&
                             row.jimDelta >
                               0
+                          }
+                        />
+                      )}
+
+                      {visibleJimCatches.length >
+                        0 && (
+                        <Scissors
+                          catches={
+                            visibleJimCatches
+                          }
+                          pop={
+                            revealAchievements &&
+                            caughtJimThisRound
                           }
                         />
                       )}
@@ -754,6 +861,15 @@ export default function ScoreTransition({
                         }
                       >
                         ★
+                      </span>
+                    )}
+
+                    {caughtJimThisRound && (
+                      <span
+                        className="rewardScissors"
+                        title="Caught Jim"
+                      >
+                        ✂︎
                       </span>
                     )}
                   </div>

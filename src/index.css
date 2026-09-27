@@ -14296,3 +14296,156 @@ button:disabled {
     height: 20px;
   }
 }
+
+/* =========================================
+   JIM CATCH / JIM SLAYER — SCISSORS
+   Append to the VERY BOTTOM of index.css
+
+   ✂︎ = caught Jim
+   ★ = Jim win
+   Purple ring on ★ = Hide used
+========================================= */
+
+/* MAIN SCOREBOARD */
+
+.jimCatchScissors {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+
+  line-height: 1;
+}
+
+.jimCatchScissor {
+  display: inline-grid;
+  place-items: center;
+
+  width: 21px;
+  height: 21px;
+
+  color: #ef8f99;
+
+  font-family:
+    "Noto Sans Symbols 2",
+    "Segoe UI Symbol",
+    sans-serif;
+
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1;
+
+  text-shadow:
+    0 0 5px
+    rgba(239, 143, 153, 0.14);
+}
+
+
+/* ROUND TRANSITION */
+
+.scoreJimScissors {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+
+  line-height: 1;
+}
+
+.scoreJimScissor {
+  display: inline-grid;
+  place-items: center;
+
+  width: 19px;
+  height: 19px;
+
+  color: #ef8f99;
+
+  font-family:
+    "Noto Sans Symbols 2",
+    "Segoe UI Symbol",
+    sans-serif;
+
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.scoreJimScissors.pop {
+  animation:
+    achievementPop
+    650ms
+    cubic-bezier(
+      0.22,
+      1.4,
+      0.36,
+      1
+    );
+}
+
+.rewardScissors {
+  display: inline-grid;
+  place-items: center;
+
+  width: 21px;
+  height: 21px;
+
+  color: #ef9aa2;
+
+  font-family:
+    "Noto Sans Symbols 2",
+    "Segoe UI Symbol",
+    sans-serif;
+
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+
+/* PREVIOUS WINNER */
+
+.previousWinnerIcon.jim.caught {
+  border-color: #754852 !important;
+
+  background: #3a242a !important;
+  color: #ef9aa2 !important;
+
+  font-family:
+    "Noto Sans Symbols 2",
+    "Segoe UI Symbol",
+    sans-serif;
+
+  box-shadow:
+    inset 0 0 0 1px
+      rgba(239, 154, 162, 0.04),
+    0 0 7px
+      rgba(239, 154, 162, 0.13)
+      !important;
+}
+
+
+/* TABLET */
+
+@media (max-width: 620px) {
+  .jimCatchScissor {
+    width: 19px;
+    height: 19px;
+
+    font-size: 13px;
+  }
+
+  .scoreJimScissor {
+    width: 18px;
+    height: 18px;
+
+    font-size: 13px;
+  }
+
+  .rewardScissors {
+    width: 20px;
+    height: 20px;
+
+    font-size: 14px;
+  }
+}

@@ -156,6 +156,48 @@ function JimWinStars({
   )
 }
 
+
+function JimCatchScissors({
+  catches,
+}: {
+  catches: JimResult[]
+}) {
+  if (catches.length === 0) {
+    return null
+  }
+
+  const orderedCatches =
+    [...catches].sort(
+      (a, b) =>
+        a.roundId - b.roundId ||
+        a.id - b.id
+    )
+
+  return (
+    <div
+      className="jimCatchScissors"
+      aria-label={`${catches.length} Jim ${
+        catches.length === 1
+          ? 'catch'
+          : 'catches'
+      }`}
+    >
+      {orderedCatches.map(
+        (result) => (
+          <span
+            className="jimCatchScissor"
+            key={result.id}
+            title="Caught Jim"
+            aria-label="Caught Jim"
+          >
+            ✂︎
+          </span>
+        )
+      )}
+    </div>
+  )
+}
+
 function App() {
   const players = useLiveQuery(
     () =>
@@ -212,6 +254,38 @@ function App() {
         return results.filter(
           (result) =>
             result.won
+        )
+      },
+      [
+        activeSession?.id,
+        activeSession?.roundNumber,
+      ]
+    ) ?? []
+
+
+  /*
+    Keep each caught-Jim result so one
+    scissors icon can represent one catch.
+  */
+  const jimCatchResults =
+    useLiveQuery(
+      async () => {
+        if (!activeSession) {
+          return []
+        }
+
+        const results =
+          await db.jimResults
+            .where('sessionId')
+            .equals(
+              activeSession.id
+            )
+            .toArray()
+
+        return results.filter(
+          (result) =>
+            result.caughtByPlayerId !==
+            undefined
         )
       },
       [
@@ -333,6 +407,9 @@ function App() {
             jimResult.won
               ? 'JIM WON'
               : 'CAUGHT JIM',
+
+          jimWon:
+            jimResult.won,
 
           hideStage:
             jimResult.hideStage,
@@ -1101,6 +1178,7 @@ if (
       data={transitionData}
       players={activeDisplayPlayers}
       jimWins={jimWinResults}
+      jimCatches={jimCatchResults}
       onDone={() => {
         setTransitionData(null)
         setScreen('scoreboard')
@@ -1249,25 +1327,36 @@ if (
               } ${
                 previousRoundWinner.type ===
                   'jim' &&
+                previousRoundWinner.jimWon &&
                 typeof previousRoundWinner.hideStage ===
                   'number'
                   ? 'usedHide'
+                  : ''
+              } ${
+                previousRoundWinner.type ===
+                  'jim' &&
+                !previousRoundWinner.jimWon
+                  ? 'caught'
                   : ''
               }`}
               title={
                 previousRoundWinner.type ===
                 'jim'
-                  ? typeof previousRoundWinner.hideStage ===
-                    'number'
-                    ? `Jim round • Hide used at Stage ${previousRoundWinner.hideStage}`
-                    : 'Jim round • No Hide'
+                  ? previousRoundWinner.jimWon
+                    ? typeof previousRoundWinner.hideStage ===
+                      'number'
+                      ? `Jim round • Hide used at Stage ${previousRoundWinner.hideStage}`
+                      : 'Jim round • No Hide'
+                    : 'Caught Jim'
                   : 'Standard round'
               }
               aria-hidden="true"
             >
               {previousRoundWinner.type ===
               'jim'
-                ? '★'
+                ? previousRoundWinner.jimWon
+                  ? '★'
+                  : '✂︎'
                 : '✓'}
             </span>
           </section>
@@ -1290,6 +1379,13 @@ if (
                 jimWinResults.filter(
                   (result) =>
                     result.jimPlayerId ===
+                    sessionPlayer.playerId
+                )
+
+              const playerJimCatches =
+                jimCatchResults.filter(
+                  (result) =>
+                    result.caughtByPlayerId ===
                     sessionPlayer.playerId
                 )
 
@@ -1332,8 +1428,9 @@ if (
 
                       {(sessionPlayer.wins >
                         0 ||
-                        (sessionPlayer.jimWins ??
-                          0) >
+                        playerJimWins.length >
+                          0 ||
+                        playerJimCatches.length >
                           0) && (
                         <div className="standingAchievements">
                           {sessionPlayer.wins >
@@ -1350,6 +1447,15 @@ if (
                             <JimWinStars
                               wins={
                                 playerJimWins
+                              }
+                            />
+                          )}
+
+                          {playerJimCatches.length >
+                            0 && (
+                            <JimCatchScissors
+                              catches={
+                                playerJimCatches
                               }
                             />
                           )}

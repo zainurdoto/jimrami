@@ -53,6 +53,7 @@ type PlayerStat = {
   jimWins: number
   jimLosses: number
   jimCatches: number
+  penakutSessions: number
   jimSuccessRate: number | null
   averageJimSurvived: number | null
 
@@ -286,8 +287,17 @@ function getAwardTone(
       'Kaki Jim':
         'jim',
 
-      'Kaki Hide':
-        'hide',
+      'Penakut':
+        'default',
+
+      'Si Malang Record':
+        'malang',
+
+      'Kaki Jim Record':
+        'jim',
+
+      'Si Tuah Record':
+        'tuah',
 
       'Paling Berolah':
         'denda',
@@ -481,12 +491,16 @@ function buildCountAwards(
     ),
 
     makeAward(
-      'Kaki Hide',
-      'Used Hide the most',
+      'Penakut',
+      'Most completed sessions with zero Jim attempts while at least one Jim round was played',
       (player) =>
-        player.hideUses,
+        player.penakutSessions,
       (value) =>
-        `${value} hides`
+        `${value} Penakut ${
+          value === 1
+            ? 'session'
+            : 'sessions'
+        }`
     ),
 
     makeAward(
@@ -1439,6 +1453,33 @@ export default function HistoryStats({
                   )
             ).length
 
+          /*
+            Penakut only counts a completed
+            session if at least one Jim round
+            happened in that session, but this
+            player never took Jim.
+          */
+          const penakutSessions =
+            completedParticipations.filter(
+              (entry) => {
+                const sessionJim =
+                  jimResults.filter(
+                    (result) =>
+                      result.sessionId ===
+                      entry.sessionId
+                  )
+
+                return (
+                  sessionJim.length > 0 &&
+                  !sessionJim.some(
+                    (result) =>
+                      result.jimPlayerId ===
+                      player.id
+                  )
+                )
+              }
+            ).length
+
           const standard =
             roundResults.filter(
               (result) =>
@@ -1601,6 +1642,8 @@ export default function HistoryStats({
             jimLosses,
 
             jimCatches,
+
+            penakutSessions,
 
             jimSuccessRate:
               percentage(
@@ -1938,6 +1981,31 @@ export default function HistoryStats({
         Boolean(player)
     )
 
+  const penakutAllTimeAward =
+    useMemo<Award>(() => {
+      const award =
+        buildCountAwards(
+          playerStats
+        ).find(
+          (entry) =>
+            entry.title ===
+            'Penakut'
+        )
+
+      return (
+        award ?? {
+          title: 'Penakut',
+          description:
+            'Most completed sessions with zero Jim attempts while at least one Jim round was played',
+          winners: '—',
+          value: 'No Penakut session yet',
+          hasData: false,
+        }
+      )
+    }, [
+      playerStats,
+    ])
+
   const allTimeCombinedAwards =
     useMemo<
       CombinedAllTimeAward[]
@@ -2173,35 +2241,6 @@ export default function HistoryStats({
 
         {
           title:
-            'Kaki Hide',
-
-          description:
-            'Who uses Hide the most, plus how often they choose Hide when taking Jim.',
-
-          total:
-            totalAward(
-              'Kaki Hide'
-            ),
-
-          rate:
-            makeLifetimeRateAward(
-              'Hide Use Rate',
-              'Highest lifetime share of Jim attempts where Hide was used',
-              playerStats,
-              5,
-              'Jim attempts',
-              (player) =>
-                player.hideUses,
-              (player) =>
-                player.jimAttempts
-            ),
-
-          rateLabel:
-            'HIGHEST USE RATE',
-        },
-
-        {
-          title:
             'Paling Berolah',
 
           description:
@@ -2229,7 +2268,29 @@ export default function HistoryStats({
           rateLabel:
             'HIGHEST RATE',
         },
-      ]
+      ].sort(
+        (a, b) => {
+          const order = [
+            'Raja Standard',
+            'Raja Session',
+            'Si Tuah',
+            'Si Malang',
+            'Jim Slayer',
+            'Tukang Cuci',
+            'Kaki Jim',
+            'Paling Berolah',
+          ]
+
+          return (
+            order.indexOf(
+              a.title
+            ) -
+            order.indexOf(
+              b.title
+            )
+          )
+        }
+      )
     }, [
       playerStats,
     ])
@@ -2482,10 +2543,181 @@ export default function HistoryStats({
         }
       }
 
+      const jimSessionEntries =
+        completed.flatMap(
+          (session) => {
+            const participants =
+              sessionPlayers.filter(
+                (entry) =>
+                  entry.sessionId ===
+                  session.id
+              )
+
+            return participants.map(
+              (participant) => {
+                const attempts =
+                  jimResults.filter(
+                    (result) =>
+                      result.sessionId ===
+                        session.id &&
+                      result.jimPlayerId ===
+                        participant.playerId
+                  )
+
+                const wins =
+                  attempts.filter(
+                    (result) =>
+                      result.won
+                  ).length
+
+                return {
+                  session,
+                  playerId:
+                    participant.playerId,
+                  attempts:
+                    attempts.length,
+                  wins,
+                  losses:
+                    attempts.length -
+                    wins,
+                }
+              }
+            )
+          }
+        )
+
+      function makeJimSessionRecord(
+        title: string,
+        description: string,
+        getValue: (
+          entry:
+            typeof jimSessionEntries[number]
+        ) => number,
+        valueLabel: (
+          maximum: number
+        ) => string,
+        emptyValue: string
+      ): Award {
+        const award:
+          Award = {
+            title,
+            description,
+            winners: '—',
+            value: emptyValue,
+            hasData: false,
+          }
+
+        const maximum =
+          Math.max(
+            0,
+            ...jimSessionEntries.map(
+              (entry) =>
+                getValue(entry)
+            )
+          )
+
+        if (maximum <= 0) {
+          return award
+        }
+
+        const winners =
+          jimSessionEntries.filter(
+            (entry) =>
+              getValue(entry) ===
+              maximum
+          )
+
+        award.winners =
+          winners
+            .map(
+              (winner) =>
+                getSessionName(
+                  winner.session.id,
+                  winner.playerId
+                )
+            )
+            .join(' • ')
+
+        award.winnerLines =
+          winners.map(
+            (winner) => ({
+              name:
+                getSessionName(
+                  winner.session.id,
+                  winner.playerId
+                ),
+
+              meta:
+                formatDate(
+                  winner.session
+                    .startedAt
+                ),
+            })
+          )
+
+        award.value =
+          valueLabel(
+            maximum
+          )
+
+        award.hasData =
+          true
+
+        return award
+      }
+
+      const siMalangRecord =
+        makeJimSessionRecord(
+          'Si Malang Record',
+          'Most failed Jim attempts by one player in a single completed session',
+          (entry) =>
+            entry.losses,
+          (maximum) =>
+            `${maximum} Jim ${
+              maximum === 1
+                ? 'loss'
+                : 'losses'
+            }`,
+          'No Jim losses yet'
+        )
+
+      const kakiJimRecord =
+        makeJimSessionRecord(
+          'Kaki Jim Record',
+          'Most Jim attempts by one player in a single completed session',
+          (entry) =>
+            entry.attempts,
+          (maximum) =>
+            `${maximum} Jim ${
+              maximum === 1
+                ? 'attempt'
+                : 'attempts'
+            }`,
+          'No Jim attempts yet'
+        )
+
+      const siTuahRecord =
+        makeJimSessionRecord(
+          'Si Tuah Record',
+          'Most Jim wins by one player in a single completed session',
+          (entry) =>
+            entry.wins,
+          (maximum) =>
+            `${maximum} Jim ${
+              maximum === 1
+                ? 'win'
+                : 'wins'
+            }`,
+          'No Jim wins yet'
+        )
+
       return [
         durationAward,
         roundAward,
         jimSlayerAward,
+        siMalangRecord,
+        kakiJimRecord,
+        siTuahRecord,
       ]
     }, [
       sessions,
@@ -3305,46 +3537,68 @@ export default function HistoryStats({
       )
     }
 
-    const kakiHide =
-      makeSessionAward(
-        'Kaki Hide',
-        'Used Hide the most times in this session',
-        (entry) =>
-          entry.stats
-            .hideUses,
-        (entry) => {
-          const hides =
+    /*
+      Penakut = completed the whole
+      session without taking Jim at all.
+      We only award it when the session
+      actually contained at least one
+      Jim round.
+    */
+    if (jim.length > 0) {
+      const penakutWinners =
+        stats.filter(
+          (entry) =>
             entry.stats
-              .hideUses
+              .jimAttempts === 0
+        )
 
-          const attempts =
-            entry.stats
-              .jimAttempts
+      if (
+        penakutWinners.length > 0
+      ) {
+        awards.push({
+          title:
+            'Penakut',
 
-          const rate =
-            percentage(
-              hides,
-              attempts
-            )
+          description:
+            'Finished this session without a single Jim attempt',
 
-          return rate === null
-            ? `${hides}/${attempts}`
-            : `${hides}/${attempts} • ${displayPercent(
-                rate
-              )}`
-        },
-        (maximum) =>
-          `${maximum} ${
-            maximum === 1
-              ? 'hide'
-              : 'hides'
-          }`
-      )
+          winners:
+            penakutWinners
+              .map(
+                (winner) =>
+                  sessionName(
+                    winner
+                      .participant
+                      .playerId
+                  )
+              )
+              .join(' • '),
 
-    if (kakiHide) {
-      awards.push(
-        kakiHide
-      )
+          winnerLines:
+            penakutWinners.map(
+              (winner) => ({
+                name:
+                  sessionName(
+                    winner
+                      .participant
+                      .playerId
+                  ),
+
+                meta:
+                  `0 attempts • ${jim.length} Jim ${
+                    jim.length === 1
+                      ? 'round'
+                      : 'rounds'
+                  }`,
+              })
+            ),
+
+          value:
+            '0 Jim attempts',
+
+          hasData: true,
+        })
+      }
     }
 
     const palingBerolah =
@@ -5464,10 +5718,8 @@ export default function HistoryStats({
             </h2>
 
             <p>
-              All-time cards pair the
-              raw record with its
-              lifetime rate. Single-
-              session records capture
+              All-time records track
+              lifetime totals and rates. Single-session records capture
               standout performances in
               one game.
             </p>
@@ -5486,11 +5738,12 @@ export default function HistoryStats({
               </div>
 
               <p>
-                Each title shows both
+                Most titles show both
                 the raw record and its
-                lifetime rate. The two
-                records can belong to
-                different players.
+                lifetime rate. Penakut
+                shows the number of
+                completed sessions with
+                zero Jim attempts.
               </p>
             </header>
 
@@ -5626,6 +5879,53 @@ export default function HistoryStats({
                   </article>
                 )
               )}
+
+              <article
+                className={`awardCard rateAwardCard awardTone-${getAwardTone(
+                  penakutAllTimeAward.title
+                )}`}
+              >
+                <AwardTitleInfo
+                  title={
+                    penakutAllTimeAward.title
+                  }
+                  description={
+                    penakutAllTimeAward.description
+                  }
+                />
+
+                {penakutAllTimeAward.winnerLines ? (
+                  <div className="sessionRecordWinners">
+                    {penakutAllTimeAward.winnerLines.map(
+                      (
+                        winner,
+                        index
+                      ) => (
+                        <div
+                          className="sessionRecordWinner"
+                          key={`${winner.name}-${index}`}
+                        >
+                          <h3>
+                            {winner.name}
+                          </h3>
+                        </div>
+                      )
+                    )}
+                  </div>
+                ) : (
+                  <h3>
+                    {
+                      penakutAllTimeAward.winners
+                    }
+                  </h3>
+                )}
+
+                <strong>
+                  {
+                    penakutAllTimeAward.value
+                  }
+                </strong>
+              </article>
             </div>
           </section>
 
