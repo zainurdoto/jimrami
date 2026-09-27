@@ -1,5 +1,7 @@
 import {
+  useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react'
 
@@ -27,9 +29,303 @@ type Tab =
 type PlayerSort =
   | 'total'
   | 'average'
+  | 'sessionsPlayed'
+  | 'standardWins'
+  | 'sessionWins'
+  | 'jimWins'
+  | 'jimRate'
+  | 'jimAttempts'
+  | 'jimCatches'
+  | 'jimCaught'
   | 'standardRate'
   | 'sessionRate'
-  | 'jimRate'
+
+
+type PlayerSortOption = {
+  value: PlayerSort
+  label: string
+}
+
+type PlayerSortGroup = {
+  label: string
+  options: PlayerSortOption[]
+}
+
+const PLAYER_SORT_GROUPS:
+  PlayerSortGroup[] = [
+    {
+      label: 'OVERALL',
+      options: [
+        {
+          value: 'total',
+          label: 'Total Points',
+        },
+        {
+          value: 'average',
+          label:
+            'Average Points / Session',
+        },
+        {
+          value: 'sessionsPlayed',
+          label: 'Sessions Played',
+        },
+      ],
+    },
+    {
+      label: 'WINS',
+      options: [
+        {
+          value: 'standardWins',
+          label: 'Total Standard Wins',
+        },
+        {
+          value: 'sessionWins',
+          label: 'Total Session Wins',
+        },
+        {
+          value: 'jimWins',
+          label: 'Total Jim Wins',
+        },
+      ],
+    },
+    {
+      label: 'JIM',
+      options: [
+        {
+          value: 'jimRate',
+          label: 'Jim Success Rate',
+        },
+        {
+          value: 'jimAttempts',
+          label: 'Total Jim Attempts',
+        },
+        {
+          value: 'jimCatches',
+          label: 'Total Catches',
+        },
+        {
+          value: 'jimCaught',
+          label: 'Total Caught',
+        },
+      ],
+    },
+    {
+      label: 'RATES',
+      options: [
+        {
+          value: 'standardRate',
+          label: 'Standard Win Rate',
+        },
+        {
+          value: 'sessionRate',
+          label: 'Session Win Rate',
+        },
+      ],
+    },
+  ]
+
+function getPlayerSortLabel(
+  value: PlayerSort
+) {
+  for (
+    const group of
+    PLAYER_SORT_GROUPS
+  ) {
+    const option =
+      group.options.find(
+        (entry) =>
+          entry.value === value
+      )
+
+    if (option) {
+      return option.label
+    }
+  }
+
+  return 'Total Points'
+}
+
+function PlayerSortPicker({
+  value,
+  onChange,
+}: {
+  value: PlayerSort
+  onChange: (
+    value: PlayerSort
+  ) => void
+}) {
+  const [
+    open,
+    setOpen,
+  ] =
+    useState(false)
+
+  const rootRef =
+    useRef<HTMLDivElement>(
+      null
+    )
+
+  useEffect(
+    () => {
+      if (!open) {
+        return
+      }
+
+      function handlePointerDown(
+        event: PointerEvent
+      ) {
+        if (
+          rootRef.current &&
+          !rootRef.current.contains(
+            event.target as Node
+          )
+        ) {
+          setOpen(false)
+        }
+      }
+
+      function handleKeyDown(
+        event: KeyboardEvent
+      ) {
+        if (
+          event.key === 'Escape'
+        ) {
+          setOpen(false)
+        }
+      }
+
+      document.addEventListener(
+        'pointerdown',
+        handlePointerDown
+      )
+
+      document.addEventListener(
+        'keydown',
+        handleKeyDown
+      )
+
+      return () => {
+        document.removeEventListener(
+          'pointerdown',
+          handlePointerDown
+        )
+
+        document.removeEventListener(
+          'keydown',
+          handleKeyDown
+        )
+      }
+    },
+    [open]
+  )
+
+  return (
+    <div
+      className="playerSortPicker"
+      ref={rootRef}
+    >
+      <button
+        type="button"
+        className={`playerSortTrigger ${
+          open
+            ? 'open'
+            : ''
+        }`}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        onClick={() =>
+          setOpen(
+            (current) =>
+              !current
+          )
+        }
+      >
+        <span>
+          {getPlayerSortLabel(
+            value
+          )}
+        </span>
+
+        <b aria-hidden="true">
+          {open
+            ? '▴'
+            : '▾'}
+        </b>
+      </button>
+
+      {open && (
+        <div
+          className="playerSortMenu"
+          role="listbox"
+          aria-label="Rank players by"
+        >
+          {PLAYER_SORT_GROUPS.map(
+            (group) => (
+              <section
+                className="playerSortGroup"
+                key={group.label}
+              >
+                <span className="playerSortGroupLabel">
+                  {group.label}
+                </span>
+
+                <div>
+                  {group.options.map(
+                    (option) => {
+                      const selected =
+                        option.value ===
+                        value
+
+                      return (
+                        <button
+                          type="button"
+                          role="option"
+                          aria-selected={
+                            selected
+                          }
+                          className={`playerSortOption ${
+                            selected
+                              ? 'selected'
+                              : ''
+                          }`}
+                          key={
+                            option.value
+                          }
+                          onClick={() => {
+                            onChange(
+                              option.value
+                            )
+
+                            setOpen(
+                              false
+                            )
+                          }}
+                        >
+                          <span className="playerSortCheck">
+                            {selected
+                              ? '✓'
+                              : ''}
+                          </span>
+
+                          <strong>
+                            {
+                              option.label
+                            }
+                          </strong>
+                        </button>
+                      )
+                    }
+                  )}
+                </div>
+              </section>
+            )
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 
 type PlayerStat = {
   id: number
@@ -1726,6 +2022,57 @@ export default function HistoryStats({
             player.averagePointsPerSession ??
             -Infinity
           )
+        }
+
+        if (
+          playerSort ===
+          'sessionsPlayed'
+        ) {
+          return (
+            player.completedSessions
+          )
+        }
+
+        if (
+          playerSort ===
+          'standardWins'
+        ) {
+          return player.standardWins
+        }
+
+        if (
+          playerSort ===
+          'sessionWins'
+        ) {
+          return player.sessionWins
+        }
+
+        if (
+          playerSort ===
+          'jimWins'
+        ) {
+          return player.jimWins
+        }
+
+        if (
+          playerSort ===
+          'jimAttempts'
+        ) {
+          return player.jimAttempts
+        }
+
+        if (
+          playerSort ===
+          'jimCatches'
+        ) {
+          return player.jimCatches
+        }
+
+        if (
+          playerSort ===
+          'jimCaught'
+        ) {
+          return player.jimLosses
         }
 
         if (
@@ -4966,87 +5313,12 @@ export default function HistoryStats({
               </strong>
             </div>
 
-            <div className="playerSortButtons">
-              <button
-                className={
-                  playerSort ===
-                  'total'
-                    ? 'active'
-                    : ''
-                }
-                onClick={() =>
-                  setPlayerSort(
-                    'total'
-                  )
-                }
-              >
-                Total Pts
-              </button>
-
-              <button
-                className={
-                  playerSort ===
-                  'average'
-                    ? 'active'
-                    : ''
-                }
-                onClick={() =>
-                  setPlayerSort(
-                    'average'
-                  )
-                }
-              >
-                Avg / Session
-              </button>
-
-              <button
-                className={
-                  playerSort ===
-                  'standardRate'
-                    ? 'active'
-                    : ''
-                }
-                onClick={() =>
-                  setPlayerSort(
-                    'standardRate'
-                  )
-                }
-              >
-                Std Win %
-              </button>
-
-              <button
-                className={
-                  playerSort ===
-                  'sessionRate'
-                    ? 'active'
-                    : ''
-                }
-                onClick={() =>
-                  setPlayerSort(
-                    'sessionRate'
-                  )
-                }
-              >
-                Session Win %
-              </button>
-
-              <button
-                className={
-                  playerSort ===
-                  'jimRate'
-                    ? 'active'
-                    : ''
-                }
-                onClick={() =>
-                  setPlayerSort(
-                    'jimRate'
-                  )
-                }
-              >
-                Jim %
-              </button>
-            </div>
+            <PlayerSortPicker
+              value={playerSort}
+              onChange={
+                setPlayerSort
+              }
+            />
           </section>
 
           <section className="playerStatsList">
@@ -5103,7 +5375,14 @@ export default function HistoryStats({
                   </div>
 
                   <div className="playerStatGrid">
-                    <div>
+                    <div
+                      className={
+                        playerSort ===
+                        'sessionsPlayed'
+                          ? 'sortStatHighlight'
+                          : ''
+                      }
+                    >
                       <span>
                         PLAYED
                       </span>
@@ -5115,7 +5394,14 @@ export default function HistoryStats({
                       </strong>
                     </div>
 
-                    <div>
+                    <div
+                      className={
+                        playerSort ===
+                        'sessionWins'
+                          ? 'sortStatHighlight'
+                          : ''
+                      }
+                    >
                       <span>
                         WINS
                       </span>
@@ -5181,7 +5467,14 @@ export default function HistoryStats({
                       </strong>
                     </div>
 
-                    <div>
+                    <div
+                      className={
+                        playerSort ===
+                        'standardWins'
+                          ? 'sortStatHighlight'
+                          : ''
+                      }
+                    >
                       <span>
                         WINS
                       </span>
@@ -5241,7 +5534,14 @@ export default function HistoryStats({
                   </div>
 
                   <div className="playerStatGrid">
-                    <div>
+                    <div
+                      className={
+                        playerSort ===
+                        'jimAttempts'
+                          ? 'sortStatHighlight'
+                          : ''
+                      }
+                    >
                       <span>
                         ATTEMPTS
                       </span>
@@ -5253,7 +5553,14 @@ export default function HistoryStats({
                       </strong>
                     </div>
 
-                    <div>
+                    <div
+                      className={
+                        playerSort ===
+                        'jimWins'
+                          ? 'sortStatHighlight'
+                          : ''
+                      }
+                    >
                       <span>
                         WINS
                       </span>
@@ -5283,7 +5590,14 @@ export default function HistoryStats({
                       </strong>
                     </div>
 
-                    <div>
+                    <div
+                      className={
+                        playerSort ===
+                        'jimCatches'
+                          ? 'sortStatHighlight'
+                          : ''
+                      }
+                    >
                       <span>
                         CATCHES
                       </span>
@@ -5307,9 +5621,16 @@ export default function HistoryStats({
                       </strong>
                     </div>
 
-                    <div>
+                    <div
+                      className={
+                        playerSort ===
+                        'jimCaught'
+                          ? 'sortStatHighlight'
+                          : ''
+                      }
+                    >
                       <span>
-                        LOSSES
+                        CAUGHT
                       </span>
 
                       <strong>
