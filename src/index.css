@@ -15266,3 +15266,422 @@ button:disabled {
     min-height: 40px;
   }
 }
+
+/* =========================================
+   WELCOME PLAYER CARD — OPEN PICKER CORNERS
+   Append to the VERY BOTTOM of index.css
+
+   The player card must use overflow:visible
+   while the custom nickname menu is open.
+   That exposes the square background corners
+   of the PLAYING AS row. Round that row itself
+   so it still follows the card shape.
+========================================= */
+
+.playerSelect.selected
+.sessionAliasPicker {
+  border-radius:
+    0 0 15px 15px;
+}
+
+/* Keep the same clean card silhouette
+   while the floating menu is open. */
+.playerSelect:has(
+  .sessionAliasTrigger.open
+)
+.sessionAliasPicker {
+  border-radius:
+    0 0 15px 15px;
+}
+
+/* Slightly inset the floating menu so its
+   edges visually line up with the field
+   instead of fighting the outer card border. */
+.playerSelect:has(
+  .sessionAliasTrigger.open
+)
+.sessionAliasMenu {
+  left: 1px;
+  right: 1px;
+}
+
+/* =========================================
+   SESSION HISTORY — PLAYER DETAILS
+   Append to the VERY BOTTOM of index.css
+========================================= */
+
+/* Clickable session standing */
+.historyStandingInteractive {
+  cursor: pointer;
+
+  outline: none;
+
+  transition:
+    background 140ms ease,
+    border-color 140ms ease,
+    transform 140ms ease;
+
+  border:
+    1px solid transparent;
+}
+
+.historyStandingInteractive:hover {
+  background: #252e3a;
+
+  border-color: #374558;
+}
+
+.historyStandingInteractive:focus-visible {
+  border-color: #7e9fd4;
+
+  box-shadow:
+    0 0 0 2px
+    rgba(126, 159, 212, 0.14);
+}
+
+.historyStandingInteractive:active {
+  transform: scale(0.997);
+}
+
+
+/* Scoreboard-style achievements inside
+   each session standing row. */
+.historyStandingAchievements {
+  display: flex !important;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px 10px !important;
+
+  min-height: 18px;
+  margin-top: 2px;
+}
+
+.historyStandingAchievements
+.standardWinTally,
+.historyStandingAchievements
+.jimWinStars,
+.historyStandingAchievements
+.jimCatchScissors {
+  margin: 0;
+}
+
+.historyStandingAchievements
+.jimWinStars {
+  max-width: none;
+}
+
+
+/* Modal */
+.sessionPlayerDetailOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+
+  display: grid;
+  place-items: center;
+
+  padding: 22px;
+
+  background:
+    rgba(5, 8, 12, 0.78);
+
+  backdrop-filter:
+    blur(8px);
+}
+
+.sessionPlayerDetailDialog {
+  width:
+    min(100%, 680px);
+  max-height:
+    min(88vh, 820px);
+  overflow-y: auto;
+
+  padding: 28px;
+
+  border:
+    1px solid #384556;
+  border-radius: 22px;
+
+  background: #171c24;
+
+  box-shadow:
+    0 24px 70px
+    rgba(0, 0, 0, 0.48);
+}
+
+.sessionPlayerDetailLabel {
+  color: #91a9c8;
+
+  font-size: 10px;
+  font-weight: 950;
+  letter-spacing: 0.13em;
+}
+
+.sessionPlayerDetailHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+
+  margin:
+    7px 0 20px;
+}
+
+.sessionPlayerDetailHeading h2 {
+  margin: 0;
+
+  font-size: 31px;
+  line-height: 1.05;
+}
+
+.sessionPlayerDetailHeading
+div > span {
+  display: block;
+
+  margin-top: 5px;
+
+  color: #7f8b9a;
+
+  font-size: 12px;
+}
+
+.sessionPlayerDetailHeading
+> strong {
+  color: #e7bd58;
+
+  font-size: 30px;
+  font-weight: 950;
+}
+
+
+/* Achievement strip */
+.sessionPlayerDetailAchievements {
+  display: grid;
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr));
+  gap: 8px;
+
+  margin-bottom: 20px;
+}
+
+.sessionPlayerDetailAchievements
+> div {
+  min-height: 68px;
+
+  display: grid;
+  align-content: center;
+  gap: 8px;
+
+  padding: 11px 13px;
+
+  border:
+    1px solid #2c3541;
+  border-radius: 12px;
+
+  background: #11161d;
+}
+
+.sessionPlayerDetailAchievements
+> div > span {
+  color: #708095;
+
+  font-size: 8px;
+  font-weight: 950;
+  letter-spacing: 0.1em;
+}
+
+.sessionPlayerDetailAchievements
+> div > b {
+  color: #d8e0e9;
+
+  font-size: 18px;
+}
+
+.sessionPlayerDetailAchievements
+.standardWinTally,
+.sessionPlayerDetailAchievements
+.jimWinStars,
+.sessionPlayerDetailAchievements
+.jimCatchScissors {
+  margin: 0;
+}
+
+
+/* Grouped details */
+.sessionPlayerDetailSection {
+  margin-top: 15px;
+}
+
+.sessionPlayerDetailSection
+> span {
+  display: block;
+
+  margin-bottom: 7px;
+
+  color: #79889a;
+
+  font-size: 9px;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+}
+
+.sessionPlayerDetailGrid {
+  display: grid;
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.sessionPlayerDetailGridWide {
+  grid-template-columns:
+    repeat(4, minmax(0, 1fr));
+}
+
+.sessionPlayerDetailGrid
+> div {
+  min-width: 0;
+
+  padding: 12px;
+
+  border-radius: 11px;
+
+  background: #10151c;
+}
+
+.sessionPlayerDetailGrid
+> div > span {
+  display: block;
+
+  margin-bottom: 6px;
+
+  color: #6f7f93;
+
+  font-size: 8px;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+}
+
+.sessionPlayerDetailGrid
+> div > strong {
+  display: block;
+
+  overflow: hidden;
+
+  color: #f1f4f7;
+
+  font-size: 18px;
+  font-weight: 900;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sessionPlayerDetailNote {
+  margin:
+    16px 0 0;
+
+  padding:
+    11px 12px;
+
+  border:
+    1px solid #3b3547;
+  border-radius: 10px;
+
+  background: #181620;
+  color: #928ca0;
+
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.sessionPlayerDetailClose {
+  width: 100%;
+  min-height: 50px;
+
+  margin-top: 20px;
+
+  border:
+    1px solid #3a4655;
+  border-radius: 13px;
+
+  background: #252d37;
+  color: #e3e8ee;
+
+  font-size: 14px;
+  font-weight: 850;
+}
+
+
+/* Tablet */
+@media (max-width: 700px) {
+  .sessionPlayerDetailDialog {
+    padding: 22px;
+  }
+
+  .sessionPlayerDetailAchievements {
+    grid-template-columns: 1fr;
+  }
+
+  .sessionPlayerDetailGridWide {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+}
+
+
+/* Phone */
+@media (max-width: 470px) {
+  .sessionPlayerDetailGrid {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+
+  .sessionPlayerDetailHeading h2 {
+    font-size: 26px;
+  }
+}
+
+/* =========================================
+   PLAYER SORT MENU — HIDE SCROLLBAR
+   Append to the VERY BOTTOM of index.css
+
+   Scrolling still works with mouse wheel,
+   trackpad, touch, or keyboard.
+========================================= */
+
+.playerSortMenu {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.playerSortMenu::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
+/* =========================================
+   APP PAGE — HIDE BROWSER SCROLLBAR
+   Append to the VERY BOTTOM of index.css
+
+   Page scrolling still works with:
+   - mouse wheel
+   - trackpad
+   - touch
+   - keyboard
+========================================= */
+
+html,
+body,
+#root {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
+#root::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}

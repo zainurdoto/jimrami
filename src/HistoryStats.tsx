@@ -9,11 +9,200 @@ import { useLiveQuery } from 'dexie-react-hooks'
 
 import {
   db,
+  type JimResult,
   type Player,
 } from './db'
 
 import TitleRace from './TitleRace'
 import RoundEditor from './RoundEditor'
+
+
+function HistoryStandardWinTally({
+  count,
+}: {
+  count: number
+}) {
+  if (count <= 0) {
+    return null
+  }
+
+  const groups =
+    Array.from(
+      {
+        length:
+          Math.ceil(
+            count / 5
+          ),
+      },
+      (_, index) =>
+        Math.min(
+          5,
+          count -
+            index * 5
+        )
+    )
+
+  return (
+    <div
+      className="standardWinTally"
+      aria-label={`${count} Standard ${
+        count === 1
+          ? 'win'
+          : 'wins'
+      }`}
+      title={`${count} Standard ${
+        count === 1
+          ? 'win'
+          : 'wins'
+      }`}
+    >
+      <div className="tallyGroups">
+        {groups.map(
+          (
+            groupSize,
+            groupIndex
+          ) => (
+            <span
+              className="tallyGroup"
+              key={
+                groupIndex
+              }
+            >
+              {Array.from(
+                {
+                  length:
+                    Math.min(
+                      groupSize,
+                      4
+                    ),
+                },
+                (
+                  _,
+                  markIndex
+                ) => (
+                  <i
+                    className="tallyMark"
+                    key={
+                      markIndex
+                    }
+                  />
+                )
+              )}
+
+              {groupSize ===
+                5 && (
+                <i className="tallyStrike" />
+              )}
+            </span>
+          )
+        )}
+      </div>
+    </div>
+  )
+}
+
+function HistoryJimWinStars({
+  wins,
+}: {
+  wins: JimResult[]
+}) {
+  if (wins.length === 0) {
+    return null
+  }
+
+  const orderedWins =
+    [...wins].sort(
+      (a, b) =>
+        a.roundId -
+          b.roundId ||
+        a.id - b.id
+    )
+
+  return (
+    <div
+      className="jimWinStars"
+      aria-label={`${wins.length} Jim ${
+        wins.length === 1
+          ? 'win'
+          : 'wins'
+      }`}
+    >
+      {orderedWins.map(
+        (win) => {
+          const usedHide =
+            typeof win.hideStage ===
+            'number'
+
+          return (
+            <span
+              className={`jimWinStar ${
+                usedHide
+                  ? 'usedHide'
+                  : 'hideless'
+              }`}
+              key={win.id}
+              aria-label={
+                usedHide
+                  ? `Jim win, Hide used at Stage ${win.hideStage}`
+                  : 'Jim win, no Hide used'
+              }
+              title={
+                usedHide
+                  ? `Jim win • Hide used at Stage ${win.hideStage}`
+                  : 'Jim win • No Hide'
+              }
+            >
+              ★
+            </span>
+          )
+        }
+      )}
+    </div>
+  )
+}
+
+function HistoryJimCatchScissors({
+  catches,
+}: {
+  catches: JimResult[]
+}) {
+  if (catches.length === 0) {
+    return null
+  }
+
+  const orderedCatches =
+    [...catches].sort(
+      (a, b) =>
+        a.roundId -
+          b.roundId ||
+        a.id - b.id
+    )
+
+  return (
+    <div
+      className="jimCatchScissors"
+      aria-label={`${catches.length} Jim ${
+        catches.length === 1
+          ? 'catch'
+          : 'catches'
+      }`}
+    >
+      {orderedCatches.map(
+        (result) => (
+          <span
+            className="jimCatchScissor"
+            key={result.id}
+            title="Caught Jim"
+            aria-label="Caught Jim"
+          >
+            ✂︎
+          </span>
+        )
+      )}
+    </div>
+  )
+}
+
 
 type Props = {
   players: Player[]
@@ -1148,6 +1337,15 @@ export default function HistoryStats({
     useState<number | null>(
       null
     )
+
+
+  const [
+    sessionPlayerDetail,
+    setSessionPlayerDetail,
+  ] = useState<{
+    sessionId: number
+    playerId: number
+  } | null>(null)
 
   const [
     roundDetailsSessionId,
@@ -4457,6 +4655,227 @@ export default function HistoryStats({
         )
       : '—'
 
+  const sessionPlayerDetailData =
+    sessionPlayerDetail === null
+      ? null
+      : (() => {
+          const session =
+            sessions.find(
+              (item) =>
+                item.id ===
+                sessionPlayerDetail.sessionId
+            )
+
+          if (!session) {
+            return null
+          }
+
+          const participants =
+            sessionPlayers.filter(
+              (player) =>
+                player.sessionId ===
+                session.id
+            )
+
+          const participant =
+            participants.find(
+              (player) =>
+                player.playerId ===
+                sessionPlayerDetail.playerId
+            )
+
+          if (!participant) {
+            return null
+          }
+
+          const sessionRounds =
+            rounds.filter(
+              (round) =>
+                round.sessionId ===
+                session.id
+            )
+
+          const standardResults =
+            roundResults.filter(
+              (result) =>
+                result.sessionId ===
+                  session.id &&
+                result.playerId ===
+                  participant.playerId
+            )
+
+          const jimAttempts =
+            jimResults.filter(
+              (result) =>
+                result.sessionId ===
+                  session.id &&
+                result.jimPlayerId ===
+                  participant.playerId
+            )
+
+          const jimWins =
+            jimAttempts.filter(
+              (result) =>
+                result.won
+            )
+
+          const catches =
+            jimResults.filter(
+              (result) =>
+                result.sessionId ===
+                  session.id &&
+                result.caughtByPlayerId ===
+                  participant.playerId
+            )
+
+          const caught =
+            jimAttempts.filter(
+              (result) =>
+                !result.won
+            )
+
+          const penalties =
+            penaltyResults.filter(
+              (penalty) =>
+                penalty.sessionId ===
+                  session.id &&
+                penalty.playerId ===
+                  participant.playerId
+            )
+
+          const standardWins =
+            standardResults.filter(
+              (result) =>
+                result.position === 1
+            ).length
+
+          const standardRate =
+            standardResults.length === 0
+              ? null
+              : standardWins /
+                standardResults.length
+
+          const jimRate =
+            jimAttempts.length === 0
+              ? null
+              : jimWins.length /
+                jimAttempts.length
+
+          const averageStages =
+            jimAttempts.length === 0
+              ? null
+              : jimAttempts.reduce(
+                  (
+                    total,
+                    result
+                  ) =>
+                    total +
+                    result.stepsSurvived,
+                  0
+                ) /
+                jimAttempts.length
+
+          const hideUses =
+            jimAttempts.filter(
+              (result) =>
+                typeof result.hideStage ===
+                'number'
+            ).length
+
+          const ranking =
+            [...participants].sort(
+              (a, b) =>
+                b.points -
+                  a.points ||
+                a.rotationOrder -
+                  b.rotationOrder
+            )
+
+          const rank =
+            ranking.findIndex(
+              (player) =>
+                player.playerId ===
+                participant.playerId
+            ) + 1
+
+          /*
+            With exactly four session players,
+            everyone is active for every round,
+            so total rounds played is exact.
+
+            With a waiting queue, older Jim data
+            does not store the two passive
+            defenders. In that case we show the
+            minimum number of recorded rounds
+            instead of inventing participation.
+          */
+          const exactRoundsPlayed =
+            participants.length <= 4
+
+          const recordedRoundIds =
+            new Set<number>()
+
+          standardResults.forEach(
+            (result) =>
+              recordedRoundIds.add(
+                result.roundId
+              )
+          )
+
+          jimResults
+            .filter(
+              (result) =>
+                result.sessionId ===
+                  session.id &&
+                (
+                  result.jimPlayerId ===
+                    participant.playerId ||
+                  result.caughtByPlayerId ===
+                    participant.playerId ||
+                  result.outPlayerId ===
+                    participant.playerId
+                )
+            )
+            .forEach(
+              (result) =>
+                recordedRoundIds.add(
+                  result.roundId
+                )
+            )
+
+          const roundsPlayed =
+            exactRoundsPlayed
+              ? sessionRounds.length
+              : recordedRoundIds.size
+
+          return {
+            session,
+            participant,
+            playerName:
+              getSessionName(
+                session.id,
+                participant.playerId
+              ),
+            rank,
+            roundsPlayed,
+            exactRoundsPlayed,
+            standardRounds:
+              standardResults.length,
+            standardWins,
+            standardRate,
+            jimAttempts,
+            jimWins,
+            jimRate,
+            averageStages,
+            catches,
+            caught:
+              caught.length,
+            penalties:
+              penalties.length,
+            hideUses,
+          }
+        })()
+
   return (
     <main className="app historyPage">
       <header className="historyHeader">
@@ -4771,10 +5190,39 @@ export default function HistoryStats({
                               index
                             ) => (
                               <div
-                                className="historyStanding"
+                                className="historyStanding historyStandingInteractive"
                                 key={
                                   player.id
                                 }
+                                role="button"
+                                tabIndex={0}
+                                onClick={() =>
+                                  setSessionPlayerDetail({
+                                    sessionId:
+                                      session.id,
+                                    playerId:
+                                      player.playerId,
+                                  })
+                                }
+                                onKeyDown={(
+                                  event
+                                ) => {
+                                  if (
+                                    event.key ===
+                                      'Enter' ||
+                                    event.key ===
+                                      ' '
+                                  ) {
+                                    event.preventDefault()
+
+                                    setSessionPlayerDetail({
+                                      sessionId:
+                                        session.id,
+                                      playerId:
+                                        player.playerId,
+                                    })
+                                  }
+                                }}
                               >
                                 <span>
                                   {index +
@@ -4789,17 +5237,64 @@ export default function HistoryStats({
                                     )}
                                   </strong>
 
-                                  <small>
-                                    {
-                                      player.wins
-                                    }{' '}
-                                    standard
-                                    {' • '}
-                                    ★{' '}
-                                    {player.jimWins ??
-                                      0}{' '}
-                                    Jim
-                                  </small>
+                                  {(() => {
+                                    const playerJimWins =
+                                      jimResults.filter(
+                                        (result) =>
+                                          result.sessionId ===
+                                            session.id &&
+                                          result.jimPlayerId ===
+                                            player.playerId &&
+                                          result.won
+                                      )
+
+                                    const playerCatches =
+                                      jimResults.filter(
+                                        (result) =>
+                                          result.sessionId ===
+                                            session.id &&
+                                          result.caughtByPlayerId ===
+                                            player.playerId
+                                      )
+
+                                    const hasAchievements =
+                                      player.wins > 0 ||
+                                      playerJimWins.length >
+                                        0 ||
+                                      playerCatches.length >
+                                        0
+
+                                    return hasAchievements ? (
+                                      <div className="historyStandingAchievements">
+                                        {player.wins >
+                                          0 && (
+                                          <HistoryStandardWinTally
+                                            count={
+                                              player.wins
+                                            }
+                                          />
+                                        )}
+
+                                        {playerJimWins.length >
+                                          0 && (
+                                          <HistoryJimWinStars
+                                            wins={
+                                              playerJimWins
+                                            }
+                                          />
+                                        )}
+
+                                        {playerCatches.length >
+                                          0 && (
+                                          <HistoryJimCatchScissors
+                                            catches={
+                                              playerCatches
+                                            }
+                                          />
+                                        )}
+                                      </div>
+                                    ) : null
+                                  })()}
                                 </div>
 
                                 <b>
@@ -6557,6 +7052,337 @@ export default function HistoryStats({
           </section>
         </section>
       )}
+      {sessionPlayerDetailData && (
+        <div
+          className="sessionPlayerDetailOverlay"
+          onClick={() =>
+            setSessionPlayerDetail(
+              null
+            )
+          }
+        >
+          <div
+            className="sessionPlayerDetailDialog"
+            onClick={(event) =>
+              event.stopPropagation()
+            }
+          >
+            <span className="sessionPlayerDetailLabel">
+              SESSION PLAYER
+            </span>
+
+            <div className="sessionPlayerDetailHeading">
+              <div>
+                <h2>
+                  {
+                    sessionPlayerDetailData.playerName
+                  }
+                </h2>
+
+                <span>
+                  {formatDate(
+                    sessionPlayerDetailData.session.startedAt
+                  )}
+                </span>
+              </div>
+
+              <strong>
+                #
+                {
+                  sessionPlayerDetailData.rank
+                }
+              </strong>
+            </div>
+
+            <div className="sessionPlayerDetailAchievements">
+              <div>
+                <span>
+                  STANDARD
+                </span>
+
+                {sessionPlayerDetailData.standardWins >
+                0 ? (
+                  <HistoryStandardWinTally
+                    count={
+                      sessionPlayerDetailData.standardWins
+                    }
+                  />
+                ) : (
+                  <b>0</b>
+                )}
+              </div>
+
+              <div>
+                <span>
+                  JIM
+                </span>
+
+                {sessionPlayerDetailData.jimWins.length >
+                0 ? (
+                  <HistoryJimWinStars
+                    wins={
+                      sessionPlayerDetailData.jimWins
+                    }
+                  />
+                ) : (
+                  <b>0</b>
+                )}
+              </div>
+
+              <div>
+                <span>
+                  CATCHES
+                </span>
+
+                {sessionPlayerDetailData.catches.length >
+                0 ? (
+                  <HistoryJimCatchScissors
+                    catches={
+                      sessionPlayerDetailData.catches
+                    }
+                  />
+                ) : (
+                  <b>0</b>
+                )}
+              </div>
+            </div>
+
+            <section className="sessionPlayerDetailSection">
+              <span>
+                OVERVIEW
+              </span>
+
+              <div className="sessionPlayerDetailGrid">
+                <div>
+                  <span>
+                    POINTS
+                  </span>
+
+                  <strong>
+                    {
+                      sessionPlayerDetailData.participant.points
+                    }
+                  </strong>
+                </div>
+
+                <div>
+                  <span>
+                    {sessionPlayerDetailData.exactRoundsPlayed
+                      ? 'ROUNDS PLAYED'
+                      : 'RECORDED ROUNDS'}
+                  </span>
+
+                  <strong>
+                    {
+                      sessionPlayerDetailData.roundsPlayed
+                    }
+                  </strong>
+                </div>
+
+                <div>
+                  <span>
+                    FINAL RANK
+                  </span>
+
+                  <strong>
+                    #
+                    {
+                      sessionPlayerDetailData.rank
+                    }
+                  </strong>
+                </div>
+              </div>
+            </section>
+
+            <section className="sessionPlayerDetailSection">
+              <span>
+                STANDARD
+              </span>
+
+              <div className="sessionPlayerDetailGrid">
+                <div>
+                  <span>
+                    ROUNDS
+                  </span>
+
+                  <strong>
+                    {
+                      sessionPlayerDetailData.standardRounds
+                    }
+                  </strong>
+                </div>
+
+                <div>
+                  <span>
+                    WINS
+                  </span>
+
+                  <strong>
+                    {
+                      sessionPlayerDetailData.standardWins
+                    }
+                  </strong>
+                </div>
+
+                <div>
+                  <span>
+                    WIN RATE
+                  </span>
+
+                  <strong>
+                    {sessionPlayerDetailData.standardRate ===
+                    null
+                      ? '—'
+                      : `${(
+                          sessionPlayerDetailData.standardRate *
+                          100
+                        ).toFixed(
+                          1
+                        )}%`}
+                  </strong>
+                </div>
+              </div>
+            </section>
+
+            <section className="sessionPlayerDetailSection">
+              <span>
+                JIM
+              </span>
+
+              <div className="sessionPlayerDetailGrid sessionPlayerDetailGridWide">
+                <div>
+                  <span>
+                    ATTEMPTS
+                  </span>
+
+                  <strong>
+                    {
+                      sessionPlayerDetailData.jimAttempts.length
+                    }
+                  </strong>
+                </div>
+
+                <div>
+                  <span>
+                    WINS
+                  </span>
+
+                  <strong>
+                    {
+                      sessionPlayerDetailData.jimWins.length
+                    }
+                  </strong>
+                </div>
+
+                <div>
+                  <span>
+                    SUCCESS RATE
+                  </span>
+
+                  <strong>
+                    {sessionPlayerDetailData.jimRate ===
+                    null
+                      ? '—'
+                      : `${(
+                          sessionPlayerDetailData.jimRate *
+                          100
+                        ).toFixed(
+                          1
+                        )}%`}
+                  </strong>
+                </div>
+
+                <div>
+                  <span>
+                    CAUGHT
+                  </span>
+
+                  <strong>
+                    {
+                      sessionPlayerDetailData.caught
+                    }
+                  </strong>
+                </div>
+
+                <div>
+                  <span>
+                    CATCHES
+                  </span>
+
+                  <strong>
+                    {
+                      sessionPlayerDetailData.catches.length
+                    }
+                  </strong>
+                </div>
+
+                <div>
+                  <span>
+                    AVG STAGES
+                  </span>
+
+                  <strong>
+                    {sessionPlayerDetailData.averageStages ===
+                    null
+                      ? '—'
+                      : sessionPlayerDetailData.averageStages.toFixed(
+                          1
+                        )}
+                  </strong>
+                </div>
+
+                <div>
+                  <span>
+                    HIDES USED
+                  </span>
+
+                  <strong>
+                    {
+                      sessionPlayerDetailData.hideUses
+                    }
+                  </strong>
+                </div>
+
+                <div>
+                  <span>
+                    PENALTIES
+                  </span>
+
+                  <strong>
+                    {
+                      sessionPlayerDetailData.penalties
+                    }
+                  </strong>
+                </div>
+              </div>
+            </section>
+
+            {!sessionPlayerDetailData.exactRoundsPlayed && (
+              <p className="sessionPlayerDetailNote">
+                Waiting-player sessions do not
+                store the two passive defenders
+                in older Jim-round records, so
+                Recorded Rounds is the confirmed
+                minimum rather than an estimated
+                total.
+              </p>
+            )}
+
+            <button
+              type="button"
+              className="sessionPlayerDetailClose"
+              onClick={() =>
+                setSessionPlayerDetail(
+                  null
+                )
+              }
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
       {deleteSession && (
         <div className="historyDeleteOverlay">
           <div className="historyDeleteDialog">
