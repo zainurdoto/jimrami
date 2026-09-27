@@ -14124,3 +14124,175 @@ button:disabled {
     gap: 5px 12px;
   }
 }
+
+/* =========================================
+   SCOREBOARD — JIM WIN STAR / HIDE MARKER
+   Append to the VERY BOTTOM of index.css
+
+   Gold star = Jim win
+   Purple ring = Hide was used for that win
+   No ring = hideless Jim win
+========================================= */
+
+.jimWinStars {
+  gap: 3px !important;
+}
+
+.jimWinStars > .jimWinStar {
+  display: inline-grid;
+  place-items: center;
+
+  width: 21px;
+  height: 21px;
+
+  box-sizing: border-box;
+
+  border: 1px solid transparent;
+  border-radius: 50%;
+
+  color: #e3b64b;
+
+  font-size: 14px;
+  line-height: 1;
+
+  filter:
+    drop-shadow(
+      0 0 4px
+      rgba(227, 182, 75, 0.15)
+    );
+}
+
+/* Jim win where Hide was used. */
+.jimWinStars >
+.jimWinStar.usedHide {
+  border-color: #8d6ac0;
+
+  background:
+    rgba(141, 106, 192, 0.07);
+
+  box-shadow:
+    inset 0 0 0 1px
+      rgba(141, 106, 192, 0.08),
+    0 0 5px
+      rgba(141, 106, 192, 0.15);
+}
+
+/* Keep identical dimensions so stars
+   remain perfectly aligned. */
+.jimWinStars >
+.jimWinStar.hideless {
+  border-color: transparent;
+}
+
+@media (max-width: 620px) {
+  .jimWinStars >
+  .jimWinStar {
+    width: 19px;
+    height: 19px;
+
+    font-size: 13px;
+  }
+}
+
+/* =========================================
+   JIM HIDE MARKERS — TRANSITION + PREVIOUS WINNER
+   Append to the VERY BOTTOM of index.css
+
+   Gold star only = hideless Jim
+   Gold star + purple ring = Hide used
+========================================= */
+
+/* ---------- SCORE TRANSITION ---------- */
+
+.scoreJimStars {
+  gap: 3px !important;
+}
+
+.scoreJimStars >
+.scoreJimStar {
+  display: inline-grid;
+  place-items: center;
+
+  width: 19px;
+  height: 19px;
+
+  box-sizing: border-box;
+
+  border: 1px solid transparent;
+  border-radius: 50%;
+
+  color: #e3b64b;
+
+  font-size: 13px;
+  line-height: 1;
+}
+
+.scoreJimStars >
+.scoreJimStar.usedHide {
+  border-color: #8d6ac0;
+
+  background:
+    rgba(141, 106, 192, 0.07);
+
+  box-shadow:
+    inset 0 0 0 1px
+      rgba(141, 106, 192, 0.08),
+    0 0 5px
+      rgba(141, 106, 192, 0.14);
+}
+
+/* Reward bubble shown when a fresh Jim win
+   is awarded during the transition. */
+.rewardStar {
+  display: inline-grid;
+  place-items: center;
+
+  width: 21px;
+  height: 21px;
+
+  box-sizing: border-box;
+
+  border: 1px solid transparent;
+  border-radius: 50%;
+}
+
+.rewardStar.usedHide {
+  border-color: #8d6ac0;
+
+  background:
+    rgba(141, 106, 192, 0.08);
+
+  box-shadow:
+    0 0 5px
+      rgba(141, 106, 192, 0.15);
+}
+
+/* ---------- PREVIOUS ROUND WINNER ---------- */
+
+/* Keep the existing gold Jim appearance.
+   Only add purple language when that Jim
+   round used Hide. */
+.previousWinnerIcon.jim.usedHide {
+  border: 1px solid #8d6ac0;
+
+  box-shadow:
+    inset 0 0 0 1px
+      rgba(141, 106, 192, 0.08),
+    0 0 6px
+      rgba(141, 106, 192, 0.16);
+}
+
+@media (max-width: 620px) {
+  .scoreJimStars >
+  .scoreJimStar {
+    width: 18px;
+    height: 18px;
+
+    font-size: 12px;
+  }
+
+  .rewardStar {
+    width: 20px;
+    height: 20px;
+  }
+}

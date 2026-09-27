@@ -4,7 +4,7 @@ import ScoreTransition, {
 import TitleRace from './TitleRace'
 import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { db } from './db'
+import { db, type JimResult } from './db'
 import StandardRound from './StandardRound'
 import JimRound from './JimRound'
 import './index.css'
@@ -98,37 +98,59 @@ function StandardWinTally({
 }
 
 function JimWinStars({
-  count,
+  wins,
 }: {
-  count: number
+  wins: JimResult[]
 }) {
-  if (count <= 0) {
+  if (wins.length === 0) {
     return null
   }
+
+  const orderedWins =
+    [...wins].sort(
+      (a, b) =>
+        a.roundId - b.roundId ||
+        a.id - b.id
+    )
 
   return (
     <div
       className="jimWinStars"
-      aria-label={`${count} Jim ${
-        count === 1
-          ? 'win'
-          : 'wins'
-      }`}
-      title={`${count} Jim ${
-        count === 1
+      aria-label={`${wins.length} Jim ${
+        wins.length === 1
           ? 'win'
           : 'wins'
       }`}
     >
-      {Array.from(
-        {
-          length: count,
-        },
-        (_, index) => (
-          <span key={index}>
-            ★
-          </span>
-        )
+      {orderedWins.map(
+        (win) => {
+          const usedHide =
+            typeof win.hideStage ===
+            'number'
+
+          return (
+            <span
+              className={`jimWinStar ${
+                usedHide
+                  ? 'usedHide'
+                  : 'hideless'
+              }`}
+              key={win.id}
+              aria-label={
+                usedHide
+                  ? `Jim win, Hide used at Stage ${win.hideStage}`
+                  : 'Jim win, no Hide used'
+              }
+              title={
+                usedHide
+                  ? `Jim win • Hide used at Stage ${win.hideStage}`
+                  : 'Jim win • No Hide'
+              }
+            >
+              ★
+            </span>
+          )
+        }
       )}
     </div>
   )
@@ -166,6 +188,37 @@ function App() {
     },
     [activeSession?.id]
   )
+
+  /*
+    The scoreboard needs each individual
+    Jim win so it can show whether Hide
+    was used for that specific win.
+  */
+  const jimWinResults =
+    useLiveQuery(
+      async () => {
+        if (!activeSession) {
+          return []
+        }
+
+        const results =
+          await db.jimResults
+            .where('sessionId')
+            .equals(
+              activeSession.id
+            )
+            .toArray()
+
+        return results.filter(
+          (result) =>
+            result.won
+        )
+      },
+      [
+        activeSession?.id,
+        activeSession?.roundNumber,
+      ]
+    ) ?? []
 
 
   const previousRoundWinner =
@@ -280,6 +333,9 @@ function App() {
             jimResult.won
               ? 'JIM WON'
               : 'CAUGHT JIM',
+
+          hideStage:
+            jimResult.hideStage,
         }
       },
       [
@@ -1044,6 +1100,7 @@ if (
     <ScoreTransition
       data={transitionData}
       players={activeDisplayPlayers}
+      jimWins={jimWinResults}
       onDone={() => {
         setTransitionData(null)
         setScreen('scoreboard')
@@ -1125,7 +1182,7 @@ if (
   <h1 className="jimramiBrandLockup">
     <img
       className="jimramiLogo"
-       src={`${import.meta.env.BASE_URL}Jim_Jawi.svg`}
+      src={`${import.meta.env.BASE_URL}Jim_Jawi.svg`}
       alt=""
     />
 
@@ -1189,7 +1246,23 @@ if (
             <span
               className={`previousWinnerIcon ${
                 previousRoundWinner.type
+              } ${
+                previousRoundWinner.type ===
+                  'jim' &&
+                typeof previousRoundWinner.hideStage ===
+                  'number'
+                  ? 'usedHide'
+                  : ''
               }`}
+              title={
+                previousRoundWinner.type ===
+                'jim'
+                  ? typeof previousRoundWinner.hideStage ===
+                    'number'
+                    ? `Jim round • Hide used at Stage ${previousRoundWinner.hideStage}`
+                    : 'Jim round • No Hide'
+                  : 'Standard round'
+              }
               aria-hidden="true"
             >
               {previousRoundWinner.type ===
@@ -1211,6 +1284,13 @@ if (
                   (player) =>
                     player.id ===
                     sessionPlayer.id
+                )
+
+              const playerJimWins =
+                jimWinResults.filter(
+                  (result) =>
+                    result.jimPlayerId ===
+                    sessionPlayer.playerId
                 )
 
               return (
@@ -1265,13 +1345,11 @@ if (
                             />
                           )}
 
-                          {(sessionPlayer.jimWins ??
-                            0) >
+                          {playerJimWins.length >
                             0 && (
                             <JimWinStars
-                              count={
-                                sessionPlayer.jimWins ??
-                                0
+                              wins={
+                                playerJimWins
                               }
                             />
                           )}
@@ -1378,7 +1456,7 @@ if (
 <h1 className="jimramiBrandLockup">
   <img
     className="jimramiLogo"
-     src={`${import.meta.env.BASE_URL}Jim_Jawi.svg`}
+    src={`${import.meta.env.BASE_URL}Jim_Jawi.svg`}
     alt=""
   />
 

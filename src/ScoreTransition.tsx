@@ -5,6 +5,7 @@ import {
 } from 'react'
 
 import type {
+  JimResult,
   Player,
   SessionPlayer,
 } from './db'
@@ -24,12 +25,13 @@ export type ScoreTransitionData = {
 type Props = {
   data: ScoreTransitionData
   players: Player[]
+  jimWins: JimResult[]
   onDone: () => void
 }
 
-const UPDATE_DELAY = 2500
-const ROUND_FINISH_DELAY = 8000
-const PENALTY_FINISH_DELAY = 4500
+const UPDATE_DELAY = 3200
+const ROUND_FINISH_DELAY = 10000
+const PENALTY_FINISH_DELAY = 6500
 
 // Wait after the point-number animation finishes
 // before revealing the new tally / Jim star.
@@ -142,13 +144,13 @@ function Tally({
 }
 
 function Stars({
-  count,
+  wins,
   pop = false,
 }: {
-  count: number
+  wins: JimResult[]
   pop?: boolean
 }) {
-  if (count <= 0) {
+  if (wins.length === 0) {
     return null
   }
 
@@ -159,21 +161,36 @@ function Stars({
           ? 'pop'
           : ''
       }`}
-      title={`${count} Jim ${
-        count === 1
+      title={`${wins.length} Jim ${
+        wins.length === 1
           ? 'win'
           : 'wins'
       }`}
     >
-      {Array.from(
-        {
-          length: count,
-        },
-        (_, index) => (
-          <span key={index}>
-            ★
-          </span>
-        )
+      {wins.map(
+        (win) => {
+          const usedHide =
+            typeof win.hideStage ===
+            'number'
+
+          return (
+            <span
+              className={`scoreJimStar ${
+                usedHide
+                  ? 'usedHide'
+                  : 'hideless'
+              }`}
+              key={win.id}
+              title={
+                usedHide
+                  ? `Jim win • Hide used at Stage ${win.hideStage}`
+                  : 'Jim win • No Hide'
+              }
+            >
+              ★
+            </span>
+          )
+        }
       )}
     </div>
   )
@@ -313,6 +330,7 @@ function AnimatedPoints({
 export default function ScoreTransition({
   data,
   players,
+  jimWins,
   onDone,
 }: Props) {
   const [
@@ -582,6 +600,44 @@ export default function ScoreTransition({
                 ROW_GAP
               )
 
+            const allPlayerJimWins =
+              jimWins
+                .filter(
+                  (result) =>
+                    result.won &&
+                    result.jimPlayerId ===
+                      row.afterPlayer.playerId
+                )
+                .sort(
+                  (a, b) =>
+                    a.roundId -
+                      b.roundId ||
+                    a.id -
+                      b.id
+                )
+
+            /*
+              Before the delayed achievement
+              reveal, only show the number of
+              Jim wins that existed before this
+              round. Once revealed, include the
+              newly-earned win too.
+            */
+            const visibleJimWins =
+              allPlayerJimWins.slice(
+                0,
+                achievementPlayer.jimWins ??
+                  0
+              )
+
+            const newestJimWin =
+              row.jimDelta > 0
+                ? allPlayerJimWins[
+                    allPlayerJimWins.length -
+                      1
+                  ]
+                : undefined
+
             return (
               <article
                 className={`cleanTransitionRow ${
@@ -638,9 +694,8 @@ export default function ScoreTransition({
                         0) >
                         0 && (
                         <Stars
-                          count={
-                            achievementPlayer.jimWins ??
-                            0
+                          wins={
+                            visibleJimWins
                           }
                           pop={
                             revealAchievements &&
@@ -684,7 +739,20 @@ export default function ScoreTransition({
 
                     {row.jimDelta >
                       0 && (
-                      <span className="rewardStar">
+                      <span
+                        className={`rewardStar ${
+                          typeof newestJimWin?.hideStage ===
+                          'number'
+                            ? 'usedHide'
+                            : 'hideless'
+                        }`}
+                        title={
+                          typeof newestJimWin?.hideStage ===
+                          'number'
+                            ? `Jim win • Hide used at Stage ${newestJimWin.hideStage}`
+                            : 'Jim win • No Hide'
+                        }
+                      >
                         ★
                       </span>
                     )}
