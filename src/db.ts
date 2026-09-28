@@ -15,12 +15,37 @@ export type Player = {
   createdAt: Date
 }
 
+export type GoalpostEvent = {
+  target: number
+  roundReached: number
+  winnerPlayerId: number
+  winnerPoints: number
+
+  deuceStartedRound?: number
+  deuceResolvedRound?: number
+
+  outcome?: 'extended' | 'finished'
+  extendedTo?: number
+}
+
 export type GameSession = {
   id: number
   startedAt: Date
   endedAt?: Date
   status: 'active' | 'ended'
   roundNumber: number
+
+  /*
+    Goalpost is intentionally unindexed, so
+    these fields do not require a Dexie
+    schema-version bump.
+
+    Undefined goalpostCurrent = Open Post.
+  */
+  goalpostInitial?: number
+  goalpostCurrent?: number
+  goalpostEvents?: GoalpostEvent[]
+  goalpostDeuceStartedRound?: number
 }
 
 export type SessionPlayer = {

@@ -207,6 +207,7 @@ function HistoryJimCatchScissors({
 type Props = {
   players: Player[]
   onBack: () => void
+  initialAwardSessionId?: number
 }
 
 type Tab =
@@ -1318,6 +1319,7 @@ function makeLifetimeAverageAward(
 export default function HistoryStats({
   players,
   onBack,
+  initialAwardSessionId,
 }: Props) {
   const [tab, setTab] =
     useState<Tab>('sessions')
@@ -1377,7 +1379,8 @@ export default function HistoryStats({
     setAwardSessionId,
   ] =
     useState<number | null>(
-      null
+      initialAwardSessionId ??
+        null
     )
 
 
@@ -4443,11 +4446,19 @@ export default function HistoryStats({
           <header className="historyHeader">
             <button
               className="roundBack"
-              onClick={() =>
+              onClick={() => {
+                if (
+                  initialAwardSessionId !==
+                  undefined
+                ) {
+                  onBack()
+                  return
+                }
+
                 setAwardSessionId(
                   null
                 )
-              }
+              }}
             >
               ←
             </button>

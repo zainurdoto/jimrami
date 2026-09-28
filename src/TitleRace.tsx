@@ -13,6 +13,7 @@ import {
   Line,
   LineChart,
   ReferenceDot,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -47,7 +48,17 @@ type EndpointLabelProps = {
   name: string
   color: string
   offsetY: number
+  crowned?: boolean
 }
+
+const GOALPOST_GOLD =
+  '#c98232'
+
+const GOALPOST_GOLD_LABEL =
+  'rgba(201, 130, 50, 0.78)'
+
+const GOALPOST_LINE_OPACITY =
+  0.34
 
 const lineColors = [
   '#f2f4f6',
@@ -83,6 +94,7 @@ function EndpointLabel({
   name,
   color,
   offsetY,
+  crowned = false,
 }: EndpointLabelProps) {
   if (!viewBox) {
     return null
@@ -108,6 +120,19 @@ function EndpointLabel({
       dominantBaseline="middle"
     >
       {name}
+
+      {crowned && (
+        <tspan
+          dx={6}
+          fill={
+            GOALPOST_GOLD
+          }
+          fontSize={17}
+          fontWeight={950}
+        >
+          ♛
+        </tspan>
+      )}
     </text>
   )
 }
@@ -614,10 +639,93 @@ export default function TitleRace({
       )
     )
 
+  const goalpostEvents =
+    session.goalpostEvents ?? []
+
+  const reachedGoalpostTargets =
+    Array.from(
+      new Set(
+        goalpostEvents.map(
+          (event) =>
+            event.target
+        )
+      )
+    )
+
+  const currentGoalpost =
+    session.goalpostCurrent
+
+  const currentGoalpostReached =
+    currentGoalpost !==
+      undefined &&
+    goalpostEvents.some(
+      (event) =>
+        event.target ===
+        currentGoalpost
+    )
+
+  /*
+    An unreached future goalpost should
+    not flatten an early race.
+
+    It only enters the Y scale when the
+    leader is within roughly 25% of it.
+  */
   const rawMaximum =
     Math.max(
       0,
       ...allTimelineValues
+    )
+
+  const futureGoalpost =
+    currentGoalpost !==
+      undefined &&
+    !currentGoalpostReached &&
+    session.status === 'active'
+      ? currentGoalpost
+      : undefined
+
+  const showFutureGoalpostLine =
+    futureGoalpost !==
+      undefined &&
+    rawMaximum >=
+      futureGoalpost * 0.75
+
+  const latestGoalpostEventAtPlayhead =
+    goalpostEvents
+      .filter(
+        (event) =>
+          event.roundReached <=
+          playhead
+      )
+      .reduce<
+        | (typeof goalpostEvents)[number]
+        | undefined
+      >(
+        (
+          latest,
+          event
+        ) =>
+          !latest ||
+          event.roundReached >
+            latest.roundReached
+            ? event
+            : latest,
+        undefined
+      )
+
+  const goalpostLineTargets =
+    Array.from(
+      new Set([
+        ...reachedGoalpostTargets,
+        ...(showFutureGoalpostLine &&
+        futureGoalpost !==
+          undefined
+          ? [futureGoalpost]
+          : []),
+      ])
+    ).sort(
+      (a, b) => a - b
     )
 
   const rawMinimum =
@@ -626,10 +734,19 @@ export default function TitleRace({
       ...allTimelineValues
     )
 
+  const goalpostCeiling =
+    goalpostLineTargets.length >
+    0
+      ? Math.max(
+          ...goalpostLineTargets
+        )
+      : 0
+
   const yMaximum =
     Math.max(
       3,
-      rawMaximum + 1.2
+      rawMaximum + 1.2,
+      goalpostCeiling + 1.2
     )
 
   const yMinimum =
@@ -950,6 +1067,22 @@ if (
       ) : (
         <>
           <section className="raceChart">
+            {futureGoalpost !==
+              undefined &&
+              !showFutureGoalpostLine && (
+              <div className="raceFutureGoalpostBadge">
+                <span>
+                  GOALPOST
+                </span>
+
+                <strong>
+                  {
+                    futureGoalpost
+                  }
+                </strong>
+              </div>
+            )}
+
             <ResponsiveContainer
               width="100%"
               height={CHART_HEIGHT}
@@ -1011,6 +1144,34 @@ if (
                   tickLine={false}
                   axisLine={false}
                 />
+
+                {goalpostLineTargets.map(
+                  (target) => (
+                    <ReferenceLine
+                      key={`goalpost-${target}`}
+                      y={target}
+                      stroke={
+                        GOALPOST_GOLD
+                      }
+                      strokeOpacity={
+                        GOALPOST_LINE_OPACITY
+                      }
+                      strokeWidth={2}
+                      strokeDasharray="7 6"
+                      ifOverflow="extendDomain"
+                      label={{
+                        value:
+                          `GOALPOST ${target}`,
+                        position:
+                          'insideTopLeft',
+                        fill:
+                          GOALPOST_GOLD_LABEL,
+                        fontSize: 10,
+                        fontWeight: 900,
+                      }}
+                    />
+                  )
+                )}
 
                 <Tooltip
                   contentStyle={{
@@ -1124,6 +1285,11 @@ if (
                                   labelOffsets[
                                     player.playerId
                                   ] ?? 0
+                                }
+                                crowned={
+                                  latestGoalpostEventAtPlayhead
+                                    ?.winnerPlayerId ===
+                                  player.playerId
                                 }
                               />
                             }

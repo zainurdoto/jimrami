@@ -4,7 +4,13 @@ import ScoreTransition, {
 import TitleRace from './TitleRace'
 import { useEffect, useRef, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { db, type JimResult } from './db'
+import {
+  db,
+  type GameSession,
+  type GoalpostEvent,
+  type JimResult,
+  type SessionPlayer,
+} from './db'
 import StandardRound from './StandardRound'
 import JimRound from './JimRound'
 import './index.css'
@@ -368,6 +374,671 @@ function SessionElapsed({
   )
 }
 
+
+
+type GoalpostPrompt =
+  | {
+      kind: 'deuce'
+      target: number
+      round: number
+      tiedPlayerIds: number[]
+    }
+  | {
+      kind: 'reached'
+      event: GoalpostEvent
+    }
+
+type GoalpostStanding = {
+  playerId: number
+  name: string
+  points: number
+
+  standardWins: number
+  jimWins: JimResult[]
+  catches: JimResult[]
+}
+
+function GoalpostPodium({
+  ranking,
+  winnerPlayerId,
+}: {
+  ranking: GoalpostStanding[]
+  winnerPlayerId?: number
+}) {
+  const displayRanking =
+    ranking.length >= 3
+      ? [
+          ranking[1],
+          ranking[0],
+          ranking[2],
+          ...ranking.slice(3),
+        ].filter(
+          (
+            player
+          ): player is GoalpostStanding =>
+            Boolean(player)
+        )
+      : ranking
+
+  return (
+    <div
+      className={`goalpostPodium goalpostPodiumCount-${ranking.length}`}
+    >
+      {displayRanking.map(
+        (player) => {
+          const rank =
+            ranking.findIndex(
+              (entry) =>
+                entry.playerId ===
+                player.playerId
+            ) + 1
+
+          return (
+            <div
+              className={`goalpostPodiumColumn rank-${rank}`}
+              key={
+                player.playerId
+              }
+            >
+              <div className="goalpostPodiumName">
+                <strong>
+                  {
+                    player.name
+                  }
+                </strong>
+
+                {player.playerId ===
+                  winnerPlayerId && (
+                  <i
+                    title="Goalpost winner"
+                    aria-label="Goalpost winner"
+                  >
+                    ♛
+                  </i>
+                )}
+              </div>
+
+              <b className="goalpostPodiumScore">
+                {
+                  player.points
+                }
+              </b>
+
+              <div className="goalpostPodiumStage">
+                <span className="goalpostPodiumRank">
+                  {rank}
+                </span>
+
+                <div className="goalpostPodiumAccolades">
+                  {player.standardWins >
+                    0 && (
+                    <StandardWinTally
+                      count={
+                        player.standardWins
+                      }
+                    />
+                  )}
+
+                  {player.jimWins.length >
+                    0 && (
+                    <JimWinStars
+                      wins={
+                        player.jimWins
+                      }
+                    />
+                  )}
+
+                  {player.catches.length >
+                    0 && (
+                    <JimCatchScissors
+                      catches={
+                        player.catches
+                      }
+                    />
+                  )}
+                </div>
+              </div>
+            </div>
+          )
+        }
+      )}
+    </div>
+  )
+}
+
+function GoalpostDeuceModal({
+  target,
+  round,
+  tiedPlayers,
+  onContinue,
+}: {
+  target: number
+  round: number
+  tiedPlayers: GoalpostStanding[]
+  onContinue: () => void
+}) {
+  return (
+    <div className="goalpostOverlay">
+      <div className="goalpostDialog deuce">
+        <span className="goalpostEyebrow">
+          DEUCE ROUND
+        </span>
+
+        <div className="goalpostHeroMark">
+          ⚔
+        </div>
+
+        <h2>
+          Goalpost {target}
+        </h2>
+
+        <p className="goalpostLead">
+          First place is tied after
+          Round {round}. No winner yet.
+        </p>
+
+        <div className="goalpostDeucePlayers">
+          {tiedPlayers.map(
+            (player) => (
+              <div
+                key={
+                  player.playerId
+                }
+              >
+                <strong>
+                  {
+                    player.name
+                  }
+                </strong>
+
+                <b>
+                  {
+                    player.points
+                  }
+                </b>
+              </div>
+            )
+          )}
+        </div>
+
+        <button
+          type="button"
+          className="goalpostPrimaryButton"
+          onClick={onContinue}
+        >
+          Continue Deuce
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function GoalpostReachedModal({
+  event,
+  ranking,
+  onExtend,
+  onFinish,
+}: {
+  event: GoalpostEvent
+  ranking: GoalpostStanding[]
+  onExtend: (
+    target: number
+  ) => void
+  onFinish: () => void
+}) {
+  const [
+    customOpen,
+    setCustomOpen,
+  ] = useState(false)
+
+  const [
+    customTarget,
+    setCustomTarget,
+  ] = useState('')
+
+  const [
+    pendingExtension,
+    setPendingExtension,
+  ] = useState<number | null>(
+    null
+  )
+
+  const [
+    confirmFinish,
+    setConfirmFinish,
+  ] = useState(false)
+
+  const leaderPoints =
+    ranking[0]?.points ?? 0
+
+  const extensionFloor =
+    Math.max(
+      event.target,
+      leaderPoints
+    )
+
+  const plusTenTarget =
+    event.target + 10
+
+  const plusTenValid =
+    plusTenTarget >
+    extensionFloor
+
+  const presets =
+    Array.from(
+      {
+        length: 20,
+      },
+      (_, index) =>
+        21 + index * 10
+    )
+      .filter(
+        (target) =>
+          target >
+            extensionFloor &&
+          target !==
+            plusTenTarget
+      )
+      .slice(0, 2)
+
+  const customNumber =
+    Number(customTarget)
+
+  const customValid =
+    Number.isInteger(
+      customNumber
+    ) &&
+    customNumber >
+      extensionFloor
+
+  return (
+    <div className="goalpostOverlay">
+      <div className="goalpostDialog reached">
+        <span className="goalpostEyebrow">
+          {event.deuceStartedRound !==
+          undefined
+            ? 'DEUCE RESOLVED'
+            : 'GOALPOST REACHED'}
+        </span>
+
+        <div className="goalpostHeroMark crown">
+          ♛
+        </div>
+
+        <h2>
+          {
+            ranking[0]?.name ??
+            'Winner'
+          }
+        </h2>
+
+        <p className="goalpostWinnerPoints">
+          {
+            ranking[0]?.points ??
+            event.winnerPoints
+          }{' '}
+          POINTS
+        </p>
+
+        {event.deuceStartedRound !==
+          undefined && (
+          <p className="goalpostDeuceInfo">
+            Deuce began at Round{' '}
+            {
+              event.deuceStartedRound
+            }
+            {' • '}
+            resolved at Round{' '}
+            {
+              event.deuceResolvedRound ??
+              event.roundReached
+            }
+          </p>
+        )}
+
+        <div className="goalpostTargetChip">
+          GOALPOST{' '}
+          <strong>
+            {event.target}
+          </strong>
+        </div>
+
+        <GoalpostPodium
+          ranking={ranking}
+          winnerPlayerId={
+            event.winnerPlayerId
+          }
+        />
+
+        <div className="goalpostDecision">
+          <span>
+            KEEP PLAYING?
+          </span>
+
+          {pendingExtension ===
+          null ? (
+            <>
+              <div className="goalpostExtendButtons">
+                <button
+                  type="button"
+                  disabled={
+                    !plusTenValid
+                  }
+                  onClick={() => {
+                    if (
+                      plusTenValid
+                    ) {
+                      setPendingExtension(
+                        plusTenTarget
+                      )
+                    }
+                  }}
+                >
+                  +10
+                </button>
+
+                {presets.map(
+                  (target) => (
+                    <button
+                      type="button"
+                      key={target}
+                      onClick={() =>
+                        setPendingExtension(
+                          target
+                        )
+                      }
+                    >
+                      {target}
+                    </button>
+                  )
+                )}
+
+                <button
+                  type="button"
+                  className={
+                    customOpen
+                      ? 'active'
+                      : ''
+                  }
+                  onClick={() =>
+                    setCustomOpen(
+                      (current) =>
+                        !current
+                    )
+                  }
+                >
+                  Custom
+                </button>
+              </div>
+
+              {customOpen && (
+                <div className="goalpostCustomExtend">
+                  <input
+                    type="number"
+                    min={
+                      extensionFloor +
+                      1
+                    }
+                    step="1"
+                    placeholder={`Above ${extensionFloor}`}
+                    value={
+                      customTarget
+                    }
+                    onChange={(
+                      event
+                    ) =>
+                      setCustomTarget(
+                        event.target.value
+                      )
+                    }
+                  />
+
+                  <button
+                    type="button"
+                    disabled={
+                      !customValid
+                    }
+                    onClick={() => {
+                      if (
+                        customValid
+                      ) {
+                        setPendingExtension(
+                          customNumber
+                        )
+                      }
+                    }}
+                  >
+                    Choose
+                  </button>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="goalpostExtensionConfirm">
+              <div>
+                <span>
+                  CONFIRM EXTENSION
+                </span>
+
+                <strong>
+                  {event.target}
+                  {' → '}
+                  {
+                    pendingExtension
+                  }
+                </strong>
+
+                <small>
+                  Continue this session
+                  with the new goalpost?
+                </small>
+              </div>
+
+              <div>
+                <button
+                  type="button"
+                  className="goalpostExtensionBack"
+                  onClick={() =>
+                    setPendingExtension(
+                      null
+                    )
+                  }
+                >
+                  Back
+                </button>
+
+                <button
+                  type="button"
+                  className="goalpostExtensionYes"
+                  onClick={() =>
+                    onExtend(
+                      pendingExtension
+                    )
+                  }
+                >
+                  Yes, Extend
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {!confirmFinish ? (
+          <button
+            type="button"
+            className="goalpostFinishButton"
+            onClick={() => {
+              setPendingExtension(
+                null
+              )
+
+              setConfirmFinish(
+                true
+              )
+            }}
+          >
+            Finish Session
+          </button>
+        ) : (
+          <div className="goalpostFinishConfirm">
+            <div>
+              <span>
+                CONFIRM FINISH
+              </span>
+
+              <strong>
+                End this session?
+              </strong>
+
+              <small>
+                This confirms the current
+                standings as the final result.
+              </small>
+            </div>
+
+            <div>
+              <button
+                type="button"
+                className="goalpostFinishBack"
+                onClick={() =>
+                  setConfirmFinish(
+                    false
+                  )
+                }
+              >
+                Back
+              </button>
+
+              <button
+                type="button"
+                className="goalpostFinishYes"
+                onClick={onFinish}
+              >
+                Yes, Finish
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function GoalpostSessionComplete({
+  session,
+  ranking,
+  onAwards,
+  onRace,
+  onDone,
+}: {
+  session: GameSession
+  ranking: GoalpostStanding[]
+  onAwards: () => void
+  onRace: () => void
+  onDone: () => void
+}) {
+  const finalEvent =
+    [...(
+      session.goalpostEvents ??
+      []
+    )]
+      .reverse()
+      .find(
+        (event) =>
+          event.outcome ===
+          'finished'
+      )
+
+  return (
+    <main className="app goalpostPostGamePage">
+      <section className="goalpostDialog complete">
+        <span className="goalpostEyebrow">
+          SESSION COMPLETE
+        </span>
+
+        <div className="goalpostHeroMark crown">
+          ♛
+        </div>
+
+        <h1>
+          {
+            ranking[0]?.name ??
+            'Winner'
+          }
+        </h1>
+
+        <p className="goalpostWinnerPoints">
+          {
+            ranking[0]?.points ??
+            0
+          }{' '}
+          POINTS
+        </p>
+
+        {finalEvent && (
+          <>
+            <div className="goalpostTargetChip">
+              GOALPOST{' '}
+              <strong>
+                {
+                  finalEvent.target
+                }
+              </strong>
+            </div>
+
+            {finalEvent.deuceStartedRound !==
+              undefined && (
+              <p className="goalpostDeuceInfo">
+                Deuce Round{' '}
+                {
+                  finalEvent.deuceStartedRound
+                }
+                {' → '}
+                {
+                  finalEvent.deuceResolvedRound ??
+                  finalEvent.roundReached
+                }
+              </p>
+            )}
+          </>
+        )}
+
+        <GoalpostPodium
+          ranking={ranking}
+          winnerPlayerId={
+            finalEvent?.winnerPlayerId
+          }
+        />
+
+        <div className="goalpostPostGameActions">
+          <button
+            type="button"
+            className="goalpostAwardsButton"
+            onClick={onAwards}
+          >
+            Session Awards
+          </button>
+
+          <button
+            type="button"
+            className="goalpostRaceButton"
+            onClick={onRace}
+          >
+            Title Race
+          </button>
+
+          <button
+            type="button"
+            className="goalpostDoneButton"
+            onClick={onDone}
+          >
+            Done
+          </button>
+        </div>
+      </section>
+    </main>
+  )
+}
 
 function EndSessionConfirmModal({
   onCancel,
@@ -907,6 +1578,68 @@ useState<
 
 
   const [
+    goalpostChoice,
+    setGoalpostChoice,
+  ] = useState<
+    | 'open'
+    | '21'
+    | '31'
+    | '41'
+    | '51'
+    | 'custom'
+  >('open')
+
+  const [
+    customGoalpost,
+    setCustomGoalpost,
+  ] = useState('61')
+
+  const [
+    goalpostPrompt,
+    setGoalpostPrompt,
+  ] =
+    useState<GoalpostPrompt | null>(
+      null
+    )
+
+  const [
+    postGame,
+    setPostGame,
+  ] = useState<{
+    session: GameSession
+    sessionPlayers:
+      SessionPlayer[]
+    jimResults: JimResult[]
+  } | null>(null)
+
+  const [
+    postGameView,
+    setPostGameView,
+  ] = useState<
+    'summary' |
+    'race' |
+    'awards'
+  >('summary')
+
+  const goalpostEvaluationRunning =
+    useRef(false)
+
+  /*
+    ScoreTransition can be skipped before the
+    Dexie live query has repainted App with the
+    newly-saved scores. Keep the transition's
+    authoritative AFTER snapshot long enough for
+    Goalpost / Deuce evaluation to run.
+  */
+  const [
+    goalpostEvaluationPlayers,
+    setGoalpostEvaluationPlayers,
+  ] = useState<
+    SessionPlayer[] | null
+  >(null)
+
+
+  const [
     selectedDisplayNames,
     setSelectedDisplayNames,
   ] = useState<
@@ -952,6 +1685,32 @@ useState<
   useState<
     ScoreTransitionData | null
   >(null)
+
+  const customGoalpostNumber =
+    Number(customGoalpost)
+
+  const customGoalpostValid =
+    Number.isInteger(
+      customGoalpostNumber
+    ) &&
+    customGoalpostNumber > 0
+
+  const selectedGoalpost =
+    goalpostChoice === 'open'
+      ? undefined
+      : goalpostChoice ===
+          'custom'
+        ? customGoalpostValid
+          ? customGoalpostNumber
+          : undefined
+        : Number(
+            goalpostChoice
+          )
+
+  const goalpostSelectionValid =
+    goalpostChoice !==
+      'custom' ||
+    customGoalpostValid
 
   async function addPlayer() {
     const name =
@@ -1384,7 +2143,8 @@ useState<
   async function startSession() {
     if (
       selectedIds.length < 4 ||
-      !players
+      !players ||
+      !goalpostSelectionValid
     ) {
       return
     }
@@ -1419,6 +2179,14 @@ useState<
             status: 'active',
 
             roundNumber: 1,
+
+            goalpostInitial:
+              selectedGoalpost,
+
+            goalpostCurrent:
+              selectedGoalpost,
+
+            goalpostEvents: [],
           })
 
         await db.sessionPlayers.bulkAdd(
@@ -1487,6 +2255,8 @@ useState<
 
     setSelectedIds([])
     setSelectedDisplayNames({})
+    setGoalpostChoice('open')
+    setCustomGoalpost('61')
     setScreen('scoreboard')
   }
 
@@ -1508,6 +2278,558 @@ useState<
     )
 
     setScreen('scoreboard')
+  }
+
+  const goalpostScoreSource =
+    goalpostEvaluationPlayers ??
+    sessionPlayers
+
+  const scoreSignature =
+    goalpostScoreSource
+      ?.map(
+        (player) =>
+          `${player.playerId}:${player.points}`
+      )
+      .join('|') ?? ''
+
+  const goalpostEventSignature =
+    activeSession?.goalpostEvents
+      ?.map(
+        (event) =>
+          `${event.target}:${event.roundReached}:${event.outcome ?? 'pending'}:${event.extendedTo ?? ''}`
+      )
+      .join('|') ?? ''
+
+  useEffect(
+    () => {
+      if (
+        !activeSession ||
+        !goalpostScoreSource ||
+        screen !==
+          'scoreboard' ||
+        activeSession.goalpostCurrent ===
+          undefined ||
+        activeSession.roundNumber <=
+          1 ||
+        goalpostEvaluationRunning.current
+      ) {
+        return
+      }
+
+      /*
+        Capture the values that were narrowed
+        by the guard above before entering the
+        async function. TypeScript does not keep
+        those outer-variable guarantees across
+        an async closure.
+      */
+      const sessionId =
+        activeSession.id
+
+      const currentSessionPlayers =
+        goalpostScoreSource
+
+      goalpostEvaluationRunning.current =
+        true
+
+      let cancelled = false
+
+      async function evaluateGoalpost() {
+        try {
+          const fresh =
+            await db.sessions.get(
+              sessionId
+            )
+
+          if (
+            cancelled ||
+            !fresh ||
+            fresh.status !==
+              'active' ||
+            fresh.goalpostCurrent ===
+              undefined
+          ) {
+            return
+          }
+
+          const target =
+            fresh.goalpostCurrent
+
+          const events =
+            fresh.goalpostEvents ??
+            []
+
+          const pending =
+            [...events]
+              .reverse()
+              .find(
+                (event) =>
+                  event.target ===
+                    target &&
+                  event.outcome ===
+                    undefined
+              )
+
+          if (pending) {
+            setGoalpostPrompt({
+              kind: 'reached',
+              event: pending,
+            })
+
+            return
+          }
+
+          const ranking =
+            [...currentSessionPlayers]
+              .sort(
+                (a, b) =>
+                  b.points -
+                    a.points ||
+                  a.rotationOrder -
+                    b.rotationOrder
+              )
+
+          const topScore =
+            ranking[0]?.points ??
+            0
+
+          if (
+            topScore <
+            target
+          ) {
+            return
+          }
+
+          const topPlayers =
+            ranking.filter(
+              (player) =>
+                player.points ===
+                topScore
+            )
+
+          const completedRound =
+            Math.max(
+              0,
+              fresh.roundNumber -
+                1
+            )
+
+          const deuceStartedRound =
+            fresh.goalpostDeuceStartedRound
+
+          if (
+            deuceStartedRound !==
+            undefined
+          ) {
+            /*
+              Deuce stays active until a later
+              round produces one unique leader.
+
+              If the next round is still tied,
+              show the Deuce popup again for
+              that new round instead of silently
+              continuing.
+            */
+            if (
+              topPlayers.length !==
+              1
+            ) {
+              if (
+                completedRound >
+                  deuceStartedRound &&
+                !cancelled
+              ) {
+                setGoalpostPrompt({
+                  kind: 'deuce',
+                  target,
+                  round:
+                    completedRound,
+                  tiedPlayerIds:
+                    topPlayers.map(
+                      (player) =>
+                        player.playerId
+                    ),
+                })
+              }
+
+              return
+            }
+
+            if (
+              completedRound <=
+              deuceStartedRound
+            ) {
+              return
+            }
+
+            const winner =
+              topPlayers[0]
+
+            const event:
+              GoalpostEvent = {
+                target,
+
+                roundReached:
+                  completedRound,
+
+                winnerPlayerId:
+                  winner.playerId,
+
+                winnerPoints:
+                  winner.points,
+
+                deuceStartedRound,
+
+                deuceResolvedRound:
+                  completedRound,
+              }
+
+            await db.sessions.update(
+              fresh.id,
+              {
+                goalpostEvents: [
+                  ...events,
+                  event,
+                ],
+
+                goalpostDeuceStartedRound:
+                  undefined,
+              }
+            )
+
+            if (
+              !cancelled
+            ) {
+              setGoalpostPrompt({
+                kind: 'reached',
+                event,
+              })
+            }
+
+            return
+          }
+
+          if (
+            topPlayers.length >
+            1
+          ) {
+            await db.sessions.update(
+              fresh.id,
+              {
+                goalpostDeuceStartedRound:
+                  completedRound,
+              }
+            )
+
+            if (
+              !cancelled
+            ) {
+              setGoalpostPrompt({
+                kind: 'deuce',
+                target,
+                round:
+                  completedRound,
+                tiedPlayerIds:
+                  topPlayers.map(
+                    (player) =>
+                      player.playerId
+                  ),
+              })
+            }
+
+            return
+          }
+
+          const winner =
+            topPlayers[0]
+
+          if (!winner) {
+            return
+          }
+
+          const event:
+            GoalpostEvent = {
+              target,
+
+              roundReached:
+                completedRound,
+
+              winnerPlayerId:
+                winner.playerId,
+
+              winnerPoints:
+                winner.points,
+            }
+
+          await db.sessions.update(
+            fresh.id,
+            {
+              goalpostEvents: [
+                ...events,
+                event,
+              ],
+            }
+          )
+
+          if (
+            !cancelled
+          ) {
+            setGoalpostPrompt({
+              kind: 'reached',
+              event,
+            })
+          }
+        } finally {
+          goalpostEvaluationRunning.current =
+            false
+
+          setGoalpostEvaluationPlayers(
+            null
+          )
+        }
+      }
+
+      void evaluateGoalpost()
+
+      return () => {
+        cancelled = true
+      }
+    },
+    [
+      activeSession?.id,
+      activeSession?.roundNumber,
+      activeSession?.goalpostCurrent,
+      activeSession?.goalpostDeuceStartedRound,
+      goalpostEventSignature,
+      scoreSignature,
+      goalpostEvaluationPlayers,
+      screen,
+    ]
+  )
+
+  async function extendGoalpost(
+    nextTarget: number
+  ) {
+    if (
+      !activeSession ||
+      !sessionPlayers
+    ) {
+      return
+    }
+
+    const fresh =
+      await db.sessions.get(
+        activeSession.id
+      )
+
+    if (!fresh) {
+      return
+    }
+
+    const events =
+      fresh.goalpostEvents ??
+      []
+
+    let pendingIndex = -1
+
+    for (
+      let index =
+        events.length - 1;
+      index >= 0;
+      index--
+    ) {
+      const event =
+        events[index]
+
+      if (
+        event.target ===
+          fresh.goalpostCurrent &&
+        event.outcome ===
+          undefined
+      ) {
+        pendingIndex =
+          index
+        break
+      }
+    }
+
+    if (
+      pendingIndex === -1
+    ) {
+      return
+    }
+
+    const topScore =
+      Math.max(
+        ...sessionPlayers.map(
+          (player) =>
+            player.points
+        )
+      )
+
+    if (
+      !Number.isInteger(
+        nextTarget
+      ) ||
+      nextTarget <=
+        Math.max(
+          fresh.goalpostCurrent ??
+            0,
+          topScore
+        )
+    ) {
+      return
+    }
+
+    const nextEvents =
+      events.map(
+        (event, index) =>
+          index === pendingIndex
+            ? {
+                ...event,
+                outcome:
+                  'extended' as const,
+                extendedTo:
+                  nextTarget,
+              }
+            : event
+      )
+
+    await db.sessions.update(
+      fresh.id,
+      {
+        goalpostCurrent:
+          nextTarget,
+
+        goalpostEvents:
+          nextEvents,
+
+        goalpostDeuceStartedRound:
+          undefined,
+      }
+    )
+
+    setGoalpostPrompt(null)
+  }
+
+  async function finishGoalpostSession() {
+    if (
+      !activeSession ||
+      !sessionPlayers
+    ) {
+      return
+    }
+
+    const fresh =
+      await db.sessions.get(
+        activeSession.id
+      )
+
+    if (!fresh) {
+      return
+    }
+
+    const events =
+      fresh.goalpostEvents ??
+      []
+
+    let pendingIndex = -1
+
+    for (
+      let index =
+        events.length - 1;
+      index >= 0;
+      index--
+    ) {
+      const event =
+        events[index]
+
+      if (
+        event.target ===
+          fresh.goalpostCurrent &&
+        event.outcome ===
+          undefined
+      ) {
+        pendingIndex =
+          index
+        break
+      }
+    }
+
+    if (
+      pendingIndex === -1
+    ) {
+      return
+    }
+
+    const nextEvents =
+      events.map(
+        (event, index) =>
+          index === pendingIndex
+            ? {
+                ...event,
+                outcome:
+                  'finished' as const,
+              }
+            : event
+      )
+
+    const endedAt =
+      new Date()
+
+    const allJimResults =
+      await db.jimResults
+        .where('sessionId')
+        .equals(
+          fresh.id
+        )
+        .toArray()
+
+    const finishedSession:
+      GameSession = {
+        ...fresh,
+        status: 'ended',
+        endedAt,
+        goalpostEvents:
+          nextEvents,
+        goalpostDeuceStartedRound:
+          undefined,
+      }
+
+    setPostGame({
+      session:
+        finishedSession,
+
+      sessionPlayers:
+        sessionPlayers.map(
+          (player) => ({
+            ...player,
+          })
+        ),
+
+      jimResults:
+        allJimResults,
+    })
+
+    setPostGameView(
+      'summary'
+    )
+
+    setGoalpostPrompt(null)
+
+    await db.sessions.update(
+      fresh.id,
+      {
+        status: 'ended',
+        endedAt,
+
+        goalpostEvents:
+          nextEvents,
+
+        goalpostDeuceStartedRound:
+          undefined,
+      }
+    )
   }
 
   const activeDisplayPlayers =
@@ -1557,6 +2879,153 @@ useState<
         (player) =>
           player.id === playerId
       )?.name ?? 'Unknown'
+    )
+  }
+
+  if (
+    postGame &&
+    players
+  ) {
+    const postGameDisplayPlayers =
+      players.map(
+        (player) => {
+          const sessionPlayer =
+            postGame.sessionPlayers.find(
+              (entry) =>
+                entry.playerId ===
+                player.id
+            )
+
+          if (
+            !sessionPlayer?.displayName
+          ) {
+            return player
+          }
+
+          return {
+            ...player,
+            name:
+              sessionPlayer.displayName,
+          }
+        }
+      )
+
+    const postGameRanking =
+      [...postGame.sessionPlayers]
+        .sort(
+          (a, b) =>
+            b.points -
+              a.points ||
+            a.rotationOrder -
+              b.rotationOrder
+        )
+        .map(
+          (player) => ({
+            playerId:
+              player.playerId,
+
+            name:
+              postGameDisplayPlayers.find(
+                (entry) =>
+                  entry.id ===
+                  player.playerId
+              )?.name ??
+              'Unknown',
+
+            points:
+              player.points,
+
+            standardWins:
+              player.wins,
+
+            jimWins:
+              postGame.jimResults.filter(
+                (result) =>
+                  result.won &&
+                  result.jimPlayerId ===
+                    player.playerId
+              ),
+
+            catches:
+              postGame.jimResults.filter(
+                (result) =>
+                  result.caughtByPlayerId ===
+                    player.playerId
+              ),
+          })
+        )
+
+    if (
+      postGameView ===
+      'race'
+    ) {
+      return (
+        <TitleRace
+          session={
+            postGame.session
+          }
+          sessionPlayers={
+            postGame.sessionPlayers
+          }
+          players={
+            postGameDisplayPlayers
+          }
+          onBack={() =>
+            setPostGameView(
+              'summary'
+            )
+          }
+        />
+      )
+    }
+
+    if (
+      postGameView ===
+      'awards'
+    ) {
+      return (
+        <HistoryStats
+          players={players}
+          initialAwardSessionId={
+            postGame.session.id
+          }
+          onBack={() =>
+            setPostGameView(
+              'summary'
+            )
+          }
+        />
+      )
+    }
+
+    return (
+      <GoalpostSessionComplete
+        session={
+          postGame.session
+        }
+        ranking={
+          postGameRanking
+        }
+        onAwards={() =>
+          setPostGameView(
+            'awards'
+          )
+        }
+        onRace={() =>
+          setPostGameView(
+            'race'
+          )
+        }
+        onDone={() => {
+          setPostGame(null)
+          setPostGameView(
+            'summary'
+          )
+          setScreen(
+            'scoreboard'
+          )
+        }}
+      />
     )
   }
 
@@ -1645,6 +3114,14 @@ if (
       jimWins={jimWinResults}
       jimCatches={jimCatchResults}
       onDone={() => {
+        setGoalpostEvaluationPlayers(
+          transitionData.after.map(
+            (player) => ({
+              ...player,
+            })
+          )
+        )
+
         setTransitionData(null)
         setScreen('scoreboard')
       }}
@@ -1711,6 +3188,31 @@ if (
         <header className="gameHeader gameHeaderPolished">
           <div className="gameRoundArea">
             <LiveClock />
+
+            {activeSession.goalpostCurrent !==
+              undefined && (
+              <div
+                className={`gameGoalpostChip ${
+                  activeSession.goalpostDeuceStartedRound !==
+                  undefined
+                    ? 'deuce'
+                    : ''
+                }`}
+              >
+                <span>
+                  {activeSession.goalpostDeuceStartedRound !==
+                  undefined
+                    ? 'DEUCE'
+                    : 'GOALPOST'}
+                </span>
+
+                <strong>
+                  {
+                    activeSession.goalpostCurrent
+                  }
+                </strong>
+              </div>
+            )}
 
             <div className="gameRoundHero">
               <span>
@@ -2022,6 +3524,115 @@ if (
 </button>
 
         </footer>
+        {goalpostPrompt?.kind ===
+          'deuce' && (
+          <GoalpostDeuceModal
+            target={
+              goalpostPrompt.target
+            }
+            round={
+              goalpostPrompt.round
+            }
+            tiedPlayers={
+              ranking
+                .filter(
+                  (player) =>
+                    goalpostPrompt.tiedPlayerIds.includes(
+                      player.playerId
+                    )
+                )
+                .map(
+                  (player) => ({
+                    playerId:
+                      player.playerId,
+
+                    name:
+                      getPlayerName(
+                        player.playerId
+                      ),
+
+                    points:
+                      player.points,
+
+                    standardWins:
+                      player.wins,
+
+                    jimWins:
+                      jimWinResults.filter(
+                        (result) =>
+                          result.jimPlayerId ===
+                          player.playerId
+                      ),
+
+                    catches:
+                      jimCatchResults.filter(
+                        (result) =>
+                          result.caughtByPlayerId ===
+                          player.playerId
+                      ),
+                  })
+                )
+            }
+            onContinue={() =>
+              setGoalpostPrompt(
+                null
+              )
+            }
+          />
+        )}
+
+        {goalpostPrompt?.kind ===
+          'reached' && (
+          <GoalpostReachedModal
+            event={
+              goalpostPrompt.event
+            }
+            ranking={
+              ranking.map(
+                (player) => ({
+                  playerId:
+                    player.playerId,
+
+                  name:
+                    getPlayerName(
+                      player.playerId
+                    ),
+
+                  points:
+                    player.points,
+
+                  standardWins:
+                    player.wins,
+
+                  jimWins:
+                    jimWinResults.filter(
+                      (result) =>
+                        result.jimPlayerId ===
+                        player.playerId
+                    ),
+
+                  catches:
+                    jimCatchResults.filter(
+                      (result) =>
+                        result.caughtByPlayerId ===
+                        player.playerId
+                    ),
+                })
+              )
+            }
+            onExtend={(
+              target
+            ) =>
+              void extendGoalpost(
+                target
+              )
+            }
+            onFinish={() =>
+              void finishGoalpostSession()
+            }
+          />
+        )}
+
         {showEndSessionConfirm && (
           <EndSessionConfirmModal
             onCancel={() =>
@@ -2290,11 +3901,133 @@ if (
         </div>
       </section>
 
+      <section className="goalpostSetup">
+        <div className="goalpostSetupHeader">
+          <div>
+            <span>
+              GOALPOST
+            </span>
+
+            <strong>
+              {selectedGoalpost ===
+              undefined
+                ? 'Open Post'
+                : `Target ${selectedGoalpost}`}
+            </strong>
+          </div>
+
+          <small>
+            A tied first place at
+            the target becomes Deuce.
+          </small>
+        </div>
+
+        <div className="goalpostPresetGrid">
+          <button
+            type="button"
+            className={
+              goalpostChoice ===
+              'open'
+                ? 'selected'
+                : ''
+            }
+            onClick={() =>
+              setGoalpostChoice(
+                'open'
+              )
+            }
+          >
+            Open
+          </button>
+
+          {[
+            '21',
+            '31',
+            '41',
+            '51',
+          ].map(
+            (target) => (
+              <button
+                type="button"
+                className={
+                  goalpostChoice ===
+                  target
+                    ? 'selected'
+                    : ''
+                }
+                key={target}
+                onClick={() =>
+                  setGoalpostChoice(
+                    target as
+                      | '21'
+                      | '31'
+                      | '41'
+                      | '51'
+                  )
+                }
+              >
+                {target}
+              </button>
+            )
+          )}
+
+          <button
+            type="button"
+            className={
+              goalpostChoice ===
+              'custom'
+                ? 'selected'
+                : ''
+            }
+            onClick={() =>
+              setGoalpostChoice(
+                'custom'
+              )
+            }
+          >
+            Custom
+          </button>
+        </div>
+
+        {goalpostChoice ===
+          'custom' && (
+          <div className="goalpostCustomSetup">
+            <span>
+              CUSTOM TARGET
+            </span>
+
+            <input
+              type="number"
+              min="1"
+              step="1"
+              value={
+                customGoalpost
+              }
+              onChange={(
+                event
+              ) =>
+                setCustomGoalpost(
+                  event.target.value
+                )
+              }
+            />
+
+            {!customGoalpostValid && (
+              <small>
+                Enter a whole
+                number above 0.
+              </small>
+            )}
+          </div>
+        )}
+      </section>
+
       <button
         className="startSession"
         disabled={
           selectedIds.length <
-          4
+            4 ||
+          !goalpostSelectionValid
         }
         onClick={
           startSession
@@ -2306,7 +4039,9 @@ if (
               4 -
               selectedIds.length
             } more`
-          : 'Start Session'}
+          : !goalpostSelectionValid
+            ? 'Enter Goalpost'
+            : 'Start Session'}
       </button>
 
       {showDataTools && (
