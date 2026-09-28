@@ -17344,3 +17344,263 @@ h2,
   }
 }
 
+/* =========================================
+   SESSION AWARDS — WIN STREAK
+   Append to the VERY BOTTOM of index.css
+========================================= */
+
+.awardTone-streak {
+  --award-color: #79b8e8;
+}
+
+/* =========================================
+   WIN STREAK RECORD — STREAK PATH
+   Append to the VERY BOTTOM of index.css
+========================================= */
+
+.sessionRecordWinner
+.winStreakPath {
+  grid-column: 1 / -1;
+
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+
+  gap: 5px;
+
+  width: 100%;
+
+  margin-top: 8px;
+  padding-top: 8px;
+
+  border-top:
+    1px solid rgba(
+      121,
+      184,
+      232,
+      0.12
+    );
+}
+
+.winStreakPathStep {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.winStreakPathArrow {
+  color: #566678;
+
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.winStreakPathGroup {
+  display: inline-flex;
+  align-items: center;
+
+  gap: 2px;
+
+  min-height: 22px;
+}
+
+
+/* Standard win: repeated bars render naturally
+   as ||, |||, etc. */
+.winStreakStandard {
+  color: #88add7;
+
+  font-size: 18px;
+  font-weight: 950;
+  line-height: 1;
+}
+
+
+/* Catch Jim */
+.winStreakCatch {
+  color: #e98591;
+
+  font-size: 17px;
+  line-height: 1;
+}
+
+
+/* Jim win */
+.winStreakJim {
+  display: inline-grid;
+  place-items: center;
+
+  width: 20px;
+  height: 20px;
+
+  color: #e3b64b;
+
+  border:
+    1px solid transparent;
+  border-radius: 50%;
+
+  font-size: 14px;
+  line-height: 1;
+}
+
+.winStreakJim.usedHide {
+  border-color: #9a75ca;
+}
+
+
+/* Let longer records wrap cleanly rather than
+   shrinking the symbols. */
+@media (max-width: 620px) {
+  .sessionRecordWinner
+  .winStreakPath {
+    gap: 4px;
+  }
+
+  .winStreakPathArrow {
+    font-size: 10px;
+  }
+}
+
+/* =========================================
+   WIN STREAK PATH — COMPACT STANDARD TALLIES
+   Append to the VERY BOTTOM of index.css
+========================================= */
+
+/* Consecutive Standard wins now render as one
+   compact string: ||, |||, ||||, etc. */
+.winStreakStandardRun {
+  display: inline-block;
+
+  color: #88add7;
+
+  font-family: ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    Consolas,
+    monospace;
+
+  font-size: 18px;
+  font-weight: 950;
+  line-height: 1;
+
+  letter-spacing: -2px;
+
+  white-space: nowrap;
+}
+
+/* =========================================
+   WIN STREAK PATH — TRUE 5-BAR TALLY
+   Append to the VERY BOTTOM of index.css
+========================================= */
+
+.winStreakStandardTallies {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.winStreakTallyGroup {
+  position: relative;
+
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+
+  height: 20px;
+}
+
+.winStreakTallyMark {
+  display: block;
+
+  width: 2px;
+  height: 18px;
+
+  border-radius: 2px;
+
+  background: #88add7;
+}
+
+/* Fifth win crosses the first four,
+   matching the familiar tally-mark style. */
+.winStreakTallyStrike {
+  position: absolute;
+
+  left: 0;
+  top: 9px;
+
+  width: 100%;
+  height: 2px;
+
+  border-radius: 2px;
+
+  background: #88add7;
+
+  transform:
+    rotate(-24deg);
+
+  transform-origin: center;
+}
+
+/* =========================================
+   WIN STREAK RECORD — NAME LAYOUT FIX
+   Append to the VERY BOTTOM of index.css
+========================================= */
+
+/*
+  The streak path became a third flex child of
+  .sessionRecordWinner, so it was stealing width
+  from the player name and forcing "H...".
+
+  Rows containing a streak path use a 2-column
+  grid instead:
+    name | date
+    streak path across the full row
+*/
+.sessionRecordWinner:has(
+  .winStreakPath
+) {
+  display: grid !important;
+
+  grid-template-columns:
+    minmax(0, 1fr) auto;
+
+  align-items: center !important;
+  column-gap: 14px !important;
+  row-gap: 7px !important;
+}
+
+
+/* Player name keeps the full first column. */
+.sessionRecordWinner:has(
+  .winStreakPath
+) h3 {
+  width: auto !important;
+  min-width: 0;
+
+  overflow: hidden;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+
+/* Date stays compact on the right. */
+.sessionRecordWinner:has(
+  .winStreakPath
+) > span {
+  grid-column: 2;
+
+  justify-self: end;
+}
+
+
+/* Streak sequence gets its own full-width row. */
+.sessionRecordWinner:has(
+  .winStreakPath
+) .winStreakPath {
+  grid-column: 1 / -1;
+
+  width: 100%;
+
+  margin-top: 0;
+}

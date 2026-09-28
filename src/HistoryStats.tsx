@@ -580,6 +580,16 @@ type MvpStat = {
   jimAttempts: number
 }
 
+type WinStreakPathEvent = {
+  type:
+    | 'standard'
+    | 'jim'
+    | 'catch'
+
+  roundNumber: number
+  usedHide?: boolean
+}
+
 type Award = {
   title: string
   description: string
@@ -589,6 +599,7 @@ type Award = {
   winnerLines?: {
     name: string
     meta: string
+    streakPath?: WinStreakPathEvent[]
   }[]
   hasData: boolean
 }
@@ -622,6 +633,199 @@ type CardScoreTriviaRecord = {
     name: string
     meta: string
   }[]
+}
+
+function WinStreakPath({
+  events,
+}: {
+  events: WinStreakPathEvent[]
+}) {
+  if (events.length === 0) {
+    return null
+  }
+
+  const groups:
+    WinStreakPathEvent[][] = []
+
+  events.forEach(
+    (event) => {
+      const current =
+        groups[
+          groups.length - 1
+        ]
+
+      if (
+        current &&
+        current[0]?.type ===
+          event.type
+      ) {
+        current.push(event)
+      } else {
+        groups.push([event])
+      }
+    }
+  )
+
+  return (
+    <div
+      className="winStreakPath"
+      aria-label="Winning streak sequence"
+    >
+      {groups.map(
+        (
+          group,
+          groupIndex
+        ) => (
+          <div
+            className="winStreakPathStep"
+            key={`${group[0].type}-${groupIndex}`}
+          >
+            {groupIndex > 0 && (
+              <span
+                className="winStreakPathArrow"
+                aria-hidden="true"
+              >
+                →
+              </span>
+            )}
+
+            <span
+              className={`winStreakPathGroup ${group[0].type}`}
+            >
+              {group.map(
+                (
+                  event,
+                  eventIndex
+                ) => {
+                  if (
+                    event.type ===
+                    'standard'
+                  ) {
+                    if (
+                      eventIndex !== 0
+                    ) {
+                      return null
+                    }
+
+                    const rounds =
+                      group.map(
+                        (entry) =>
+                          entry.roundNumber
+                      )
+
+                    const tallyGroups =
+                      Array.from(
+                        {
+                          length:
+                            Math.ceil(
+                              group.length /
+                              5
+                            ),
+                        },
+                        (_, index) =>
+                          Math.min(
+                            5,
+                            group.length -
+                              index * 5
+                          )
+                      )
+
+                    return (
+                      <span
+                        className="winStreakStandardTallies"
+                        key={`standard-${groupIndex}`}
+                        title={`Standard wins • Rounds ${rounds.join(', ')}`}
+                        aria-label={`${group.length} consecutive Standard wins`}
+                      >
+                        {tallyGroups.map(
+                          (
+                            groupSize,
+                            tallyIndex
+                          ) => (
+                            <span
+                              className="winStreakTallyGroup"
+                              key={
+                                tallyIndex
+                              }
+                            >
+                              {Array.from(
+                                {
+                                  length:
+                                    Math.min(
+                                      groupSize,
+                                      4
+                                    ),
+                                },
+                                (
+                                  _,
+                                  markIndex
+                                ) => (
+                                  <i
+                                    className="winStreakTallyMark"
+                                    key={
+                                      markIndex
+                                    }
+                                  />
+                                )
+                              )}
+
+                              {groupSize ===
+                                5 && (
+                                <i className="winStreakTallyStrike" />
+                              )}
+                            </span>
+                          )
+                        )}
+                      </span>
+                    )
+                  }
+
+                  if (
+                    event.type ===
+                    'catch'
+                  ) {
+                    return (
+                      <span
+                        className="winStreakCatch"
+                        key={`${event.roundNumber}-${eventIndex}`}
+                        title={`Caught Jim • Round ${event.roundNumber}`}
+                        aria-label={`Caught Jim, Round ${event.roundNumber}`}
+                      >
+                        ✂︎
+                      </span>
+                    )
+                  }
+
+                  return (
+                    <span
+                      className={`winStreakJim ${
+                        event.usedHide
+                          ? 'usedHide'
+                          : 'hideless'
+                      }`}
+                      key={`${event.roundNumber}-${eventIndex}`}
+                      title={
+                        event.usedHide
+                          ? `Jim win • Hide used • Round ${event.roundNumber}`
+                          : `Jim win • No Hide • Round ${event.roundNumber}`
+                      }
+                      aria-label={
+                        event.usedHide
+                          ? `Jim win with Hide, Round ${event.roundNumber}`
+                          : `Jim win without Hide, Round ${event.roundNumber}`
+                      }
+                    >
+                      ★
+                    </span>
+                  )
+                }
+              )}
+            </span>
+          </div>
+        )
+      )}
+    </div>
+  )
 }
 
 function AwardTitleInfo({
@@ -767,6 +971,12 @@ function getAwardTone(
 
       'Raja Standard':
         'standard',
+
+      'Win Streak':
+        'streak',
+
+      'Win Streak Record':
+        'streak',
 
       'Classic Arteta':
         'arteta',
@@ -2909,10 +3119,26 @@ export default function HistoryStats({
         !sessions ||
         !rounds ||
         !sessionPlayers ||
+        !roundResults ||
         !jimResults
       ) {
         return []
       }
+
+      /*
+        Capture the arrays after the guard.
+        TypeScript does not preserve the
+        outer narrowing inside nested helper
+        functions.
+      */
+      const allRounds =
+        rounds
+
+      const allRoundResults =
+        roundResults
+
+      const allJimResults =
+        jimResults
 
       const completed =
         sessions.filter(
@@ -3049,6 +3275,268 @@ export default function HistoryStats({
             `${maximum} rounds`
 
           roundAward.hasData =
+            true
+        }
+      }
+
+      const winStreakRecord:
+        Award = {
+          title:
+            'Win Streak Record',
+
+          description:
+            'Longest run of consecutive wins by one player in a single completed session. Standard wins, successful Jim, and catching Jim count. Waiting and penalties pause the streak.',
+
+          winners: '—',
+          value:
+            'No 2-win streak yet',
+
+          hasData: false,
+        }
+
+      if (
+        completed.length > 0
+      ) {
+        function longestSessionStreak(
+          sessionId: number,
+          playerId: number
+        ) {
+          let current:
+            WinStreakPathEvent[] = []
+
+          let longest:
+            WinStreakPathEvent[] = []
+
+          const orderedRounds =
+            allRounds
+              .filter(
+                (round) =>
+                  round.sessionId ===
+                  sessionId
+              )
+              .sort(
+                (a, b) =>
+                  a.roundNumber -
+                    b.roundNumber ||
+                  a.id - b.id
+              )
+
+          function addWin(
+            event:
+              WinStreakPathEvent
+          ) {
+            current = [
+              ...current,
+              event,
+            ]
+
+            if (
+              current.length >
+              longest.length
+            ) {
+              longest = [
+                ...current,
+              ]
+            }
+          }
+
+          orderedRounds.forEach(
+            (round) => {
+              if (
+                round.type ===
+                'standard'
+              ) {
+                const result =
+                  allRoundResults.find(
+                    (entry) =>
+                      entry.roundId ===
+                        round.id &&
+                      entry.playerId ===
+                        playerId
+                  )
+
+                // Waiting / not playing: pause.
+                if (!result) {
+                  return
+                }
+
+                if (
+                  result.position === 1
+                ) {
+                  addWin({
+                    type:
+                      'standard',
+
+                    roundNumber:
+                      round.roundNumber,
+                  })
+                } else {
+                  current = []
+                }
+
+                return
+              }
+
+              const result =
+                allJimResults.find(
+                  (entry) =>
+                    entry.roundId ===
+                    round.id
+                )
+
+              if (!result) {
+                return
+              }
+
+              if (
+                result.jimPlayerId ===
+                playerId
+              ) {
+                if (result.won) {
+                  addWin({
+                    type: 'jim',
+
+                    roundNumber:
+                      round.roundNumber,
+
+                    usedHide:
+                      typeof result.hideStage ===
+                      'number',
+                  })
+                } else {
+                  current = []
+                }
+
+                return
+              }
+
+              if (
+                result.caughtByPlayerId ===
+                playerId
+              ) {
+                addWin({
+                  type: 'catch',
+
+                  roundNumber:
+                    round.roundNumber,
+                })
+
+                return
+              }
+
+              if (
+                result.won &&
+                result.outPlayerId ===
+                  playerId
+              ) {
+                current = []
+                return
+              }
+
+              // Other Jim players: pause.
+            }
+          )
+
+          return {
+            length:
+              longest.length,
+
+            path:
+              longest,
+          }
+        }
+
+        const streakEntries =
+          completed.flatMap(
+            (session) => {
+              const participants =
+                sessionPlayers.filter(
+                  (entry) =>
+                    entry.sessionId ===
+                    session.id
+                )
+
+              return participants.map(
+                (participant) => {
+                  const streak =
+                    longestSessionStreak(
+                      session.id,
+                      participant.playerId
+                    )
+
+                  return {
+                    session,
+
+                    playerId:
+                      participant.playerId,
+
+                    value:
+                      streak.length,
+
+                    path:
+                      streak.path,
+                  }
+                }
+              )
+            }
+          )
+
+        const maximum =
+          Math.max(
+            0,
+            ...streakEntries.map(
+              (entry) =>
+                entry.value
+            )
+          )
+
+        /*
+          A single isolated win is not
+          treated as a streak.
+        */
+        if (maximum >= 2) {
+          const winners =
+            streakEntries.filter(
+              (entry) =>
+                entry.value ===
+                maximum
+            )
+
+          winStreakRecord.winners =
+            winners
+              .map(
+                (winner) =>
+                  getSessionName(
+                    winner.session.id,
+                    winner.playerId
+                  )
+              )
+              .join(' • ')
+
+          winStreakRecord.winnerLines =
+            winners.map(
+              (winner) => ({
+                name:
+                  getSessionName(
+                    winner.session.id,
+                    winner.playerId
+                  ),
+
+                meta:
+                  formatDate(
+                    winner.session
+                      .startedAt
+                  ),
+
+                streakPath:
+                  winner.path,
+              })
+            )
+
+          winStreakRecord.value =
+            `${maximum}-win streak`
+
+          winStreakRecord.hasData =
             true
         }
       }
@@ -3322,6 +3810,7 @@ export default function HistoryStats({
       return [
         durationAward,
         roundAward,
+        winStreakRecord,
         jimSlayerAward,
         siMalangRecord,
         kakiJimRecord,
@@ -3331,6 +3820,7 @@ export default function HistoryStats({
       sessions,
       rounds,
       sessionPlayers,
+      roundResults,
       jimResults,
       playerNameMap,
     ])
@@ -3747,6 +4237,144 @@ export default function HistoryStats({
         })
       )
 
+    /*
+      WIN STREAK RULES
+
+      Standard 1st = win.
+      Successful Jim = win for Jim.
+      Catching Jim = win for catcher.
+      Waiting / not participating = pause.
+      Penalty = pause.
+      Recorded non-win = break.
+      Successful Jim outPlayer = break.
+      Other players in a Jim round = pause,
+      because older Jim history does not
+      reliably record every defender.
+    */
+    function longestWinStreak(
+      playerId: number
+    ) {
+      let current = 0
+      let longest = 0
+
+      const orderedRounds =
+        [...sessionRounds].sort(
+          (a, b) =>
+            a.roundNumber -
+              b.roundNumber ||
+            a.id - b.id
+        )
+
+      orderedRounds.forEach(
+        (round) => {
+          if (
+            round.type ===
+            'standard'
+          ) {
+            const result =
+              standard.find(
+                (entry) =>
+                  entry.roundId ===
+                    round.id &&
+                  entry.playerId ===
+                    playerId
+              )
+
+            // Waiting / not playing: pause.
+            if (!result) {
+              return
+            }
+
+            if (
+              result.position === 1
+            ) {
+              current += 1
+
+              longest =
+                Math.max(
+                  longest,
+                  current
+                )
+            } else {
+              current = 0
+            }
+
+            return
+          }
+
+          const result =
+            jim.find(
+              (entry) =>
+                entry.roundId ===
+                round.id
+            )
+
+          if (!result) {
+            return
+          }
+
+          if (
+            result.jimPlayerId ===
+            playerId
+          ) {
+            if (result.won) {
+              current += 1
+
+              longest =
+                Math.max(
+                  longest,
+                  current
+                )
+            } else {
+              current = 0
+            }
+
+            return
+          }
+
+          if (
+            result.caughtByPlayerId ===
+            playerId
+          ) {
+            current += 1
+
+            longest =
+              Math.max(
+                longest,
+                current
+              )
+
+            return
+          }
+
+          if (
+            result.won &&
+            result.outPlayerId ===
+              playerId
+          ) {
+            current = 0
+            return
+          }
+
+          // Everyone else in Jim: pause.
+        }
+      )
+
+      return longest
+    }
+
+    const streakStats =
+      participants.map(
+        (participant) => ({
+          participant,
+
+          streak:
+            longestWinStreak(
+              participant.playerId
+            ),
+        })
+      )
+
     function makeSessionAward(
       title: string,
       description: string,
@@ -3881,6 +4509,71 @@ export default function HistoryStats({
           topPoints === 1
             ? '1 point'
             : `${topPoints} points`,
+
+        hasData: true,
+      })
+    }
+
+    const longestStreak =
+      Math.max(
+        0,
+        ...streakStats.map(
+          (entry) =>
+            entry.streak
+        )
+      )
+
+    /*
+      One isolated win is not shown as a
+      streak. Minimum qualifying streak = 2.
+    */
+    if (longestStreak >= 2) {
+      const streakWinners =
+        streakStats.filter(
+          (entry) =>
+            entry.streak ===
+            longestStreak
+        )
+
+      awards.push({
+        title:
+          'Win Streak',
+
+        description:
+          'Longest run of consecutive wins in this session. Standard wins, successful Jim, and catching Jim count. Other players in a Jim round do not gain or lose their streak.',
+
+        winners:
+          streakWinners
+            .map(
+              (winner) =>
+                sessionName(
+                  winner
+                    .participant
+                    .playerId
+                )
+            )
+            .join(' • '),
+
+        winnerLines:
+          streakWinners.map(
+            (winner) => ({
+              name:
+                sessionName(
+                  winner
+                    .participant
+                    .playerId
+                ),
+
+              meta:
+                `${winner.streak} consecutive wins`,
+            })
+          ),
+
+        value:
+          `${longestStreak}-win streak`,
+
+        note:
+          'Waiting and penalties pause the streak rather than breaking it.',
 
         hasData: true,
       })
@@ -6929,6 +7622,14 @@ export default function HistoryStats({
                                   winner.meta
                                 }
                               </span>
+
+                              {winner.streakPath && (
+                                <WinStreakPath
+                                  events={
+                                    winner.streakPath
+                                  }
+                                />
+                              )}
                             </div>
                           )
                         )}
