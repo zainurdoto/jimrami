@@ -4254,8 +4254,11 @@ export default function HistoryStats({
     function longestWinStreak(
       playerId: number
     ) {
-      let current = 0
-      let longest = 0
+      let current:
+        WinStreakPathEvent[] = []
+
+      let longest:
+        WinStreakPathEvent[] = []
 
       const orderedRounds =
         [...sessionRounds].sort(
@@ -4264,6 +4267,25 @@ export default function HistoryStats({
               b.roundNumber ||
             a.id - b.id
         )
+
+      function addWin(
+        event:
+          WinStreakPathEvent
+      ) {
+        current = [
+          ...current,
+          event,
+        ]
+
+        if (
+          current.length >
+          longest.length
+        ) {
+          longest = [
+            ...current,
+          ]
+        }
+      }
 
       orderedRounds.forEach(
         (round) => {
@@ -4288,15 +4310,15 @@ export default function HistoryStats({
             if (
               result.position === 1
             ) {
-              current += 1
+              addWin({
+                type:
+                  'standard',
 
-              longest =
-                Math.max(
-                  longest,
-                  current
-                )
+                roundNumber:
+                  round.roundNumber,
+              })
             } else {
-              current = 0
+              current = []
             }
 
             return
@@ -4306,7 +4328,7 @@ export default function HistoryStats({
             jim.find(
               (entry) =>
                 entry.roundId ===
-                round.id
+                  round.id
             )
 
           if (!result) {
@@ -4318,15 +4340,18 @@ export default function HistoryStats({
             playerId
           ) {
             if (result.won) {
-              current += 1
+              addWin({
+                type: 'jim',
 
-              longest =
-                Math.max(
-                  longest,
-                  current
-                )
+                roundNumber:
+                  round.roundNumber,
+
+                usedHide:
+                  typeof result.hideStage ===
+                  'number',
+              })
             } else {
-              current = 0
+              current = []
             }
 
             return
@@ -4336,13 +4361,12 @@ export default function HistoryStats({
             result.caughtByPlayerId ===
             playerId
           ) {
-            current += 1
+            addWin({
+              type: 'catch',
 
-            longest =
-              Math.max(
-                longest,
-                current
-              )
+              roundNumber:
+                round.roundNumber,
+            })
 
             return
           }
@@ -4352,7 +4376,7 @@ export default function HistoryStats({
             result.outPlayerId ===
               playerId
           ) {
-            current = 0
+            current = []
             return
           }
 
@@ -4360,19 +4384,33 @@ export default function HistoryStats({
         }
       )
 
-      return longest
+      return {
+        length:
+          longest.length,
+
+        path:
+          longest,
+      }
     }
 
     const streakStats =
       participants.map(
-        (participant) => ({
-          participant,
-
-          streak:
+        (participant) => {
+          const streak =
             longestWinStreak(
               participant.playerId
-            ),
-        })
+            )
+
+          return {
+            participant,
+
+            streak:
+              streak.length,
+
+            streakPath:
+              streak.path,
+          }
+        }
       )
 
     function makeSessionAward(
@@ -4566,6 +4604,9 @@ export default function HistoryStats({
 
               meta:
                 `${winner.streak} consecutive wins`,
+
+              streakPath:
+                winner.streakPath,
             })
           ),
 
@@ -5241,6 +5282,14 @@ export default function HistoryStats({
                                     winner.meta
                                   }
                                 </span>
+                              )}
+
+                              {winner.streakPath && (
+                                <WinStreakPath
+                                  events={
+                                    winner.streakPath
+                                  }
+                                />
                               )}
                             </div>
                           )
