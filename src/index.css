@@ -17652,3 +17652,193 @@ h2,
 .cloudStatusOption p + p {
   margin-top: 4px;
 }
+
+/* =========================================
+   JIMRAMI CLOUD — OPTIONAL DATA-PANEL LOGIN
+   Append to the bottom of src/index.css
+========================================= */
+
+.cloudLoginPanel {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1fr)
+    minmax(0, 1fr)
+    auto;
+  align-items: end;
+  gap: 12px;
+
+  padding: 16px 0;
+
+  border-bottom:
+    1px solid #2b3440;
+}
+
+.cloudLoginPanel label {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.cloudLoginPanel label > span {
+  color: #8795a6;
+
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.cloudLoginPanel input {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+
+  padding: 0 12px;
+
+  border:
+    1px solid #35404d;
+  border-radius: 11px;
+
+  outline: none;
+
+  background: #10151c;
+  color: #edf2f7;
+
+  font: inherit;
+}
+
+.cloudLoginPanel input:focus {
+  border-color: #667d9a;
+}
+
+.cloudLoginPanel input::placeholder {
+  color: #5f6c7c;
+}
+
+.cloudLoginPanel > button {
+  min-height: 44px;
+  padding: 0 16px;
+
+  white-space: nowrap;
+}
+
+.cloudLoginError {
+  grid-column: 1 / -1;
+
+  margin: 0;
+  padding: 9px 11px;
+
+  border:
+    1px solid #684049;
+  border-radius: 9px;
+
+  background: #291a1f;
+  color: #e89aa4;
+
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.cloudSignOutButton {
+  background: transparent !important;
+  color: #a6b1be !important;
+
+  border:
+    1px solid #3a4552 !important;
+}
+
+@media (max-width: 680px) {
+  .cloudLoginPanel {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .cloudLoginPanel > button {
+    width: 100%;
+  }
+}
+
+/* =========================================
+   JIMRAMI — SUPABASE OWNER CONNECTION
+   Append BELOW the previous cloud-login CSS
+========================================= */
+
+/*
+  Override the normal white Data-panel
+  action buttons for Supabase controls.
+*/
+.cloudStatusOption > .cloudConnectButton,
+.cloudStatusOption > .cloudSignOutButton {
+  min-height: 44px !important;
+  padding: 0 16px !important;
+
+  border:
+    1px solid #3b4755 !important;
+  border-radius: 11px !important;
+
+  background:
+    #202731 !important;
+  color:
+    #b8c3d0 !important;
+
+  box-shadow: none !important;
+
+  font-size: 12px !important;
+  font-weight: 850 !important;
+}
+
+.cloudStatusOption > .cloudConnectButton:hover,
+.cloudStatusOption > .cloudSignOutButton:hover {
+  background:
+    #252e3a !important;
+
+  border-color:
+    #4b5969 !important;
+}
+
+.cloudLoginPanel > .cloudLoginSubmit {
+  min-height: 44px !important;
+  padding: 0 16px !important;
+
+  border:
+    1px solid #42536a !important;
+  border-radius: 11px !important;
+
+  background:
+    #263345 !important;
+  color:
+    #d3deeb !important;
+
+  box-shadow: none !important;
+
+  font-size: 12px !important;
+  font-weight: 850 !important;
+}
+
+.cloudLoginPanel > .cloudLoginSubmit:hover {
+  background:
+    #2d3b50 !important;
+
+  border-color:
+    #536985 !important;
+}
+
+.cloudLoginHint {
+  grid-column: 1 / -1;
+
+  margin: -2px 0 0;
+
+  color: #667588;
+
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+@media (max-width: 680px) {
+  .cloudStatusOption >
+  .cloudConnectButton,
+  .cloudStatusOption >
+  .cloudSignOutButton {
+    min-width: 96px;
+  }
+}

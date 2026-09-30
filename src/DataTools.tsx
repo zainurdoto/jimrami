@@ -150,6 +150,30 @@ export default function DataTools({
     )
 
   const [
+    showCloudLogin,
+    setShowCloudLogin,
+  ] =
+    useState(false)
+
+  const [
+    cloudLoginEmail,
+    setCloudLoginEmail,
+  ] =
+    useState('')
+
+  const [
+    cloudLoginPassword,
+    setCloudLoginPassword,
+  ] =
+    useState('')
+
+  const [
+    cloudLoginError,
+    setCloudLoginError,
+  ] =
+    useState('')
+
+  const [
     cloudStatus,
     setCloudStatus,
   ] =
@@ -719,6 +743,124 @@ export default function DataTools({
     }
   }
 
+  async function signInToCloud(
+    event:
+      React.FormEvent<HTMLFormElement>
+  ) {
+    event.preventDefault()
+
+    if (
+      busy ||
+      !supabase
+    ) {
+      return
+    }
+
+    const email =
+      cloudLoginEmail.trim()
+
+    if (
+      !email ||
+      !cloudLoginPassword
+    ) {
+      setCloudLoginError(
+        'Enter your email and password.'
+      )
+
+      return
+    }
+
+    setBusy(true)
+    setCloudLoginError('')
+
+    try {
+      const {
+        error,
+      } =
+        await supabase.auth
+          .signInWithPassword({
+            email,
+            password:
+              cloudLoginPassword,
+          })
+
+      if (error) {
+        throw error
+      }
+
+      /*
+        Reload after sign-in so the
+        normal JIMRAMI startup cloud
+        checks run with the new session.
+      */
+      window.location.reload()
+    } catch (error) {
+      console.error(
+        'Cloud sign-in failed:',
+        error
+      )
+
+      setCloudLoginError(
+        error instanceof Error
+          ? error.message
+          : 'Cloud sign-in failed.'
+      )
+
+      setBusy(false)
+    }
+  }
+
+  async function signOutOfCloud() {
+    if (
+      busy ||
+      !supabase
+    ) {
+      return
+    }
+
+    const confirmed =
+      window.confirm(
+        'Sign out of JIMRAMI Cloud?\n\nYour local data will stay on this device.'
+      )
+
+    if (!confirmed) {
+      return
+    }
+
+    setBusy(true)
+    setCloudLoginError('')
+
+    try {
+      const {
+        error,
+      } =
+        await supabase.auth
+          .signOut()
+
+      if (error) {
+        throw error
+      }
+
+      setCloudUserEmail(null)
+      setShowCloudLogin(false)
+      setCloudLoginEmail('')
+      setCloudLoginPassword('')
+    } catch (error) {
+      console.error(
+        'Cloud sign-out failed:',
+        error
+      )
+
+      window.alert(
+        error instanceof Error
+          ? error.message
+          : 'Cloud sign-out failed.'
+      )
+    } finally {
+      setBusy(false)
+    }
+  }
+
   async function cloudBackup() {
     if (busy) return
 
@@ -902,7 +1044,7 @@ export default function DataTools({
         <div className="dataOption cloudStatusOption">
           <div>
             <strong>
-              Cloud
+              Supabase Sync
             </strong>
 
             <div
@@ -918,10 +1060,10 @@ export default function DataTools({
               <span>
                 {cloudState ===
                 'local'
-                  ? 'Local mode'
+                  ? 'Local only'
                   : cloudState ===
                       'signedOut'
-                    ? 'Not signed in'
+                    ? 'Not connected'
                     : cloudState ===
                         'offline'
                       ? 'Offline'
@@ -935,16 +1077,18 @@ export default function DataTools({
             {cloudState ===
             'local' ? (
               <p>
-                Cloud sync is not
-                configured. Jim is
-                stored on this device.
+                Supabase is not
+                configured for this
+                deployment. JIMRAMI is
+                stored locally.
               </p>
             ) : cloudState ===
               'signedOut' ? (
               <p>
-                Cloud is configured,
-                but no user is signed
-                in.
+                Owner/self-hosted sync.
+                Connect to the Supabase
+                project configured for
+                this deployment.
               </p>
             ) : (
               <>
@@ -988,7 +1132,115 @@ export default function DataTools({
               </>
             )}
           </div>
+
+          {cloudConfigured &&
+            !cloudUserEmail && (
+              <button
+                className="cloudConnectButton"
+                onClick={() => {
+                  setCloudLoginError('')
+                  setShowCloudLogin(
+                    (visible) =>
+                      !visible
+                  )
+                }}
+                disabled={busy}
+              >
+                {showCloudLogin
+                  ? 'Close'
+                  : 'Connect'}
+              </button>
+            )}
+
+          {cloudConfigured &&
+            cloudUserEmail && (
+              <button
+                className="cloudSignOutButton"
+                onClick={
+                  signOutOfCloud
+                }
+                disabled={busy}
+              >
+                Sign Out
+              </button>
+            )}
         </div>
+
+        {cloudConfigured &&
+          !cloudUserEmail &&
+          showCloudLogin && (
+            <form
+              className="cloudLoginPanel"
+              onSubmit={
+                signInToCloud
+              }
+            >
+              <label>
+                <span>
+                  Supabase Email
+                </span>
+
+                <input
+                  type="email"
+                  value={
+                    cloudLoginEmail
+                  }
+                  onChange={(event) =>
+                    setCloudLoginEmail(
+                      event.target.value
+                    )
+                  }
+                  autoComplete="email"
+                  inputMode="email"
+                  placeholder="you@example.com"
+                  disabled={busy}
+                />
+              </label>
+
+              <label>
+                <span>
+                  Password
+                </span>
+
+                <input
+                  type="password"
+                  value={
+                    cloudLoginPassword
+                  }
+                  onChange={(event) =>
+                    setCloudLoginPassword(
+                      event.target.value
+                    )
+                  }
+                  autoComplete="current-password"
+                  placeholder="Password"
+                  disabled={busy}
+                />
+              </label>
+
+              {cloudLoginError && (
+                <p className="cloudLoginError">
+                  {cloudLoginError}
+                </p>
+              )}
+
+              <button
+                className="cloudLoginSubmit"
+                type="submit"
+                disabled={busy}
+              >
+                {busy
+                  ? 'Connecting...'
+                  : 'Connect Supabase'}
+              </button>
+
+              <p className="cloudLoginHint">
+                Uses the Supabase project
+                already configured for
+                this JIMRAMI deployment.
+              </p>
+            </form>
+          )}
 
         {cloudConfigured &&
           cloudUserEmail && (
