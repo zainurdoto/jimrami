@@ -1,5 +1,7 @@
 import { db } from '../db'
-import { supabase } from './supabase'
+import {
+  requireSupabase,
+} from './supabase'
 
 function requireCloudId(
   value: {
@@ -170,6 +172,9 @@ export async function previewCloudMigration() {
 }
 
 export async function migrateLocalDataToSupabase() {
+    const supabase =
+  requireSupabase()
+  
   const {
     data: authData,
     error: authError,
