@@ -1,6 +1,6 @@
 # JIMRAMI
 
-A local-first scorekeeper for the JIMRAMI family card game. [Go check it out!.](zainurdoto.github.io/jimrami/)
+A local-first scorekeeper for the JIMRAMI family card game. [Go check it out!.](http://zainurdoto.github.io/jimrami/)
 
 JIMRAMI works without an account, without Supabase, and without an internet connection. Game data is stored locally in the browser with Dexie / IndexedDB.
 
