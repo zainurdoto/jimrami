@@ -2,7 +2,6 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
-import CloudAuth from './CloudAuth.tsx'
 
 import {
   installCloudSyncRetry,
@@ -19,8 +18,6 @@ createRoot(
   document.getElementById('root')!
 ).render(
   <StrictMode>
-    <CloudAuth>
-      <App />
-    </CloudAuth>
+    <App />
   </StrictMode>,
 )
