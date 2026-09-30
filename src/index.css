@@ -17604,3 +17604,51 @@ h2,
 
   margin-top: 0;
 }
+
+/* =========================================
+   JIM DATA — CLOUD SYNC STATUS
+   Append to the bottom of index.css
+========================================= */
+
+.cloudStatusOption {
+  align-items: start;
+}
+
+.cloudStatusLine {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  margin-top: 8px;
+
+  color: #aeb8c5;
+
+  font-size: 14px;
+  font-weight: 850;
+}
+
+.cloudStatusDot {
+  font-size: 13px;
+  line-height: 1;
+}
+
+.cloudStatusLine.connected {
+  color: #78c89a;
+}
+
+.cloudStatusLine.pending {
+  color: #d8b66a;
+}
+
+.cloudStatusLine.offline {
+  color: #d58b82;
+}
+
+.cloudStatusLine.local,
+.cloudStatusLine.signedOut {
+  color: #8994a2;
+}
+
+.cloudStatusOption p + p {
+  margin-top: 4px;
+}

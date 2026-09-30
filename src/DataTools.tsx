@@ -1,17 +1,4 @@
 import {
-  cloudConfigured,
-  supabase,
-} from './lib/supabase'
-
-import {
-  migrateLocalDataToSupabase,
-} from './lib/migrateToSupabase'
-
-import {
-  restoreCloudToEmptyLocal,
-} from './lib/restoreFromSupabase'
-
-import {
   useEffect,
   useRef,
   useState,
@@ -27,6 +14,22 @@ import {
   type RoundResult,
   type SessionPlayer,
 } from './db'
+
+import {
+  cloudConfigured,
+  supabase,
+} from './lib/supabase'
+
+import {
+  restoreCloudToEmptyLocal,
+} from './lib/restoreFromSupabase'
+
+import {
+  getLastCloudSync,
+  getPendingDeletionCount,
+  hasPendingCloudSync,
+  runCloudSync,
+} from './lib/cloudSync'
 
 type Props = {
   onClose: () => void
@@ -137,28 +140,173 @@ export default function DataTools({
 
   const [busy, setBusy] =
     useState(false)
-    const [
-  cloudUserEmail,
-  setCloudUserEmail,
-] =
-  useState<string | null>(
-    null
-  )
 
-useEffect(() => {
-  if (!supabase) {
-    return
-  }
+  const [
+    cloudUserEmail,
+    setCloudUserEmail,
+  ] =
+    useState<string | null>(
+      null
+    )
 
-  supabase.auth
-    .getUser()
-    .then(({ data }) => {
+  const [
+    cloudStatus,
+    setCloudStatus,
+  ] =
+    useState(() => ({
+      online:
+        navigator.onLine,
+
+      pending:
+        hasPendingCloudSync(),
+
+      pendingDeletions:
+        getPendingDeletionCount(),
+
+      lastSync:
+        getLastCloudSync(),
+    }))
+
+  useEffect(() => {
+    function refreshCloudStatus() {
+      setCloudStatus({
+        online:
+          navigator.onLine,
+
+        pending:
+          hasPendingCloudSync(),
+
+        pendingDeletions:
+          getPendingDeletionCount(),
+
+        lastSync:
+          getLastCloudSync(),
+      })
+    }
+
+    window.addEventListener(
+      'jimrami-cloud-sync-status',
+      refreshCloudStatus
+    )
+
+    window.addEventListener(
+      'online',
+      refreshCloudStatus
+    )
+
+    window.addEventListener(
+      'offline',
+      refreshCloudStatus
+    )
+
+    refreshCloudStatus()
+
+    return () => {
+      window.removeEventListener(
+        'jimrami-cloud-sync-status',
+        refreshCloudStatus
+      )
+
+      window.removeEventListener(
+        'online',
+        refreshCloudStatus
+      )
+
+      window.removeEventListener(
+        'offline',
+        refreshCloudStatus
+      )
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!supabase) {
       setCloudUserEmail(
-        data.user?.email ??
         null
       )
-    })
-}, [])
+
+      return
+    }
+
+    let active = true
+
+    void supabase.auth
+      .getUser()
+      .then(
+        ({
+          data,
+        }) => {
+          if (!active) {
+            return
+          }
+
+          setCloudUserEmail(
+            data.user?.email ??
+            null
+          )
+        }
+      )
+
+    const {
+      data:
+        authListener,
+    } =
+      supabase.auth
+        .onAuthStateChange(
+          (
+            _event,
+            session
+          ) => {
+            if (!active) {
+              return
+            }
+
+            setCloudUserEmail(
+              session
+                ?.user
+                .email ??
+              null
+            )
+          }
+        )
+
+    return () => {
+      active = false
+
+      authListener
+        .subscription
+        .unsubscribe()
+    }
+  }, [])
+
+  function formatLastSync(
+    value: string | null
+  ) {
+    if (!value) {
+      return 'Not synced yet'
+    }
+
+    const date =
+      new Date(value)
+
+    if (
+      Number.isNaN(
+        date.getTime()
+      )
+    ) {
+      return 'Unknown'
+    }
+
+    return date.toLocaleString(
+      [],
+      {
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+      }
+    )
+  }
 
   /*
     EXPORT
@@ -572,69 +720,91 @@ useEffect(() => {
   }
 
   async function cloudBackup() {
-  if (busy) return
+    if (busy) return
 
-  setBusy(true)
+    setBusy(true)
 
-  try {
-    await migrateLocalDataToSupabase()
+    try {
+      const success =
+        await runCloudSync()
 
-    window.alert(
-      'Cloud backup completed successfully.'
-    )
-  } catch (error) {
-    console.error(
-      'Cloud backup failed:',
-      error
-    )
+      if (!success) {
+        throw new Error(
+          navigator.onLine
+            ? 'Cloud backup could not run. Check your cloud sign-in.'
+            : 'You are offline. Changes are safe locally and will sync automatically when you reconnect.'
+        )
+      }
 
-    window.alert(
-      error instanceof Error
-        ? error.message
-        : 'Cloud backup failed.'
-    )
-  } finally {
-    setBusy(false)
-  }
-}
+      window.alert(
+        'Cloud backup completed successfully.'
+      )
+    } catch (error) {
+      console.error(
+        'Cloud backup failed:',
+        error
+      )
 
-async function cloudRestore() {
-  if (busy) return
-
-  const confirmed =
-    window.confirm(
-      'Restore all Jim data from the cloud?\n\nThis only works when the local database is empty.'
-    )
-
-  if (!confirmed) {
-    return
+      window.alert(
+        error instanceof Error
+          ? error.message
+          : 'Cloud backup failed.'
+      )
+    } finally {
+      setBusy(false)
+    }
   }
 
-  setBusy(true)
+  async function cloudRestore() {
+    if (busy) return
 
-  try {
-    await restoreCloudToEmptyLocal()
+    const confirmed =
+      window.confirm(
+        'Restore all Jim data from the cloud?\n\nThis only works when the local database is empty.'
+      )
 
-    window.alert(
-      'Cloud restore completed successfully.'
-    )
+    if (!confirmed) {
+      return
+    }
 
-    window.location.reload()
-  } catch (error) {
-    console.error(
-      'Cloud restore failed:',
-      error
-    )
+    setBusy(true)
 
-    window.alert(
-      error instanceof Error
-        ? error.message
-        : 'Cloud restore failed.'
-    )
-  } finally {
-    setBusy(false)
+    try {
+      await restoreCloudToEmptyLocal()
+
+      window.alert(
+        'Cloud restore completed successfully.'
+      )
+
+      window.location.reload()
+    } catch (error) {
+      console.error(
+        'Cloud restore failed:',
+        error
+      )
+
+      window.alert(
+        error instanceof Error
+          ? error.message
+          : 'Cloud restore failed.'
+      )
+    } finally {
+      setBusy(false)
+    }
   }
-}
+
+  const cloudState =
+    !cloudConfigured
+      ? 'local'
+      : !cloudUserEmail
+        ? 'signedOut'
+        : !cloudStatus.online
+          ? 'offline'
+          : cloudStatus.pending ||
+              cloudStatus.pendingDeletions >
+                0
+            ? 'pending'
+            : 'connected'
 
   return (
     <div
@@ -666,7 +836,6 @@ async function cloudRestore() {
           </button>
         </header>
 
-        {/* LOCAL EXPORT */}
         <div className="dataOption">
           <div>
             <strong>
@@ -692,7 +861,6 @@ async function cloudRestore() {
           </button>
         </div>
 
-        {/* LOCAL IMPORT */}
         <div className="dataOption">
           <div>
             <strong>
@@ -731,34 +899,97 @@ async function cloudRestore() {
           />
         </div>
 
-        {/* CLOUD STATUS */}
-        <div className="dataOption">
+        <div className="dataOption cloudStatusOption">
           <div>
             <strong>
               Cloud
             </strong>
 
-            {!cloudConfigured ? (
+            <div
+              className={`cloudStatusLine ${cloudState}`}
+            >
+              <span
+                className="cloudStatusDot"
+                aria-hidden="true"
+              >
+                ●
+              </span>
+
+              <span>
+                {cloudState ===
+                'local'
+                  ? 'Local mode'
+                  : cloudState ===
+                      'signedOut'
+                    ? 'Not signed in'
+                    : cloudState ===
+                        'offline'
+                      ? 'Offline'
+                      : cloudState ===
+                          'pending'
+                        ? 'Sync pending'
+                        : 'Connected'}
+              </span>
+            </div>
+
+            {cloudState ===
+            'local' ? (
               <p>
-                Local mode. Cloud
-                backup is not
-                configured.
+                Cloud sync is not
+                configured. Jim is
+                stored on this device.
               </p>
-            ) : cloudUserEmail ? (
+            ) : cloudState ===
+              'signedOut' ? (
               <p>
-                Connected as{' '}
-                {cloudUserEmail}
+                Cloud is configured,
+                but no user is signed
+                in.
               </p>
             ) : (
-              <p>
-                Cloud configured,
-                but not signed in.
-              </p>
+              <>
+                <p>
+                  Connected as{' '}
+                  {cloudUserEmail}
+                </p>
+
+                {cloudState ===
+                'offline' ? (
+                  <p>
+                    Local data is safe.
+                    Changes will sync
+                    automatically when
+                    you reconnect.
+                  </p>
+                ) : cloudState ===
+                  'pending' ? (
+                  <p>
+                    Changes are waiting
+                    to sync
+                    {cloudStatus.pendingDeletions >
+                    0
+                      ? ` (${cloudStatus.pendingDeletions} deletion${
+                          cloudStatus.pendingDeletions ===
+                          1
+                            ? ''
+                            : 's'
+                        } queued)`
+                      : ''}
+                    .
+                  </p>
+                ) : (
+                  <p>
+                    Last synced:{' '}
+                    {formatLastSync(
+                      cloudStatus.lastSync
+                    )}
+                  </p>
+                )}
+              </>
             )}
           </div>
         </div>
 
-        {/* CLOUD CONTROLS */}
         {cloudConfigured &&
           cloudUserEmail && (
             <>
@@ -769,7 +1000,7 @@ async function cloudRestore() {
                   </strong>
 
                   <p>
-                    Upload the current
+                    Sync the current
                     local Jim database
                     to Supabase.
                   </p>
@@ -777,11 +1008,16 @@ async function cloudRestore() {
 
                 <button
                   onClick={cloudBackup}
-                  disabled={busy}
+                  disabled={
+                    busy ||
+                    !cloudStatus.online
+                  }
                 >
                   {busy
                     ? 'Working...'
-                    : 'Back Up'}
+                    : cloudStatus.online
+                      ? 'Back Up'
+                      : 'Offline'}
                 </button>
               </div>
 
@@ -800,11 +1036,16 @@ async function cloudRestore() {
 
                 <button
                   onClick={cloudRestore}
-                  disabled={busy}
+                  disabled={
+                    busy ||
+                    !cloudStatus.online
+                  }
                 >
                   {busy
                     ? 'Working...'
-                    : 'Restore'}
+                    : cloudStatus.online
+                      ? 'Restore'
+                      : 'Offline'}
                 </button>
               </div>
             </>
