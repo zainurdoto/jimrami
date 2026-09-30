@@ -5,25 +5,10 @@ import {
   useState,
 } from 'react'
 
-import { db } from './db'
-
 import {
   cloudConfigured,
   supabase,
 } from './lib/supabase'
-
-import {
-  getLocalCloudRevision,
-  getOrCreateCloudRevision,
-} from './lib/cloudRevision'
-
-import {
-  pullCloudSnapshot,
-} from './lib/cloudPull'
-
-import {
-  replaceCloudWithThisDevice,
-} from './lib/cloudSync'
 
 type Props = {
   children: ReactNode
@@ -131,20 +116,6 @@ export default function CloudAuth({
   const [busy, setBusy] =
     useState(false)
 
-  const [
-    sourceChoiceRevision,
-    setSourceChoiceRevision,
-  ] =
-    useState<number | null>(
-      null
-    )
-
-  const [
-    checkingDataSource,
-    setCheckingDataSource,
-  ] =
-    useState(false)
-
   useEffect(() => {
     if (
       !cloudConfigured ||
@@ -166,93 +137,15 @@ export default function CloudAuth({
             return
           }
 
-          const hasSession =
+          setSignedIn(
             Boolean(
               data.session
             )
-
-          setSignedIn(
-            hasSession
           )
 
-          if (!hasSession) {
-            setCheckingSession(
-              false
-            )
-
-            return
-          }
-
-          setCheckingDataSource(
-            true
+          setCheckingSession(
+            false
           )
-
-          void (async () => {
-            try {
-              const localRevision =
-                getLocalCloudRevision()
-
-              if (
-                localRevision !==
-                  null
-              ) {
-                return
-              }
-
-              const counts =
-                await Promise.all([
-                  db.players.count(),
-                  db.sessions.count(),
-                  db.sessionPlayers.count(),
-                  db.rounds.count(),
-                  db.roundResults.count(),
-                  db.jimResults.count(),
-                  db.penaltyResults.count(),
-                ])
-
-              const localRows =
-                counts.reduce(
-                  (
-                    total,
-                    value
-                  ) =>
-                    total + value,
-                  0
-                )
-
-              if (
-                localRows === 0
-              ) {
-                return
-              }
-
-              const cloudRevision =
-                await getOrCreateCloudRevision()
-
-              if (
-                cloudRevision > 0
-              ) {
-                setSourceChoiceRevision(
-                  cloudRevision
-                )
-              }
-            } catch (choiceError) {
-              console.warn(
-                'Could not check cloud data source:',
-                choiceError
-              )
-            } finally {
-              if (active) {
-                setCheckingDataSource(
-                  false
-                )
-
-                setCheckingSession(
-                  false
-                )
-              }
-            }
-          })()
         }
       )
 
@@ -286,16 +179,9 @@ export default function CloudAuth({
               Boolean(session)
             )
 
-            /*
-              Initial signed-in data
-              source checks are handled
-              by getSession() above.
-            */
-            if (!session) {
-              setCheckingSession(
-                false
-              )
-            }
+            setCheckingSession(
+              false
+            )
           }
         )
 
@@ -497,80 +383,6 @@ export default function CloudAuth({
     )
   }
 
-  async function useThisDevice() {
-    if (
-      busy ||
-      sourceChoiceRevision ===
-        null
-    ) {
-      return
-    }
-
-    const confirmed =
-      window.confirm(
-        'Use this device as the cloud source?\n\nThe current Supabase game data will be replaced with the data stored on this device.'
-      )
-
-    if (!confirmed) {
-      return
-    }
-
-    setBusy(true)
-    clearMessages()
-
-    try {
-      await replaceCloudWithThisDevice()
-
-      window.location.reload()
-    } catch (sourceError) {
-      setError(
-        sourceError instanceof Error
-          ? sourceError.message
-          : 'Could not replace the cloud copy.'
-      )
-
-      setBusy(false)
-    }
-  }
-
-  async function replaceThisDeviceWithCloud() {
-    if (
-      busy ||
-      sourceChoiceRevision ===
-        null
-    ) {
-      return
-    }
-
-    const confirmed =
-      window.confirm(
-        'Replace this device with the cloud copy?\n\nLocal JIMRAMI data on this browser will be replaced.'
-      )
-
-    if (!confirmed) {
-      return
-    }
-
-    setBusy(true)
-    clearMessages()
-
-    try {
-      await pullCloudSnapshot(
-        sourceChoiceRevision
-      )
-
-      window.location.reload()
-    } catch (sourceError) {
-      setError(
-        sourceError instanceof Error
-          ? sourceError.message
-          : 'Could not download the cloud copy.'
-      )
-
-      setBusy(false)
-    }
-  }
-
   function continueLocal() {
     sessionStorage.setItem(
       LOCAL_MODE_KEY,
@@ -601,10 +413,7 @@ export default function CloudAuth({
     return children
   }
 
-  if (
-    checkingSession ||
-    checkingDataSource
-  ) {
+  if (checkingSession) {
     return (
       <main className="cloudAuthPage">
         <section className="cloudAuthCard cloudAuthLoading">
@@ -619,88 +428,6 @@ export default function CloudAuth({
           <p>
             Looking for your saved
             Supabase session…
-          </p>
-        </section>
-      </main>
-    )
-  }
-
-  if (
-    signedIn &&
-    sourceChoiceRevision !== null
-  ) {
-    return (
-      <main className="cloudAuthPage">
-        <section className="cloudAuthCard cloudSourceCard">
-          <header className="cloudAuthHeader">
-            <span className="cloudAuthEyebrow">
-              JIMRAMI CLOUD
-            </span>
-
-            <h1>
-              Choose Your Data
-            </h1>
-
-            <p>
-              This browser already has
-              JIMRAMI data, while the
-              cloud also has an existing
-              copy. Nothing has been
-              overwritten.
-            </p>
-          </header>
-
-          <div className="cloudSourceChoices">
-            <button
-              className="cloudSourceDevice"
-              type="button"
-              onClick={useThisDevice}
-              disabled={busy}
-            >
-              <strong>
-                Use This Device
-              </strong>
-
-              <span>
-                Upload this browser's
-                current JIMRAMI data and
-                make it the shared cloud
-                copy.
-              </span>
-            </button>
-
-            <button
-              className="cloudSourceCloud"
-              type="button"
-              onClick={
-                replaceThisDeviceWithCloud
-              }
-              disabled={busy}
-            >
-              <strong>
-                Use Cloud Copy
-              </strong>
-
-              <span>
-                Replace this browser's
-                local data with cloud
-                revision{' '}
-                {sourceChoiceRevision}.
-              </span>
-            </button>
-          </div>
-
-          {error && (
-            <p className="cloudAuthError">
-              {error}
-            </p>
-          )}
-
-          <p className="cloudAuthNote cloudSourceNote">
-            Choose only once for this
-            existing device. Future
-            updates use normal revision
-            syncing automatically.
           </p>
         </section>
       </main>
