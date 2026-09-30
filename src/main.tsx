@@ -3,7 +3,20 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
 
-createRoot(document.getElementById('root')!).render(
+import {
+  installCloudSyncRetry,
+} from './lib/cloudSync'
+
+import {
+  installCloudSyncTriggers,
+} from './lib/cloudSyncTriggers'
+
+installCloudSyncRetry()
+installCloudSyncTriggers()
+
+createRoot(
+  document.getElementById('root')!
+).render(
   <StrictMode>
     <App />
   </StrictMode>,
