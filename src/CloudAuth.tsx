@@ -14,40 +14,8 @@ type Props = {
   children: ReactNode
 }
 
-type AuthMode =
-  | 'signIn'
-  | 'forgot'
-  | 'recovery'
-
 const LOCAL_MODE_KEY =
   'jimrami-local-mode-this-tab'
-
-function isPasswordRecoveryUrl() {
-  const hash =
-    new URLSearchParams(
-      window.location.hash
-        .replace(/^#/, '')
-    )
-
-  const query =
-    new URLSearchParams(
-      window.location.search
-    )
-
-  return (
-    hash.get('type') ===
-      'recovery' ||
-    query.get('type') ===
-      'recovery'
-  )
-}
-
-function appUrl() {
-  return new URL(
-    import.meta.env.BASE_URL,
-    window.location.origin
-  ).toString()
-}
 
 export default function CloudAuth({
   children,
@@ -63,17 +31,6 @@ export default function CloudAuth({
     setSignedIn,
   ] =
     useState(false)
-
-  const [
-    mode,
-    setMode,
-  ] =
-    useState<AuthMode>(
-      () =>
-        isPasswordRecoveryUrl()
-          ? 'recovery'
-          : 'signIn'
-    )
 
   const [
     localMode,
@@ -92,25 +49,7 @@ export default function CloudAuth({
   const [password, setPassword] =
     useState('')
 
-  const [
-    newPassword,
-    setNewPassword,
-  ] =
-    useState('')
-
-  const [
-    confirmPassword,
-    setConfirmPassword,
-  ] =
-    useState('')
-
   const [error, setError] =
-    useState('')
-
-  const [
-    message,
-    setMessage,
-  ] =
     useState('')
 
   const [busy, setBusy] =
@@ -156,23 +95,11 @@ export default function CloudAuth({
       supabase.auth
         .onAuthStateChange(
           (
-            event,
+            _event,
             session
           ) => {
             if (!active) {
               return
-            }
-
-            if (
-              event ===
-              'PASSWORD_RECOVERY'
-            ) {
-              setMode(
-                'recovery'
-              )
-
-              setError('')
-              setMessage('')
             }
 
             setSignedIn(
@@ -193,11 +120,6 @@ export default function CloudAuth({
         .unsubscribe()
     }
   }, [])
-
-  function clearMessages() {
-    setError('')
-    setMessage('')
-  }
 
   async function signIn(
     event: FormEvent
@@ -226,7 +148,7 @@ export default function CloudAuth({
     }
 
     setBusy(true)
-    clearMessages()
+    setError('')
 
     const {
       error:
@@ -250,137 +172,14 @@ export default function CloudAuth({
     }
 
     /*
-      Reload after login so the normal
-      JIMRAMI startup cloud checker runs
-      with the authenticated session.
+      Reload after login.
+
+      This lets the normal JIMRAMI
+      startup cloud checker run again
+      with the new authenticated
+      Supabase session.
     */
-    window.location.replace(
-      appUrl()
-    )
-  }
-
-  async function sendResetEmail(
-    event: FormEvent
-  ) {
-    event.preventDefault()
-
-    if (
-      !supabase ||
-      busy
-    ) {
-      return
-    }
-
-    const cleanEmail =
-      email.trim()
-
-    if (!cleanEmail) {
-      setError(
-        'Enter your email address.'
-      )
-
-      return
-    }
-
-    setBusy(true)
-    clearMessages()
-
-    const {
-      error:
-        resetError,
-    } =
-      await supabase.auth
-        .resetPasswordForEmail(
-          cleanEmail,
-          {
-            redirectTo:
-              appUrl(),
-          }
-        )
-
-    if (resetError) {
-      setError(
-        resetError.message
-      )
-
-      setBusy(false)
-      return
-    }
-
-    setMessage(
-      'Password reset email sent. Open the email and tap the reset link.'
-    )
-
-    setBusy(false)
-  }
-
-  async function saveNewPassword(
-    event: FormEvent
-  ) {
-    event.preventDefault()
-
-    if (
-      !supabase ||
-      busy
-    ) {
-      return
-    }
-
-    if (
-      newPassword.length < 6
-    ) {
-      setError(
-        'Password must be at least 6 characters.'
-      )
-
-      return
-    }
-
-    if (
-      newPassword !==
-      confirmPassword
-    ) {
-      setError(
-        'The two passwords do not match.'
-      )
-
-      return
-    }
-
-    setBusy(true)
-    clearMessages()
-
-    const {
-      error:
-        updateError,
-    } =
-      await supabase.auth
-        .updateUser({
-          password:
-            newPassword,
-        })
-
-    if (updateError) {
-      setError(
-        updateError.message
-      )
-
-      setBusy(false)
-      return
-    }
-
-    setMessage(
-      'Password updated. Opening JIMRAMI…'
-    )
-
-    window.setTimeout(
-      () => {
-        window.location.replace(
-          appUrl()
-        )
-      },
-      650
-    )
+    window.location.reload()
   }
 
   function continueLocal() {
@@ -390,20 +189,6 @@ export default function CloudAuth({
     )
 
     setLocalMode(true)
-  }
-
-  function showForgotPassword() {
-    clearMessages()
-    setPassword('')
-    setMode('forgot')
-  }
-
-  function showSignIn() {
-    clearMessages()
-    setPassword('')
-    setNewPassword('')
-    setConfirmPassword('')
-    setMode('signIn')
   }
 
   if (
@@ -434,190 +219,8 @@ export default function CloudAuth({
     )
   }
 
-  /*
-    Recovery must win over signedIn.
-
-    Supabase creates a temporary
-    authenticated recovery session when
-    the user opens the reset link.
-  */
-  if (mode === 'recovery') {
-    return (
-      <main className="cloudAuthPage">
-        <section className="cloudAuthCard">
-          <header className="cloudAuthHeader">
-            <span className="cloudAuthEyebrow">
-              JIMRAMI CLOUD
-            </span>
-
-            <h1>
-              Set New Password
-            </h1>
-
-            <p>
-              Choose the password you
-              want to use when signing
-              in to JIMRAMI.
-            </p>
-          </header>
-
-          <form
-            className="cloudAuthForm"
-            onSubmit={
-              saveNewPassword
-            }
-          >
-            <label>
-              <span>
-                New Password
-              </span>
-
-              <input
-                type="password"
-                value={newPassword}
-                onChange={(event) =>
-                  setNewPassword(
-                    event.target.value
-                  )
-                }
-                autoComplete="new-password"
-                placeholder="At least 6 characters"
-                disabled={busy}
-              />
-            </label>
-
-            <label>
-              <span>
-                Confirm Password
-              </span>
-
-              <input
-                type="password"
-                value={
-                  confirmPassword
-                }
-                onChange={(event) =>
-                  setConfirmPassword(
-                    event.target.value
-                  )
-                }
-                autoComplete="new-password"
-                placeholder="Enter it again"
-                disabled={busy}
-              />
-            </label>
-
-            {error && (
-              <p className="cloudAuthError">
-                {error}
-              </p>
-            )}
-
-            {message && (
-              <p className="cloudAuthMessage">
-                {message}
-              </p>
-            )}
-
-            <button
-              className="cloudAuthSignIn"
-              type="submit"
-              disabled={busy}
-            >
-              {busy
-                ? 'Saving…'
-                : 'Save Password'}
-            </button>
-          </form>
-        </section>
-      </main>
-    )
-  }
-
   if (signedIn) {
     return children
-  }
-
-  if (mode === 'forgot') {
-    return (
-      <main className="cloudAuthPage">
-        <section className="cloudAuthCard">
-          <header className="cloudAuthHeader">
-            <span className="cloudAuthEyebrow">
-              JIMRAMI CLOUD
-            </span>
-
-            <h1>
-              Reset Password
-            </h1>
-
-            <p>
-              Enter your account email.
-              Supabase will send you a
-              password reset link.
-            </p>
-          </header>
-
-          <form
-            className="cloudAuthForm"
-            onSubmit={
-              sendResetEmail
-            }
-          >
-            <label>
-              <span>
-                Email
-              </span>
-
-              <input
-                type="email"
-                value={email}
-                onChange={(event) =>
-                  setEmail(
-                    event.target.value
-                  )
-                }
-                autoComplete="email"
-                inputMode="email"
-                placeholder="you@example.com"
-                disabled={busy}
-              />
-            </label>
-
-            {error && (
-              <p className="cloudAuthError">
-                {error}
-              </p>
-            )}
-
-            {message && (
-              <p className="cloudAuthMessage">
-                {message}
-              </p>
-            )}
-
-            <button
-              className="cloudAuthSignIn"
-              type="submit"
-              disabled={busy}
-            >
-              {busy
-                ? 'Sending…'
-                : 'Send Reset Email'}
-            </button>
-          </form>
-
-          <button
-            className="cloudAuthTextButton"
-            type="button"
-            onClick={showSignIn}
-            disabled={busy}
-          >
-            ← Back to Sign In
-          </button>
-        </section>
-      </main>
-    )
   }
 
   return (
@@ -681,17 +284,6 @@ export default function CloudAuth({
               disabled={busy}
             />
           </label>
-
-          <button
-            className="cloudAuthForgot"
-            type="button"
-            onClick={
-              showForgotPassword
-            }
-            disabled={busy}
-          >
-            Forgot password?
-          </button>
 
           {error && (
             <p className="cloudAuthError">
