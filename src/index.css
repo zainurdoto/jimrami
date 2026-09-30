@@ -17955,3 +17955,147 @@ h2,
   font-size: 12px;
   line-height: 1.45;
 }
+
+/* =========================================
+   JIMRAMI CLOUD — EXISTING DEVICE CHOICE
+   Append to the bottom of index.css
+========================================= */
+
+.cloudSourceChoices {
+  display: grid;
+  gap: 12px;
+}
+
+.cloudSourceChoices > button {
+  display: grid;
+  gap: 6px;
+
+  width: 100%;
+  min-height: 92px;
+
+  padding: 16px 18px;
+
+  border-radius: 14px;
+
+  text-align: left;
+  font: inherit;
+
+  cursor: pointer;
+}
+
+.cloudSourceChoices strong {
+  font-size: 15px;
+  font-weight: 950;
+}
+
+.cloudSourceChoices span {
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.cloudSourceDevice {
+  border:
+    1px solid #47745b;
+
+  background:
+    #18271f;
+  color: #a8e1bd;
+}
+
+.cloudSourceDevice span {
+  color: #82ad91;
+}
+
+.cloudSourceCloud {
+  border:
+    1px solid #3b4c61;
+
+  background:
+    #171f29;
+  color: #b4c8e1;
+}
+
+.cloudSourceCloud span {
+  color: #8295ad;
+}
+
+.cloudSourceChoices > button:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
+.cloudSourceNote {
+  margin-top: 18px;
+}
+
+/* =========================================
+   JIMRAMI CLOUD — EXISTING DEVICE CHOICE
+   Append to the bottom of index.css
+========================================= */
+
+.cloudSourceChoices {
+  display: grid;
+  gap: 12px;
+}
+
+.cloudSourceChoices > button {
+  display: grid;
+  gap: 6px;
+
+  width: 100%;
+  min-height: 92px;
+
+  padding: 16px 18px;
+
+  border-radius: 14px;
+
+  text-align: left;
+  font: inherit;
+
+  cursor: pointer;
+}
+
+.cloudSourceChoices strong {
+  font-size: 15px;
+  font-weight: 950;
+}
+
+.cloudSourceChoices span {
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.cloudSourceDevice {
+  border:
+    1px solid #47745b;
+
+  background:
+    #18271f;
+  color: #a8e1bd;
+}
+
+.cloudSourceDevice span {
+  color: #82ad91;
+}
+
+.cloudSourceCloud {
+  border:
+    1px solid #3b4c61;
+
+  background:
+    #171f29;
+  color: #b4c8e1;
+}
+
+.cloudSourceCloud span {
+  color: #8295ad;
+}
+
+.cloudSourceChoices > button:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
+.cloudSourceNote {
+  margin-top: 18px;
+}
