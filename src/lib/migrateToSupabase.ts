@@ -1,4 +1,5 @@
 import { db } from '../db'
+
 import {
   requireSupabase,
 } from './supabase'
@@ -44,6 +45,9 @@ async function upsertChunks(
   table: string,
   rows: Record<string, unknown>[]
 ) {
+  const supabase =
+    requireSupabase()
+
   for (
     const batch of chunks(rows)
   ) {
@@ -172,9 +176,9 @@ export async function previewCloudMigration() {
 }
 
 export async function migrateLocalDataToSupabase() {
-    const supabase =
-  requireSupabase()
-  
+  const supabase =
+    requireSupabase()
+
   const {
     data: authData,
     error: authError,
@@ -209,26 +213,14 @@ export async function migrateLocalDataToSupabase() {
       db.penaltyResults.toArray(),
     ])
 
-  /*
-    Numeric local ID -> permanent cloud UUID.
-  */
   const playerIds =
-    new Map<
-      number,
-      string
-    >()
+    new Map<number, string>()
 
   const sessionIds =
-    new Map<
-      number,
-      string
-    >()
+    new Map<number, string>()
 
   const roundIds =
-    new Map<
-      number,
-      string
-    >()
+    new Map<number, string>()
 
   players.forEach(
     (player) => {
@@ -317,9 +309,6 @@ export async function migrateLocalDataToSupabase() {
     return value
   }
 
-  /*
-    1. PLAYERS
-  */
   await upsertChunks(
     'players',
     players.map(
@@ -334,8 +323,7 @@ export async function migrateLocalDataToSupabase() {
           player.name,
 
         nicknames:
-          player.nicknames ??
-          [],
+          player.nicknames ?? [],
 
         last_used_display_name:
           player.lastUsedDisplayName ??
@@ -356,12 +344,6 @@ export async function migrateLocalDataToSupabase() {
     `✓ Players: ${players.length}`
   )
 
-  /*
-    2. SESSIONS
-
-    Goalpost / Deuce data goes inside
-    Supabase metadata.
-  */
   await upsertChunks(
     'sessions',
     sessions.map(
@@ -390,12 +372,10 @@ export async function migrateLocalDataToSupabase() {
 
         metadata: {
           goalpostInitial:
-            session
-              .goalpostInitial,
+            session.goalpostInitial,
 
           goalpostCurrent:
-            session
-              .goalpostCurrent,
+            session.goalpostCurrent,
 
           goalpostDeuceStartedRound:
             session
@@ -403,22 +383,15 @@ export async function migrateLocalDataToSupabase() {
 
           goalpostEvents:
             (
-              session
-                .goalpostEvents ??
+              session.goalpostEvents ??
               []
             ).map(
               (event) => ({
                 ...event,
 
-                /*
-                  Store player relationship
-                  using cloud UUID, not the
-                  device-local number.
-                */
                 winnerPlayerId:
                   playerCloudId(
-                    event
-                      .winnerPlayerId
+                    event.winnerPlayerId
                   ),
               })
             ),
@@ -435,9 +408,6 @@ export async function migrateLocalDataToSupabase() {
     `✓ Sessions: ${sessions.length}`
   )
 
-  /*
-    3. SESSION PLAYERS
-  */
   await upsertChunks(
     'session_players',
     sessionPlayers.map(
@@ -484,9 +454,6 @@ export async function migrateLocalDataToSupabase() {
     `✓ Session players: ${sessionPlayers.length}`
   )
 
-  /*
-    4. ROUNDS
-  */
   await upsertChunks(
     'rounds',
     rounds.map(
@@ -523,9 +490,6 @@ export async function migrateLocalDataToSupabase() {
     `✓ Rounds: ${rounds.length}`
   )
 
-  /*
-    5. STANDARD RESULTS
-  */
   await upsertChunks(
     'round_results',
     roundResults.map(
@@ -568,9 +532,6 @@ export async function migrateLocalDataToSupabase() {
     `✓ Standard results: ${roundResults.length}`
   )
 
-  /*
-    6. JIM RESULTS
-  */
   await upsertChunks(
     'jim_results',
     jimResults.map(
@@ -597,12 +558,10 @@ export async function migrateLocalDataToSupabase() {
           ),
 
         caught_by_player_id:
-          result
-            .caughtByPlayerId !==
+          result.caughtByPlayerId !==
           undefined
             ? playerCloudId(
-                result
-                  .caughtByPlayerId
+                result.caughtByPlayerId
               )
             : null,
 
@@ -610,8 +569,7 @@ export async function migrateLocalDataToSupabase() {
           result.outPlayerId !==
           undefined
             ? playerCloudId(
-                result
-                  .outPlayerId
+                result.outPlayerId
               )
             : null,
 
@@ -626,12 +584,10 @@ export async function migrateLocalDataToSupabase() {
           null,
 
         jim_points_awarded:
-          result
-            .jimPointsAwarded,
+          result.jimPointsAwarded,
 
         catcher_points_awarded:
-          result
-            .catcherPointsAwarded,
+          result.catcherPointsAwarded,
       })
     )
   )
@@ -640,9 +596,6 @@ export async function migrateLocalDataToSupabase() {
     `✓ Jim results: ${jimResults.length}`
   )
 
-  /*
-    7. PENALTIES
-  */
   await upsertChunks(
     'penalty_results',
     penaltyResults.map(

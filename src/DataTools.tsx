@@ -1,4 +1,18 @@
 import {
+  cloudConfigured,
+  supabase,
+} from './lib/supabase'
+
+import {
+  migrateLocalDataToSupabase,
+} from './lib/migrateToSupabase'
+
+import {
+  restoreCloudToEmptyLocal,
+} from './lib/restoreFromSupabase'
+
+import {
+  useEffect,
   useRef,
   useState,
 } from 'react'
@@ -123,6 +137,28 @@ export default function DataTools({
 
   const [busy, setBusy] =
     useState(false)
+    const [
+  cloudUserEmail,
+  setCloudUserEmail,
+] =
+  useState<string | null>(
+    null
+  )
+
+useEffect(() => {
+  if (!supabase) {
+    return
+  }
+
+  supabase.auth
+    .getUser()
+    .then(({ data }) => {
+      setCloudUserEmail(
+        data.user?.email ??
+        null
+      )
+    })
+}, [])
 
   /*
     EXPORT
@@ -535,6 +571,71 @@ export default function DataTools({
     }
   }
 
+  async function cloudBackup() {
+  if (busy) return
+
+  setBusy(true)
+
+  try {
+    await migrateLocalDataToSupabase()
+
+    window.alert(
+      'Cloud backup completed successfully.'
+    )
+  } catch (error) {
+    console.error(
+      'Cloud backup failed:',
+      error
+    )
+
+    window.alert(
+      error instanceof Error
+        ? error.message
+        : 'Cloud backup failed.'
+    )
+  } finally {
+    setBusy(false)
+  }
+}
+
+async function cloudRestore() {
+  if (busy) return
+
+  const confirmed =
+    window.confirm(
+      'Restore all Jim data from the cloud?\n\nThis only works when the local database is empty.'
+    )
+
+  if (!confirmed) {
+    return
+  }
+
+  setBusy(true)
+
+  try {
+    await restoreCloudToEmptyLocal()
+
+    window.alert(
+      'Cloud restore completed successfully.'
+    )
+
+    window.location.reload()
+  } catch (error) {
+    console.error(
+      'Cloud restore failed:',
+      error
+    )
+
+    window.alert(
+      error instanceof Error
+        ? error.message
+        : 'Cloud restore failed.'
+    )
+  } finally {
+    setBusy(false)
+  }
+}
+
   return (
     <div
       className="dataOverlay"
@@ -565,6 +666,7 @@ export default function DataTools({
           </button>
         </header>
 
+        {/* LOCAL EXPORT */}
         <div className="dataOption">
           <div>
             <strong>
@@ -590,6 +692,7 @@ export default function DataTools({
           </button>
         </div>
 
+        {/* LOCAL IMPORT */}
         <div className="dataOption">
           <div>
             <strong>
@@ -627,6 +730,85 @@ export default function DataTools({
             hidden
           />
         </div>
+
+        {/* CLOUD STATUS */}
+        <div className="dataOption">
+          <div>
+            <strong>
+              Cloud
+            </strong>
+
+            {!cloudConfigured ? (
+              <p>
+                Local mode. Cloud
+                backup is not
+                configured.
+              </p>
+            ) : cloudUserEmail ? (
+              <p>
+                Connected as{' '}
+                {cloudUserEmail}
+              </p>
+            ) : (
+              <p>
+                Cloud configured,
+                but not signed in.
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* CLOUD CONTROLS */}
+        {cloudConfigured &&
+          cloudUserEmail && (
+            <>
+              <div className="dataOption">
+                <div>
+                  <strong>
+                    Cloud Backup
+                  </strong>
+
+                  <p>
+                    Upload the current
+                    local Jim database
+                    to Supabase.
+                  </p>
+                </div>
+
+                <button
+                  onClick={cloudBackup}
+                  disabled={busy}
+                >
+                  {busy
+                    ? 'Working...'
+                    : 'Back Up'}
+                </button>
+              </div>
+
+              <div className="dataOption">
+                <div>
+                  <strong>
+                    Restore from Cloud
+                  </strong>
+
+                  <p>
+                    Rebuild an empty
+                    device from the
+                    cloud database.
+                  </p>
+                </div>
+
+                <button
+                  onClick={cloudRestore}
+                  disabled={busy}
+                >
+                  {busy
+                    ? 'Working...'
+                    : 'Restore'}
+                </button>
+              </div>
+            </>
+          )}
 
         <p className="dataWarning">
           Import replaces the data
