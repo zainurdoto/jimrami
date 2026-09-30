@@ -11,6 +11,10 @@ import {
   type CloudTableName,
 } from './cloudSync'
 
+import {
+  isCloudSyncSuppressed,
+} from './cloudSyncGuard'
+
 let installed = false
 
 function scheduleAfterCommit(
@@ -40,6 +44,12 @@ function installTableHooks<
       _object,
       transaction
     ) => {
+      if (
+        isCloudSyncSuppressed()
+      ) {
+        return
+      }
+
       scheduleAfterCommit(
         transaction
       )
@@ -54,6 +64,12 @@ function installTableHooks<
       _object,
       transaction
     ) => {
+      if (
+        isCloudSyncSuppressed()
+      ) {
+        return
+      }
+
       scheduleAfterCommit(
         transaction
       )
@@ -67,6 +83,12 @@ function installTableHooks<
       object,
       transaction
     ) => {
+      if (
+        isCloudSyncSuppressed()
+      ) {
+        return
+      }
+
       const cloudId =
         object.cloudId
 
@@ -74,14 +96,6 @@ function installTableHooks<
         return
       }
 
-      /*
-        Queue the cloud deletion only
-        after the local Dexie
-        transaction commits.
-
-        A rolled-back local delete must
-        never remove cloud data.
-      */
       transaction.on(
         'complete',
         () => {

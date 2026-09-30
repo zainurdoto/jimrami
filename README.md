@@ -4,7 +4,7 @@ A local-first scorekeeper for the JIMRAMI family card game. [Go check it out!.](
 
 JIMRAMI works without an account, without Supabase, and without an internet connection. Game data is stored locally in the browser with Dexie / IndexedDB.
 
-Supabase cloud backup and sync are optional.
+Supabase cloud backup and cross-device sync are optional.
 
 ## Quick Start
 
@@ -22,7 +22,7 @@ npm run dev
 
 Open the URL printed by Vite.
 
-For the current Vite base path, local development is normally available at:
+With the current Vite base path, local development is normally available at:
 
 ```text
 http://localhost:5173/jimrami/
@@ -45,11 +45,13 @@ If no Supabase environment variables are configured:
 
 When Supabase is configured and an authenticated user is signed in:
 
-- local Dexie remains the working database
-- changes sync automatically to Supabase
+- Dexie remains the working local database
+- local changes sync automatically to Supabase
 - failed syncs stay pending and retry after reconnecting
 - deletions also sync to the cloud
-- a fresh empty local database can be restored from the cloud
+- a fresh empty device can rebuild itself from the cloud
+- an existing stale device can pull a newer cloud snapshot
+- cloud revisions prevent an older device from blindly overwriting a newer cloud revision
 
 JIMRAMI is still local-first. Cloud failure should not stop a game.
 
@@ -82,8 +84,9 @@ The schema creates these tables:
 - `round_results`
 - `jim_results`
 - `penalty_results`
+- `sync_state`
 
-It also enables Row Level Security. Each row belongs to the authenticated user through `owner_id`.
+It also enables Row Level Security. Each row belongs to the authenticated Supabase user through `owner_id`.
 
 ### 3. Configure authentication
 
@@ -167,10 +170,16 @@ Dexie / IndexedDB
    |
    v
 Supabase
-(optional cloud copy)
+(optional shared cloud copy)
 ```
 
-Normal local changes trigger background cloud sync when cloud mode is available.
+### Local changes
+
+Normal local creates and updates trigger background cloud sync.
+
+Local deletions are placed in a persistent deletion queue so the matching Supabase rows can be removed safely after reconnecting.
+
+### Offline use
 
 If the device is offline:
 
@@ -179,9 +188,46 @@ If the device is offline:
 3. reconnecting triggers another sync attempt
 4. the pending state clears after a successful upload
 
-Cloud deletion uses a persistent deletion queue so records removed locally can also be removed from Supabase after reconnecting.
+### Cross-device revision tracking
 
-For simplicity, use one active game device during a live session. This project does not currently try to provide Google-Docs-style simultaneous conflict resolution between multiple active devices.
+Supabase stores one shared revision number in `sync_state`.
+
+Each device also stores the revision of its current local snapshot.
+
+Example:
+
+```text
+Laptop local revision: 5
+Cloud revision:        5
+
+Laptop changes data
+-> upload succeeds
+-> cloud revision becomes 6
+
+Tablet local revision: 5
+Cloud revision:         6
+
+Tablet becomes active
+-> detects newer cloud revision
+-> pulls the cloud snapshot
+-> tablet local revision becomes 6
+```
+
+A fresh empty device with no local revision can also pull the current cloud snapshot automatically.
+
+If a device has pending local work while the cloud is already newer, JIMRAMI does not automatically discard that local work. Automatic pull is skipped for safety.
+
+### Important concurrency limitation
+
+The current design is intended for sequential family use across devices, for example:
+
+```text
+laptop -> sync -> tablet -> sync -> laptop
+```
+
+Do not treat it as Google-Docs-style real-time multi-device editing.
+
+Two devices should not actively edit the same JIMRAMI data at the same time. Revision tracking protects normal stale-device use, but this project does not implement full conflict merging for simultaneous edits.
 
 ## Backup and Restore
 
@@ -193,6 +239,13 @@ The Data panel supports:
 - Restore from Cloud
 
 Cloud restore is intentionally restricted to an empty local database to reduce the risk of overwriting existing local data.
+
+The Data panel also shows live cloud state such as:
+
+- Connected
+- Sync pending
+- Offline
+- Last synced time
 
 ## Development Notes
 

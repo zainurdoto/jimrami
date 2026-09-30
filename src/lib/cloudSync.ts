@@ -1,3 +1,5 @@
+import { db } from '../db'
+
 import {
   cloudConfigured,
   supabase,
@@ -6,6 +8,17 @@ import {
 import {
   migrateLocalDataToSupabase,
 } from './migrateToSupabase'
+
+import {
+  advanceCloudRevision,
+  getLocalCloudRevision,
+  getOrCreateCloudRevision,
+  setLocalCloudRevision,
+} from './cloudRevision'
+
+import {
+  pullCloudSnapshot,
+} from './cloudPull'
 
 const PENDING_KEY =
   'jimrami-cloud-sync-pending'
@@ -256,6 +269,154 @@ async function flushCloudDeletions() {
   }
 }
 
+async function localDatabaseIsEmpty() {
+  const counts =
+    await Promise.all([
+      db.players.count(),
+      db.sessions.count(),
+      db.sessionPlayers.count(),
+      db.rounds.count(),
+      db.roundResults.count(),
+      db.jimResults.count(),
+      db.penaltyResults.count(),
+    ])
+
+  return (
+    counts.reduce(
+      (
+        total,
+        value
+      ) =>
+        total + value,
+      0
+    ) === 0
+  )
+}
+
+export async function checkForCloudUpdates() {
+  if (
+    !cloudConfigured ||
+    !supabase ||
+    !navigator.onLine ||
+    syncRunning
+  ) {
+    return false
+  }
+
+  const {
+    data,
+  } =
+    await supabase.auth
+      .getSession()
+
+  if (!data.session) {
+    return false
+  }
+
+  syncRunning = true
+
+  try {
+    const cloudRevision =
+      await getOrCreateCloudRevision()
+
+    const localRevision =
+      getLocalCloudRevision()
+
+    /*
+      Fresh empty device:
+      cloud has data/revision, local
+      has no revision yet.
+    */
+    if (
+      localRevision === null
+    ) {
+      if (
+        cloudRevision === 0
+      ) {
+        setLocalCloudRevision(
+          0
+        )
+
+        return false
+      }
+
+      if (
+        hasPendingCloudSync() ||
+        getPendingDeletionCount() >
+          0
+      ) {
+        console.warn(
+          'Cloud update available, but this device has pending local changes. Automatic pull skipped.'
+        )
+
+        return false
+      }
+
+      if (
+        await localDatabaseIsEmpty()
+      ) {
+        await pullCloudSnapshot(
+          cloudRevision
+        )
+
+        return true
+      }
+
+      console.warn(
+        `Cloud is revision ${cloudRevision}, but this device has local data and no revision marker. Automatic pull skipped for safety.`
+      )
+
+      return false
+    }
+
+    /*
+      Normal stale-device case.
+    */
+    if (
+      cloudRevision >
+      localRevision
+    ) {
+      if (
+        hasPendingCloudSync() ||
+        getPendingDeletionCount() >
+          0
+      ) {
+        console.warn(
+          `Cloud is newer (revision ${cloudRevision}, local ${localRevision}), but this device has pending local changes. Automatic pull skipped to protect local work.`
+        )
+
+        return false
+      }
+
+      await pullCloudSnapshot(
+        cloudRevision
+      )
+
+      return true
+    }
+
+    if (
+      cloudRevision <
+      localRevision
+    ) {
+      console.warn(
+        `Local revision ${localRevision} is ahead of cloud revision ${cloudRevision}. Automatic pull skipped.`
+      )
+    }
+
+    return false
+  } catch (error) {
+    console.warn(
+      'JIMRAMI cloud update check failed:',
+      error
+    )
+
+    return false
+  } finally {
+    syncRunning = false
+  }
+}
+
 export async function runCloudSync() {
   if (
     !cloudConfigured ||
@@ -283,6 +444,61 @@ export async function runCloudSync() {
 
   try {
     /*
+      Revision protection.
+
+      The cloud revision tells us
+      whether another device has
+      already uploaded a newer state.
+
+      A brand-new sync_state row starts
+      at revision 0. This existing
+      device can then establish the
+      first tracked cloud revision.
+    */
+    const cloudRevision =
+      await getOrCreateCloudRevision()
+
+    let localRevision =
+      getLocalCloudRevision()
+
+    if (
+      localRevision === null &&
+      cloudRevision === 0
+    ) {
+      localRevision = 0
+
+      setLocalCloudRevision(
+        0
+      )
+    }
+
+    if (
+      localRevision === null
+    ) {
+      throw new Error(
+        `Cloud is newer (revision ${cloudRevision}) and this device has no matching revision yet. Upload stopped to protect cloud data.`
+      )
+    }
+
+    if (
+      cloudRevision >
+      localRevision
+    ) {
+      throw new Error(
+        `Cloud is newer (revision ${cloudRevision}, local ${localRevision}). Upload stopped to protect cloud data.`
+      )
+    }
+
+    if (
+      cloudRevision <
+      localRevision
+    ) {
+      throw new Error(
+        `Local revision ${localRevision} is ahead of cloud revision ${cloudRevision}. Sync stopped for safety.`
+      )
+    }
+
+    /*
       Delete stale cloud rows first,
       then upload the current local
       database state.
@@ -290,6 +506,19 @@ export async function runCloudSync() {
     await flushCloudDeletions()
 
     await migrateLocalDataToSupabase()
+
+    /*
+      Only after the upload succeeds do
+      we advance the shared revision.
+    */
+    const nextRevision =
+      await advanceCloudRevision(
+        cloudRevision
+      )
+
+    setLocalCloudRevision(
+      nextRevision
+    )
 
     localStorage.removeItem(
       PENDING_KEY
@@ -301,6 +530,10 @@ export async function runCloudSync() {
     )
 
     notifyStatusChanged()
+
+    console.log(
+      `✓ Cloud revision: ${nextRevision}`
+    )
 
     return true
   } catch (error) {
@@ -387,6 +620,21 @@ export function installCloudSyncRetry() {
     return
   }
 
+  async function checkAndReload() {
+    const pulled =
+      await checkForCloudUpdates()
+
+    if (pulled) {
+      /*
+        Pulling rebuilds local numeric
+        Dexie IDs. Reload so every React
+        screen starts from the new local
+        snapshot cleanly.
+      */
+      window.location.reload()
+    }
+  }
+
   window.addEventListener(
     'online',
     () => {
@@ -396,20 +644,58 @@ export function installCloudSyncRetry() {
           0
       ) {
         scheduleCloudSync(250)
+      } else {
+        void checkAndReload()
+      }
+    }
+  )
+
+  window.addEventListener(
+    'focus',
+    () => {
+      if (
+        !hasPendingCloudSync() &&
+        getPendingDeletionCount() ===
+          0
+      ) {
+        void checkAndReload()
+      }
+    }
+  )
+
+  document.addEventListener(
+    'visibilitychange',
+    () => {
+      if (
+        document.visibilityState ===
+          'visible' &&
+        !hasPendingCloudSync() &&
+        getPendingDeletionCount() ===
+          0
+      ) {
+        void checkAndReload()
       }
     }
   )
 
   /*
-    If a previous upload failed,
-    a deletion is waiting, or the
-    browser closed before sync ran,
-    retry shortly after startup.
+    If a previous upload failed or a
+    deletion is waiting, retry upload.
+
+    Otherwise check whether another
+    device has a newer cloud revision.
   */
   if (
     hasPendingCloudSync() ||
     getPendingDeletionCount() > 0
   ) {
     scheduleCloudSync(1000)
+  } else {
+    window.setTimeout(
+      () => {
+        void checkAndReload()
+      },
+      900
+    )
   }
 }

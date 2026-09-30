@@ -1,12 +1,13 @@
 -- JIMRAMI Supabase schema
 -- Run this in Supabase -> SQL Editor for a fresh project.
 --
--- JIMRAMI remains local-first. Supabase is optional and is used only
--- when VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY are configured.
+-- JIMRAMI is local-first. Supabase is optional and is used only when
+-- VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY are configured.
 --
 -- Security model:
---   - every row belongs to one authenticated Supabase user via owner_id
---   - Row Level Security allows that user to access only their own rows
+--   - every game row belongs to one authenticated Supabase user via owner_id
+--   - sync_state has one row per authenticated user
+--   - RLS allows users to access only their own rows
 --   - anon receives no table privileges
 
 begin;
@@ -160,6 +161,18 @@ create table if not exists public.penalty_results (
   created_at timestamptz not null default now()
 );
 
+-- One revision row per authenticated user.
+-- Devices compare this revision with their local snapshot revision.
+create table if not exists public.sync_state (
+  owner_id uuid primary key
+    default auth.uid()
+    references auth.users(id) on delete cascade,
+
+  revision bigint not null default 0,
+
+  updated_at timestamptz not null default now()
+);
+
 -- ============================================================
 -- INDEXES
 -- ============================================================
@@ -214,8 +227,8 @@ alter table public.rounds enable row level security;
 alter table public.round_results enable row level security;
 alter table public.jim_results enable row level security;
 alter table public.penalty_results enable row level security;
+alter table public.sync_state enable row level security;
 
--- Browser clients should never use the anonymous role for these tables.
 revoke all on public.players from anon;
 revoke all on public.sessions from anon;
 revoke all on public.session_players from anon;
@@ -223,6 +236,7 @@ revoke all on public.rounds from anon;
 revoke all on public.round_results from anon;
 revoke all on public.jim_results from anon;
 revoke all on public.penalty_results from anon;
+revoke all on public.sync_state from anon;
 
 grant select, insert, update, delete on public.players to authenticated;
 grant select, insert, update, delete on public.sessions to authenticated;
@@ -231,8 +245,11 @@ grant select, insert, update, delete on public.rounds to authenticated;
 grant select, insert, update, delete on public.round_results to authenticated;
 grant select, insert, update, delete on public.jim_results to authenticated;
 grant select, insert, update, delete on public.penalty_results to authenticated;
+grant select, insert, update, delete on public.sync_state to authenticated;
 
--- Re-running this script should not fail because old policy names are removed first.
+-- ============================================================
+-- POLICIES
+-- ============================================================
 
 drop policy if exists "players_select_own" on public.players;
 drop policy if exists "players_insert_own" on public.players;
@@ -419,6 +436,33 @@ create policy "penalty_results_update_own"
 
 create policy "penalty_results_delete_own"
   on public.penalty_results for delete
+  to authenticated
+  using ((select auth.uid()) = owner_id);
+
+
+drop policy if exists "sync_state_select_own" on public.sync_state;
+drop policy if exists "sync_state_insert_own" on public.sync_state;
+drop policy if exists "sync_state_update_own" on public.sync_state;
+drop policy if exists "sync_state_delete_own" on public.sync_state;
+
+create policy "sync_state_select_own"
+  on public.sync_state for select
+  to authenticated
+  using ((select auth.uid()) = owner_id);
+
+create policy "sync_state_insert_own"
+  on public.sync_state for insert
+  to authenticated
+  with check ((select auth.uid()) = owner_id);
+
+create policy "sync_state_update_own"
+  on public.sync_state for update
+  to authenticated
+  using ((select auth.uid()) = owner_id)
+  with check ((select auth.uid()) = owner_id);
+
+create policy "sync_state_delete_own"
+  on public.sync_state for delete
   to authenticated
   using ((select auth.uid()) = owner_id);
 
