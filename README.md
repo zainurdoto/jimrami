@@ -1,6 +1,6 @@
 # JIMRAMI
 
-A browser-based score and session tracker for JIMRAMI card game. Try the [demo](http://zainurdoto.github.io/jimrami/) with this [mock data](https://zainurdoto.github.io/jimrami/demo_data.json) imported 
+A browser-based score and session tracker for JIMRAMI card game. Try the [demo](http://zainurdoto.github.io/jimrami/) and import this [mock data](https://zainurdoto.github.io/jimrami/demo_data.zip) for preview 
 
 JIMRAMI stores data locally in the browser with Dexie. Supabase is optional and adds cloud backup and syncing between devices.
 
