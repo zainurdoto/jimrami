@@ -861,41 +861,61 @@ export default function DataTools({
     }
   }
 
-  async function cloudBackup() {
-    if (busy) return
+ async function cloudBackup() {
+  if (busy) return
 
-    setBusy(true)
+  setBusy(true)
 
-    try {
-      const success =
-        await runCloudSync()
-
-      if (!success) {
-        throw new Error(
-          navigator.onLine
-            ? 'Cloud backup could not run. Check your cloud sign-in.'
-            : 'You are offline. Changes are safe locally and will sync automatically when you reconnect.'
-        )
-      }
-
-      window.alert(
-        'Cloud backup completed successfully.'
+  try {
+    if (!navigator.onLine) {
+      throw new Error(
+        'You are offline. Changes are safe locally and will sync automatically when you reconnect.'
       )
-    } catch (error) {
-      console.error(
-        'Cloud backup failed:',
-        error
-      )
-
-      window.alert(
-        error instanceof Error
-          ? error.message
-          : 'Cloud backup failed.'
-      )
-    } finally {
-      setBusy(false)
     }
+
+    if (!supabase) {
+      throw new Error(
+        'Cloud backup is not configured on this deployment.'
+      )
+    }
+
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
+
+    if (!session) {
+      throw new Error(
+        'You are not signed in to cloud backup.'
+      )
+    }
+
+    const success =
+      await runCloudSync()
+
+    if (!success) {
+      throw new Error(
+        'Cloud backup could not complete right now. Your local data is safe and JIMRAMI will retry automatically.'
+      )
+    }
+
+    window.alert(
+      'Cloud backup completed successfully.'
+    )
+  } catch (error) {
+    console.error(
+      'Cloud backup failed:',
+      error
+    )
+
+    window.alert(
+      error instanceof Error
+        ? error.message
+        : 'Cloud backup failed.'
+    )
+  } finally {
+    setBusy(false)
   }
+}
 
   async function cloudRestore() {
     if (busy) return
