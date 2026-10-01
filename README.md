@@ -1,6 +1,6 @@
 # JIMRAMI
 
-A browser-based score and session tracker for our family card game.
+A browser-based score and session tracker for JIMRAMI card game. Try the [demo](http://zainurdoto.github.io/jimrami/) with this [mock data](https://zainurdoto.github.io/jimrami/demo_data.json) imported 
 
 JIMRAMI stores data locally in the browser with Dexie. Supabase is optional and adds cloud backup and syncing between devices.
 
@@ -71,9 +71,9 @@ Never commit `.env.local`, the database password, or a Supabase secret/service-r
 
 ### 5. GitHub Pages
 
-GitHub Pages also needs the same two values during the Vite build.
+For hosting on GitHub Pages,
 
-Add these repository secrets:
+In Settings-Secrets and variables-Actions, Add these repository secrets:
 
 ```text
 VITE_SUPABASE_URL
