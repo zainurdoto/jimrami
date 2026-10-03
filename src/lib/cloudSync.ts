@@ -417,17 +417,45 @@ export async function checkForCloudUpdates() {
   }
 }
 
-export async function runCloudSync() {
+export type CloudSyncResult =
+  | {
+      status: 'synced'
+    }
+  | {
+      status: 'queued'
+    }
+  | {
+      status: 'unavailable'
+      message: string
+    }
+  | {
+      status: 'signedOut'
+      message: string
+    }
+  | {
+      status: 'failed'
+      message: string
+    }
+
+export async function runCloudSync():
+  Promise<CloudSyncResult> {
   if (
     !cloudConfigured ||
     !supabase
   ) {
-    return false
+    return {
+      status: 'unavailable',
+      message:
+        'Cloud sync is not configured on this deployment.',
+    }
   }
 
   if (syncRunning) {
     syncAgain = true
-    return false
+
+    return {
+      status: 'queued',
+    }
   }
 
   const {
@@ -437,7 +465,26 @@ export async function runCloudSync() {
       .getSession()
 
   if (!data.session) {
-    return false
+    return {
+      status: 'signedOut',
+      message:
+        'You are not signed in to cloud sync.',
+    }
+  }
+
+  /*
+    A second sync can begin while the
+    session lookup above is waiting.
+
+    Treat that as queued work instead of
+    reporting it as a failure.
+  */
+  if (syncRunning) {
+    syncAgain = true
+
+    return {
+      status: 'queued',
+    }
   }
 
   syncRunning = true
@@ -535,7 +582,9 @@ export async function runCloudSync() {
       `✓ Cloud revision: ${nextRevision}`
     )
 
-    return true
+    return {
+      status: 'synced',
+    }
   } catch (error) {
     /*
       Cloud failure must never stop
@@ -557,7 +606,13 @@ export async function runCloudSync() {
       error
     )
 
-    return false
+    return {
+      status: 'failed',
+      message:
+        error instanceof Error
+          ? error.message
+          : 'Cloud sync failed.',
+    }
   } finally {
     syncRunning = false
 

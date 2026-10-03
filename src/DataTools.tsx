@@ -21,15 +21,20 @@ import {
 } from './lib/supabase'
 
 import {
-  restoreCloudToEmptyLocal,
-} from './lib/restoreFromSupabase'
-
-import {
   getLastCloudSync,
   getPendingDeletionCount,
   hasPendingCloudSync,
   runCloudSync,
 } from './lib/cloudSync'
+
+type AppDialog = {
+  title: string
+  message: string
+  confirmLabel: string
+  cancelLabel?: string
+  onConfirm: () => void
+  onCancel?: () => void
+}
 
 type Props = {
   onClose: () => void
@@ -140,6 +145,57 @@ export default function DataTools({
 
   const [busy, setBusy] =
     useState(false)
+
+  const [dialog, setDialog] =
+    useState<AppDialog | null>(
+      null
+    )
+
+  function appAlert(
+    title: string,
+    message: string,
+    confirmLabel = 'OK'
+  ) {
+    return new Promise<void>(
+      (resolve) => {
+        setDialog({
+          title,
+          message,
+          confirmLabel,
+          onConfirm: () => {
+            setDialog(null)
+            resolve()
+          },
+        })
+      }
+    )
+  }
+
+  function appConfirm(
+    title: string,
+    message: string,
+    confirmLabel = 'Confirm',
+    cancelLabel = 'Cancel'
+  ) {
+    return new Promise<boolean>(
+      (resolve) => {
+        setDialog({
+          title,
+          message,
+          confirmLabel,
+          cancelLabel,
+          onConfirm: () => {
+            setDialog(null)
+            resolve(true)
+          },
+          onCancel: () => {
+            setDialog(null)
+            resolve(false)
+          },
+        })
+      }
+    )
+  }
 
   const [
     cloudUserEmail,
@@ -475,7 +531,8 @@ export default function DataTools({
         error
       )
 
-      window.alert(
+      await appAlert(
+        'Export Failed',
         'Backup export failed.'
       )
     } finally {
@@ -523,7 +580,8 @@ export default function DataTools({
         JSON.parse(text)
 
       if (!isBackupData(parsed)) {
-        window.alert(
+        await appAlert(
+          'Invalid Backup',
           'This does not look like a valid Jim backup.'
         )
 
@@ -531,8 +589,10 @@ export default function DataTools({
       }
 
       const confirmed =
-        window.confirm(
-          'Importing this backup will replace ALL Jim data currently stored on this device.\n\nContinue?'
+        await appConfirm(
+          'Restore Backup',
+          'Importing this backup will replace ALL Jim data currently stored on this device.\n\nContinue?',
+          'Restore'
         )
 
       if (!confirmed) {
@@ -720,7 +780,8 @@ export default function DataTools({
         }
       )
 
-      window.alert(
+      await appAlert(
+        'Backup Restored',
         'Jim backup restored successfully.'
       )
 
@@ -735,7 +796,8 @@ export default function DataTools({
         error
       )
 
-      window.alert(
+      await appAlert(
+        'Import Failed',
         'Backup import failed. Your backup file may be damaged or incompatible.'
       )
     } finally {
@@ -819,8 +881,10 @@ export default function DataTools({
     }
 
     const confirmed =
-      window.confirm(
-        'Sign out of JIMRAMI Cloud?\n\nYour local data will stay on this device.'
+      await appConfirm(
+        'Sign Out',
+        'Sign out of JIMRAMI Cloud?\n\nYour local data will stay on this device.',
+        'Sign Out'
       )
 
     if (!confirmed) {
@@ -851,7 +915,8 @@ export default function DataTools({
         error
       )
 
-      window.alert(
+      await appAlert(
+        'Sign Out Failed',
         error instanceof Error
           ? error.message
           : 'Cloud sign-out failed.'
@@ -861,94 +926,71 @@ export default function DataTools({
     }
   }
 
- async function cloudBackup() {
-  if (busy) return
-
-  setBusy(true)
-
-  try {
-    if (!navigator.onLine) {
-      throw new Error(
-        'You are offline. Changes are safe locally and will sync automatically when you reconnect.'
-      )
-    }
-
-    if (!supabase) {
-      throw new Error(
-        'Cloud backup is not configured on this deployment.'
-      )
-    }
-
-    const {
-      data: { session },
-    } = await supabase.auth.getSession()
-
-    if (!session) {
-      throw new Error(
-        'You are not signed in to cloud backup.'
-      )
-    }
-
-    const success =
-      await runCloudSync()
-
-    if (!success) {
-      throw new Error(
-        'Cloud backup could not complete right now. Your local data is safe and JIMRAMI will retry automatically.'
-      )
-    }
-
-    window.alert(
-      'Cloud backup completed successfully.'
-    )
-  } catch (error) {
-    console.error(
-      'Cloud backup failed:',
-      error
-    )
-
-    window.alert(
-      error instanceof Error
-        ? error.message
-        : 'Cloud backup failed.'
-    )
-  } finally {
-    setBusy(false)
-  }
-}
-
-  async function cloudRestore() {
+  async function syncNow() {
     if (busy) return
-
-    const confirmed =
-      window.confirm(
-        'Restore all Jim data from the cloud?\n\nThis only works when the local database is empty.'
-      )
-
-    if (!confirmed) {
-      return
-    }
 
     setBusy(true)
 
     try {
-      await restoreCloudToEmptyLocal()
+      if (!navigator.onLine) {
+        throw new Error(
+          'You are offline. Changes are safe locally and will sync automatically when you reconnect.'
+        )
+      }
 
-      window.alert(
-        'Cloud restore completed successfully.'
+      if (!supabase) {
+        throw new Error(
+          'Cloud sync is not configured on this deployment.'
+        )
+      }
+
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
+
+      if (!session) {
+        throw new Error(
+          'You are not signed in to cloud sync.'
+        )
+      }
+
+      const result =
+        await runCloudSync()
+
+      if (
+        result.status === 'queued'
+      ) {
+        await appAlert(
+          'Sync in Progress',
+          'A cloud sync is already running. JIMRAMI will finish it automatically.'
+        )
+
+        return
+      }
+
+      if (
+        result.status !== 'synced'
+      ) {
+        throw new Error(
+          result.message
+        )
+      }
+
+      await appAlert(
+        'Cloud Sync',
+        'Cloud sync completed successfully.'
       )
-
-      window.location.reload()
     } catch (error) {
       console.error(
-        'Cloud restore failed:',
+        'Cloud sync failed:',
         error
       )
 
-      window.alert(
+      await appAlert(
+        'Cloud Sync Failed',
         error instanceof Error
           ? error.message
-          : 'Cloud restore failed.'
+          : 'Cloud sync failed.'
       )
     } finally {
       setBusy(false)
@@ -1264,63 +1306,32 @@ export default function DataTools({
 
         {cloudConfigured &&
           cloudUserEmail && (
-            <>
-              <div className="dataOption">
-                <div>
-                  <strong>
-                    Cloud Backup
-                  </strong>
+            <div className="dataOption">
+              <div>
+                <strong>
+                  Sync Now
+                </strong>
 
-                  <p>
-                    Sync the current
-                    local Jim database
-                    to Supabase.
-                  </p>
-                </div>
-
-                <button
-                  onClick={cloudBackup}
-                  disabled={
-                    busy ||
-                    !cloudStatus.online
-                  }
-                >
-                  {busy
-                    ? 'Working...'
-                    : cloudStatus.online
-                      ? 'Back Up'
-                      : 'Offline'}
-                </button>
+                <p>
+                  Changes sync automatically.
+                  Use this to sync immediately.
+                </p>
               </div>
 
-              <div className="dataOption">
-                <div>
-                  <strong>
-                    Restore from Cloud
-                  </strong>
-
-                  <p>
-                    Rebuild an empty
-                    device from the
-                    cloud database.
-                  </p>
-                </div>
-
-                <button
-                  onClick={cloudRestore}
-                  disabled={
-                    busy ||
-                    !cloudStatus.online
-                  }
-                >
-                  {busy
-                    ? 'Working...'
-                    : cloudStatus.online
-                      ? 'Restore'
-                      : 'Offline'}
-                </button>
-              </div>
-            </>
+              <button
+                onClick={syncNow}
+                disabled={
+                  busy ||
+                  !cloudStatus.online
+                }
+              >
+                {busy
+                  ? 'Syncing...'
+                  : cloudStatus.online
+                    ? 'Sync Now'
+                    : 'Offline'}
+              </button>
+            </div>
           )}
 
         <p className="dataWarning">
@@ -1330,6 +1341,49 @@ export default function DataTools({
           you want to keep it.
         </p>
       </section>
+
+      {dialog && (
+        <div
+          className="jimDialogOverlay"
+          onClick={(event) =>
+            event.stopPropagation()
+          }
+        >
+          <div
+            className="jimDialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="jimDialogTitle"
+          >
+            <h3 id="jimDialogTitle">
+              {dialog.title}
+            </h3>
+
+            <p>
+              {dialog.message}
+            </p>
+
+            <div className="jimDialogActions">
+              {dialog.cancelLabel &&
+                dialog.onCancel && (
+                  <button
+                    className="jimDialogSecondary"
+                    onClick={dialog.onCancel}
+                  >
+                    {dialog.cancelLabel}
+                  </button>
+                )}
+
+              <button
+                className="jimDialogPrimary"
+                onClick={dialog.onConfirm}
+              >
+                {dialog.confirmLabel}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
