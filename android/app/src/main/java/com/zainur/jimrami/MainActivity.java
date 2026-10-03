@@ -8,6 +8,20 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(SaveFilePlugin.class);
+
         super.onCreate(savedInstanceState);
+
+        if (
+            bridge != null &&
+            bridge.getWebView() != null
+        ) {
+            bridge
+                .getWebView()
+                .setVerticalScrollBarEnabled(false);
+
+            bridge
+                .getWebView()
+                .setHorizontalScrollBarEnabled(false);
+        }
     }
 }

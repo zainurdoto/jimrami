@@ -1,9 +1,17 @@
-import type { CapacitorConfig } from '@capacitor/cli';
+import type { CapacitorConfig } from '@capacitor/cli'
 
 const config: CapacitorConfig = {
   appId: 'com.zainur.jimrami',
-  appName: 'Jimrami',
-  webDir: 'dist'
-};
+  appName: 'JIMRAMI',
+  webDir: 'dist',
 
-export default config;
+  plugins: {
+    SystemBars: {
+      insetsHandling: 'css',
+      style: 'DARK',
+      hidden: false,
+    },
+  },
+}
+
+export default config

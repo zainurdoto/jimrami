@@ -989,6 +989,10 @@ export default function JimRound({
         </div>
       </header>
 
+      <div
+        className="jimPhasePage"
+        key={phase}
+      >
       {phase === 'choose' && (
         <section className="jimPanel">
           <div className="jimSectionTitle">
@@ -1368,6 +1372,7 @@ export default function JimRound({
             </section>
           )
         )}
+      </div>
 
     </main>
   )

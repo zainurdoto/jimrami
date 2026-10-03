@@ -5,6 +5,8 @@ import {
   useState,
 } from 'react'
 
+import { createPortal } from 'react-dom'
+
 import { useLiveQuery } from 'dexie-react-hooks'
 
 import {
@@ -1607,6 +1609,209 @@ export default function HistoryStats({
     setDeletingSession,
   ] =
     useState(false)
+
+  /*
+    Keep confirmation modals fixed to the
+    visible viewport.
+
+    While the delete confirmation is open,
+    freeze the page at its current scroll
+    position. Closing the modal restores
+    the exact previous scroll position.
+  */
+  useEffect(
+    () => {
+      if (deleteSessionId === null) {
+        return
+      }
+
+      const scrollX =
+        window.scrollX
+      const scrollY =
+        window.scrollY
+
+      const oldPosition =
+        document.body.style.position
+      const oldTop =
+        document.body.style.top
+      const oldLeft =
+        document.body.style.left
+      const oldWidth =
+        document.body.style.width
+      const oldOverflow =
+        document.body.style.overflow
+
+      document.body.style.position =
+        'fixed'
+      document.body.style.top =
+        `-${scrollY}px`
+      document.body.style.left =
+        `-${scrollX}px`
+      document.body.style.width =
+        '100%'
+      document.body.style.overflow =
+        'hidden'
+
+      return () => {
+        document.body.style.position =
+          oldPosition
+        document.body.style.top =
+          oldTop
+        document.body.style.left =
+          oldLeft
+        document.body.style.width =
+          oldWidth
+        document.body.style.overflow =
+          oldOverflow
+
+        window.scrollTo(
+          scrollX,
+          scrollY
+        )
+      }
+    },
+    [deleteSessionId]
+  )
+
+  /*
+    Handle Android Back one level at a time.
+
+    App.tsx dispatches this cancelable event
+    before doing its own high-level navigation.
+    If HistoryStats has something more local
+    to close, preventDefault() tells App.tsx
+    that Back has already been handled.
+  */
+  useEffect(
+    () => {
+      function handleAndroidBack(
+        event: Event
+      ) {
+        /*
+          Modal / temporary UI first.
+        */
+        if (
+          sessionPlayerDetail !== null
+        ) {
+          setSessionPlayerDetail(
+            null
+          )
+          event.preventDefault()
+          return
+        }
+
+        if (
+          deleteSessionId !== null
+        ) {
+          /*
+            Do not navigate away while a
+            destructive delete is running.
+          */
+          if (!deletingSession) {
+            setDeleteSessionId(
+              null
+            )
+          }
+
+          event.preventDefault()
+          return
+        }
+
+        if (
+          editingRoundId !== null
+        ) {
+          setEditingRoundId(
+            null
+          )
+          event.preventDefault()
+          return
+        }
+
+        /*
+          Full child pages.
+        */
+        if (
+          awardSessionId !== null
+        ) {
+          if (
+            initialAwardSessionId !==
+            undefined
+          ) {
+            onBack()
+          } else {
+            setAwardSessionId(
+              null
+            )
+          }
+
+          event.preventDefault()
+          return
+        }
+
+        if (
+          raceSessionId !== null
+        ) {
+          setRaceSessionId(
+            null
+          )
+          event.preventDefault()
+          return
+        }
+
+        /*
+          Nested session detail levels.
+        */
+        if (
+          roundDetailsSessionId !==
+          null
+        ) {
+          setEditingRoundId(
+            null
+          )
+
+          setRoundDetailsSessionId(
+            null
+          )
+
+          event.preventDefault()
+          return
+        }
+
+        if (
+          expandedSessionId !== null
+        ) {
+          setExpandedSessionId(
+            null
+          )
+          event.preventDefault()
+        }
+      }
+
+      window.addEventListener(
+        'jimrami-back-request',
+        handleAndroidBack
+      )
+
+      return () => {
+        window.removeEventListener(
+          'jimrami-back-request',
+          handleAndroidBack
+        )
+      }
+    },
+    [
+      awardSessionId,
+      deleteSessionId,
+      deletingSession,
+      editingRoundId,
+      expandedSessionId,
+      initialAwardSessionId,
+      onBack,
+      raceSessionId,
+      roundDetailsSessionId,
+      sessionPlayerDetail,
+    ]
+  )
 
   const sessions =
     useLiveQuery(
@@ -5136,7 +5341,10 @@ export default function HistoryStats({
     !penaltyResults
   ) {
     return (
-      <main className="app">
+      <main
+        className="app"
+        key="history-loading"
+      >
         <p>
           Loading history...
         </p>
@@ -5176,7 +5384,10 @@ export default function HistoryStats({
           : 'In progress'
 
       return (
-        <main className="app historyPage sessionAwardsPage">
+        <main
+          className="app historyPage sessionAwardsPage"
+          key={`session-awards-${session.id}`}
+        >
           <header className="historyHeader">
             <button
               className="roundBack"
@@ -5365,6 +5576,7 @@ export default function HistoryStats({
 
       return (
         <TitleRace
+          key={`history-race-${session.id}`}
           session={session}
           sessionPlayers={
             participants
@@ -5630,7 +5842,10 @@ export default function HistoryStats({
         })()
 
   return (
-    <main className="app historyPage">
+    <main
+      className="app historyPage"
+      key="history-root"
+    >
       <header className="historyHeader">
         <button
           className="roundBack"
@@ -5704,6 +5919,10 @@ export default function HistoryStats({
         </button>
       </nav>
 
+      <div
+        className="historyTabPage"
+        key={tab}
+      >
       {tab === 'sessions' && (
         <section className="historySessionList">
           {orderedSessions.length ===
@@ -7813,6 +8032,8 @@ export default function HistoryStats({
           </section>
         </section>
       )}
+      </div>
+
       {sessionPlayerDetailData && (
         <div
           className="sessionPlayerDetailOverlay"
@@ -8144,83 +8365,85 @@ export default function HistoryStats({
         </div>
       )}
 
-      {deleteSession && (
-        <div className="historyDeleteOverlay">
-          <div className="historyDeleteDialog">
-            <span className="historyDeleteLabel">
-              DELETE SESSION
-            </span>
+      {deleteSession &&
+        createPortal(
+          <div className="historyDeleteOverlay">
+            <div className="historyDeleteDialog">
+              <span className="historyDeleteLabel">
+                DELETE SESSION
+              </span>
 
-            <h2>
-              {formatDate(
-                deleteSession.startedAt
-              )}
-            </h2>
+              <h2>
+                {formatDate(
+                  deleteSession.startedAt
+                )}
+              </h2>
 
-            <p>
-              This permanently removes
-              this session and all of its
-              Standard rounds, Jim
-              results, penalties and
-              standings.
-            </p>
+              <p>
+                This permanently removes
+                this session and all of its
+                Standard rounds, Jim
+                results, penalties and
+                standings.
+              </p>
 
-            <div className="historyDeleteSummary">
-              <div>
-                <span>
-                  ROUNDS
-                </span>
+              <div className="historyDeleteSummary">
+                <div>
+                  <span>
+                    ROUNDS
+                  </span>
 
-                <strong>
-                  {
-                    deleteSessionRoundCount
-                  }
-                </strong>
+                  <strong>
+                    {
+                      deleteSessionRoundCount
+                    }
+                  </strong>
+                </div>
+
+                <div>
+                  <span>
+                    DURATION
+                  </span>
+
+                  <strong>
+                    {
+                      deleteSessionDuration
+                    }
+                  </strong>
+                </div>
               </div>
 
-              <div>
-                <span>
-                  DURATION
-                </span>
-
-                <strong>
-                  {
-                    deleteSessionDuration
+              <div className="historyDeleteActions">
+                <button
+                  className="historyDeleteCancel"
+                  disabled={
+                    deletingSession
                   }
-                </strong>
+                  onClick={
+                    cancelDeleteSession
+                  }
+                >
+                  Cancel
+                </button>
+
+                <button
+                  className="historyDeleteConfirm"
+                  disabled={
+                    deletingSession
+                  }
+                  onClick={
+                    confirmDeleteSession
+                  }
+                >
+                  {deletingSession
+                    ? 'Deleting...'
+                    : 'Delete Session'}
+                </button>
               </div>
             </div>
-
-            <div className="historyDeleteActions">
-              <button
-                className="historyDeleteCancel"
-                disabled={
-                  deletingSession
-                }
-                onClick={
-                  cancelDeleteSession
-                }
-              >
-                Cancel
-              </button>
-
-              <button
-                className="historyDeleteConfirm"
-                disabled={
-                  deletingSession
-                }
-                onClick={
-                  confirmDeleteSession
-                }
-              >
-                {deletingSession
-                  ? 'Deleting...'
-                  : 'Delete Session'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
     </main>
   )
 }

@@ -3,6 +3,9 @@ import ScoreTransition, {
 } from './ScoreTransition'
 import TitleRace from './TitleRace'
 import { useEffect, useRef, useState } from 'react'
+
+import { createPortal } from 'react-dom'
+import { App as CapacitorApp } from '@capacitor/app'
 import { useLiveQuery } from 'dexie-react-hooks'
 import {
   db,
@@ -1332,7 +1335,60 @@ function SessionAliasPicker({
   )
 }
 
+function ExitHint({
+  visible,
+}: {
+  visible: boolean
+}) {
+  if (!visible) {
+    return null
+  }
+
+  return (
+    <div
+      className="androidExitHint"
+      role="status"
+      aria-live="polite"
+    >
+      Press Back again to exit
+    </div>
+  )
+}
+
+function LaunchIntro() {
+  return createPortal(
+    <div
+      className="launchIntro"
+      aria-hidden="true"
+    >
+      <div className="launchIntroBrand">
+        <img
+          className="launchIntroCardLogo"
+          src={`${import.meta.env.BASE_URL}Jim_Card.svg`}
+          alt=""
+        />
+
+        <img
+          className="launchIntroJawiLogo"
+          src={`${import.meta.env.BASE_URL}Jim_Jawi.svg`}
+          alt=""
+        />
+
+        <strong>
+          JIMRAMI
+        </strong>
+      </div>
+    </div>,
+    document.body
+  )
+}
+
 function App() {
+  const [
+    showLaunchIntro,
+    setShowLaunchIntro,
+  ] = useState(true)
+
   const players = useLiveQuery(
     () =>
       db.players
@@ -1679,12 +1735,38 @@ useState<
   ] = useState(false)
 
   const [
+    showExitHint,
+    setShowExitHint,
+  ] = useState(false)
+
+  const exitBackDeadline =
+    useRef(0)
+
+  const exitHintTimer =
+    useRef<number | null>(
+      null
+    )
+
+  const [
   transitionData,
   setTransitionData,
 ] =
   useState<
     ScoreTransitionData | null
   >(null)
+
+  const [
+    transitionLeaving,
+    setTransitionLeaving,
+  ] = useState(false)
+
+  const transitionExitRunning =
+    useRef(false)
+
+  const transitionExitTimer =
+    useRef<number | null>(
+      null
+    )
 
   const customGoalpostNumber =
     Number(customGoalpost)
@@ -2882,6 +2964,284 @@ useState<
     )
   }
 
+  /*
+    Android system Back button.
+
+    Priority:
+    1. Close temporary overlays/panels.
+    2. Return sub-pages to their parent screen.
+    3. Do not interrupt score transitions or a
+       required Goalpost decision.
+    4. At the root screen, let Back exit the app.
+  */
+  useEffect(
+    () => {
+      const timer =
+        window.setTimeout(
+          () => {
+            setShowLaunchIntro(
+              false
+            )
+          },
+          1700
+        )
+
+      return () => {
+        window.clearTimeout(
+          timer
+        )
+      }
+    },
+    []
+  )
+
+  useEffect(
+    () => {
+      return () => {
+        if (
+          exitHintTimer.current !==
+          null
+        ) {
+          window.clearTimeout(
+            exitHintTimer.current
+          )
+        }
+
+        if (
+          transitionExitTimer.current !==
+          null
+        ) {
+          window.clearTimeout(
+            transitionExitTimer.current
+          )
+        }
+      }
+    },
+    []
+  )
+
+  useEffect(
+    () => {
+      let listener:
+        | {
+            remove: () =>
+              Promise<void>
+          }
+        | undefined
+
+      void CapacitorApp.addListener(
+        'backButton',
+        () => {
+          /*
+            Give the currently mounted child
+            screen first chance to handle Back.
+
+            Example:
+            Session Awards -> Sessions,
+            Round Editor -> Round Details,
+            Title Race -> Sessions.
+
+            If a child handles it, it calls
+            preventDefault() on this event.
+          */
+          const childBackEvent =
+            new Event(
+              'jimrami-back-request',
+              {
+                cancelable: true,
+              }
+            )
+
+          window.dispatchEvent(
+            childBackEvent
+          )
+
+          if (
+            childBackEvent.defaultPrevented
+          ) {
+            return
+          }
+
+          if (showDataTools) {
+            setShowDataTools(false)
+            return
+          }
+
+          if (
+            editingPlayerId !== null
+          ) {
+            closePlayerEditor()
+            return
+          }
+
+          if (
+            showEndSessionConfirm
+          ) {
+            setShowEndSessionConfirm(
+              false
+            )
+            return
+          }
+
+          if (goalpostPrompt) {
+            /*
+              Deuce can safely return to
+              the scoreboard because the
+              session remains in Deuce.
+
+              A reached Goalpost requires
+              a Finish / Extend decision,
+              so Back is intentionally
+              ignored there.
+            */
+            if (
+              goalpostPrompt.kind ===
+              'deuce'
+            ) {
+              setGoalpostPrompt(null)
+            }
+
+            return
+          }
+
+          if (postGame) {
+            if (
+              postGameView !==
+              'summary'
+            ) {
+              setPostGameView(
+                'summary'
+              )
+              return
+            }
+
+            setPostGame(null)
+            setPostGameView(
+              'summary'
+            )
+            setScreen(
+              'scoreboard'
+            )
+            return
+          }
+
+          if (
+            screen === 'history'
+          ) {
+            setScreen('scoreboard')
+            return
+          }
+
+          if (
+            activeSession &&
+            (
+              screen ===
+                'standard' ||
+              screen === 'jim' ||
+              screen === 'race' ||
+              screen ===
+                'penalty'
+            )
+          ) {
+            setScreen('scoreboard')
+            return
+          }
+
+          /*
+            Never interrupt the animated
+            score transition. It finishes
+            itself and returns safely.
+          */
+          if (
+            screen ===
+            'transition'
+          ) {
+            return
+          }
+
+          /*
+            Root/new-session or active-session
+            scoreboard: require two Back presses
+            within 2 seconds before exiting.
+          */
+          const now = Date.now()
+
+          if (
+            now <
+            exitBackDeadline.current
+          ) {
+            exitBackDeadline.current = 0
+
+            if (
+              exitHintTimer.current !==
+              null
+            ) {
+              window.clearTimeout(
+                exitHintTimer.current
+              )
+
+              exitHintTimer.current =
+                null
+            }
+
+            setShowExitHint(false)
+
+            void CapacitorApp.exitApp()
+            return
+          }
+
+          exitBackDeadline.current =
+            now + 2000
+
+          setShowExitHint(true)
+
+          if (
+            exitHintTimer.current !==
+            null
+          ) {
+            window.clearTimeout(
+              exitHintTimer.current
+            )
+          }
+
+          exitHintTimer.current =
+            window.setTimeout(
+              () => {
+                setShowExitHint(
+                  false
+                )
+
+                exitBackDeadline.current =
+                  0
+
+                exitHintTimer.current =
+                  null
+              },
+              2000
+            )
+        }
+      ).then((handle) => {
+        listener = handle
+      })
+
+      return () => {
+        if (listener) {
+          void listener.remove()
+        }
+      }
+    },
+    [
+      activeSession,
+      editingPlayerId,
+      goalpostPrompt,
+      postGame,
+      postGameView,
+      screen,
+      showDataTools,
+      showEndSessionConfirm,
+    ]
+  )
+
   if (
     postGame &&
     players
@@ -2961,6 +3321,7 @@ useState<
     ) {
       return (
         <TitleRace
+          key={`postgame-race-${postGame.session.id}`}
           session={
             postGame.session
           }
@@ -2985,6 +3346,7 @@ useState<
     ) {
       return (
         <HistoryStats
+          key={`postgame-awards-${postGame.session.id}`}
           players={players}
           initialAwardSessionId={
             postGame.session.id
@@ -3000,6 +3362,7 @@ useState<
 
     return (
       <GoalpostSessionComplete
+        key={`postgame-summary-${postGame.session.id}`}
         session={
           postGame.session
         }
@@ -3035,6 +3398,7 @@ useState<
   ) {
     return (
       <HistoryStats
+        key="history"
         players={players}
         onBack={() =>
           setScreen('scoreboard')
@@ -3055,6 +3419,7 @@ useState<
     if (screen === 'standard') {
       return (
         <StandardRound
+          key={`standard-${activeSession.id}`}
           session={activeSession}
           sessionPlayers={
             sessionPlayers
@@ -3066,9 +3431,12 @@ useState<
             )
           }
           onComplete={(data) => {
-          setTransitionData(data)
-          setScreen('transition')
-        }}
+            transitionExitRunning.current =
+              false
+            setTransitionLeaving(false)
+            setTransitionData(data)
+            setScreen('transition')
+          }}
         />
       )
     }
@@ -3076,6 +3444,7 @@ useState<
     if (screen === 'jim') {
   return (
     <JimRound
+      key={`jim-${activeSession.id}`}
       session={activeSession}
       sessionPlayers={sessionPlayers}
       players={activeDisplayPlayers}
@@ -3083,6 +3452,9 @@ useState<
         setScreen('scoreboard')
       }
        onComplete={(data) => {
+      transitionExitRunning.current =
+        false
+      setTransitionLeaving(false)
       setTransitionData(data)
       setScreen('transition')
   }}
@@ -3093,6 +3465,7 @@ useState<
 if (screen === 'race') {
   return (
     <TitleRace
+      key={`race-${activeSession.id}`}
       session={activeSession}
       sessionPlayers={sessionPlayers}
       players={activeDisplayPlayers}
@@ -3108,24 +3481,60 @@ if (
   transitionData
 ) {
   return (
-    <ScoreTransition
-      data={transitionData}
-      players={activeDisplayPlayers}
-      jimWins={jimWinResults}
-      jimCatches={jimCatchResults}
-      onDone={() => {
-        setGoalpostEvaluationPlayers(
-          transitionData.after.map(
-            (player) => ({
-              ...player,
-            })
-          )
-        )
+    <div
+      className={`scoreTransitionShell ${
+        transitionLeaving
+          ? 'leaving'
+          : ''
+      }`}
+    >
+      <ScoreTransition
+        key={`transition-${activeSession.id}-${activeSession.roundNumber}`}
+        data={transitionData}
+        players={activeDisplayPlayers}
+        jimWins={jimWinResults}
+        jimCatches={jimCatchResults}
+        onDone={() => {
+          if (
+            transitionExitRunning.current
+          ) {
+            return
+          }
 
-        setTransitionData(null)
-        setScreen('scoreboard')
-      }}
-    />
+          transitionExitRunning.current =
+            true
+          setTransitionLeaving(true)
+
+          const completedData =
+            transitionData
+
+          transitionExitTimer.current =
+            window.setTimeout(
+              () => {
+                setGoalpostEvaluationPlayers(
+                  completedData.after.map(
+                    (player) => ({
+                      ...player,
+                    })
+                  )
+                )
+
+                setTransitionData(null)
+                setScreen('scoreboard')
+                setTransitionLeaving(
+                  false
+                )
+
+                transitionExitRunning.current =
+                  false
+                transitionExitTimer.current =
+                  null
+              },
+              160
+            )
+        }}
+      />
+    </div>
   )
 }
 
@@ -3137,6 +3546,7 @@ if (
 ) {
   return (
     <Penalty
+      key={`penalty-${activeSession.id}`}
       session={activeSession}
       sessionPlayers={
         sessionPlayers
@@ -3148,6 +3558,10 @@ if (
         )
       }
       onComplete={(data) => {
+        transitionExitRunning.current =
+          false
+        setTransitionLeaving(false)
+
         setTransitionData(
           data
         )
@@ -3184,7 +3598,10 @@ if (
     )
 
     return (
-      <main className="app">
+      <main
+        className="app"
+        key={`scoreboard-${activeSession.id}`}
+      >
         <header className="gameHeader gameHeaderPolished">
           <div className="gameRoundArea">
             <LiveClock />
@@ -3229,6 +3646,12 @@ if (
 
 <div className="gameBrand">
   <h1 className="jimramiBrandLockup">
+    <img
+      className="jimramiCardLogo"
+      src={`${import.meta.env.BASE_URL}Jim_Card.svg`}
+      alt=""
+    />
+
     <img
       className="jimramiLogo"
       src={`${import.meta.env.BASE_URL}Jim_Jawi.svg`}
@@ -3520,7 +3943,7 @@ if (
     setScreen('penalty')
   }
 >
-  Penalty -1
+  Penalty
 </button>
 
         </footer>
@@ -3651,6 +4074,14 @@ if (
     }
   />
 )}
+
+        {showLaunchIntro && (
+          <LaunchIntro />
+        )}
+
+        <ExitHint
+          visible={showExitHint}
+        />
       </main>
     )
   }
@@ -3660,9 +4091,18 @@ if (
   ---------------------------- */
 
   return (
-    <main className="app">
+    <main
+      className="app"
+      key="new-session"
+    >
      <header className="setupHeader">
 <h1 className="jimramiBrandLockup">
+  <img
+    className="jimramiCardLogo"
+    src={`${import.meta.env.BASE_URL}Jim_Card.svg`}
+    alt=""
+  />
+
   <img
     className="jimramiLogo"
     src={`${import.meta.env.BASE_URL}Jim_Jawi.svg`}
@@ -4187,6 +4627,14 @@ if (
           </div>
         </div>
       )}
+
+      {showLaunchIntro && (
+        <LaunchIntro />
+      )}
+
+      <ExitHint
+        visible={showExitHint}
+      />
     </main>
   )
 }
