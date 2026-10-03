@@ -5,6 +5,7 @@ import {
 } from './supabase'
 
 import {
+  setLocalCloudOwnerEmail,
   setLocalCloudOwnerId,
   setLocalCloudRevision,
 } from './cloudRevision'
@@ -698,6 +699,12 @@ export async function pullCloudSnapshot(
   setLocalCloudOwnerId(
     authData.user.id
   )
+
+  if (authData.user.email) {
+    setLocalCloudOwnerEmail(
+      authData.user.email
+    )
+  }
 
   localStorage.setItem(
     LAST_SYNC_KEY,

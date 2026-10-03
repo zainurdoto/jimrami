@@ -14,6 +14,7 @@ import {
   getLocalCloudOwnerId,
   getLocalCloudRevision,
   getOrCreateCloudRevision,
+  setLocalCloudOwnerEmail,
   setLocalCloudOwnerId,
   setLocalCloudRevision,
 } from './cloudRevision'
@@ -377,7 +378,8 @@ async function localDataMatchesCurrentCloudUser() {
 }
 
 async function ensureLocalOwnerMatchesSession(
-  userId: string
+  userId: string,
+  userEmail?: string
 ) {
   const localOwnerId =
     getLocalCloudOwnerId()
@@ -406,6 +408,12 @@ async function ensureLocalOwnerMatchesSession(
     setLocalCloudOwnerId(
       userId
     )
+
+    if (userEmail) {
+      setLocalCloudOwnerEmail(
+        userEmail
+      )
+    }
 
     return
   }
@@ -439,7 +447,8 @@ export async function checkForCloudUpdates() {
 
   try {
     await ensureLocalOwnerMatchesSession(
-      data.session.user.id
+      data.session.user.id,
+      data.session.user.email
     )
 
     const cloudRevision =
@@ -465,6 +474,12 @@ export async function checkForCloudUpdates() {
           setLocalCloudOwnerId(
             data.session.user.id
           )
+
+          if (data.session.user.email) {
+            setLocalCloudOwnerEmail(
+              data.session.user.email
+            )
+          }
 
           setLocalCloudRevision(
             0
@@ -681,7 +696,8 @@ export async function runCloudSync():
 
   try {
     await ensureLocalOwnerMatchesSession(
-      data.session.user.id
+      data.session.user.id,
+      data.session.user.email
     )
 
     /*

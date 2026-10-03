@@ -46657,3 +46657,207 @@ button:disabled {
   color: #7f8995 !important;
   transform: none !important;
 }
+
+/* =========================================
+   JIM DATA — CLOUD STATUS / ADVANCED DETAILS
+========================================= */
+
+.cloudStatusMessage {
+  max-width: 680px;
+  margin-top: 7px !important;
+}
+
+.cloudStatusMessage.warning {
+  color: #d8a0a6 !important;
+}
+
+.cloudAdvancedWrap {
+  border-top: 1px solid #222a34;
+}
+
+.cloudAdvancedToggle {
+  display: flex;
+  width: 100%;
+  min-height: 52px;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 0 4px;
+
+  border: 0;
+
+  background: transparent;
+  color: #8f9baa;
+
+  font-size: 12px;
+  font-weight: 850;
+  letter-spacing: 0.04em;
+  text-align: left;
+}
+
+.cloudAdvancedToggle:hover {
+  color: #c5ced8;
+}
+
+.cloudAdvancedToggle > span:last-child {
+  font-size: 20px;
+  font-weight: 500;
+}
+
+.cloudAdvancedPanel {
+  margin-bottom: 14px;
+  padding: 16px;
+
+  border: 1px solid #2c3540;
+  border-radius: 14px;
+
+  background: #11171e;
+}
+
+.cloudAdvancedHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+
+  margin-bottom: 13px;
+}
+
+.cloudAdvancedHeader > strong {
+  color: #dce3ea;
+  font-size: 13px;
+}
+
+.cloudAdvancedHeader > button {
+  min-height: 34px;
+  padding: 0 11px;
+
+  border: 1px solid #384451;
+  border-radius: 9px;
+
+  background: #1c242d;
+  color: #aeb9c5;
+
+  font-size: 10px;
+  font-weight: 850;
+}
+
+.cloudAdvancedHeader > button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.cloudAdvancedGrid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  gap: 8px;
+  margin: 0;
+}
+
+.cloudAdvancedGrid > div {
+  min-width: 0;
+  padding: 10px 11px;
+
+  border: 1px solid #27313b;
+  border-radius: 10px;
+
+  background: #161d25;
+}
+
+.cloudAdvancedGrid dt {
+  margin: 0 0 4px;
+
+  color: #687687;
+
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.cloudAdvancedGrid dd {
+  min-width: 0;
+  margin: 0;
+
+  overflow-wrap: anywhere;
+
+  color: #c8d1db;
+
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.cloudAdvancedNote,
+.cloudAdvancedError {
+  margin: 12px 2px 0 !important;
+
+  font-size: 10px !important;
+  line-height: 1.5 !important;
+}
+
+.cloudAdvancedNote {
+  color: #687687 !important;
+}
+
+.cloudAdvancedError {
+  color: #c9868d !important;
+}
+
+@media (max-width: 620px) {
+  .cloudAdvancedGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* =========================================
+   JIM DATA — SCROLLABLE BACKUP PANEL
+========================================= */
+
+.dataOverlay {
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
+}
+
+.dataPanel {
+  max-height: calc(100dvh - 40px) !important;
+  overflow-y: auto !important;
+
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Keep some breathing room at the bottom */
+.dataPanel {
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+
+/* =========================================
+   JIM DATA — CLOUD TEXT SIZE + HIDE SCROLLBAR
+========================================= */
+
+.cloudStatusOption p,
+.cloudStatusMessage {
+  font-size: 13px !important;
+  line-height: 1.45 !important;
+}
+
+.cloudStatusOption p strong,
+.cloudStatusMessage strong {
+  font-size: inherit !important;
+}
+
+/* Hide scrollbar but keep scrolling */
+.dataOverlay,
+.dataPanel {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.dataOverlay::-webkit-scrollbar,
+.dataPanel::-webkit-scrollbar {
+  display: none;
+}

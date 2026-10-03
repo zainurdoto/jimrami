@@ -29,7 +29,11 @@ import {
 } from './lib/cloudSync'
 
 import {
+  getCloudRevision,
+  getLocalCloudOwnerEmail,
   getLocalCloudOwnerId,
+  getLocalCloudRevision,
+  setLocalCloudOwnerEmail,
 } from './lib/cloudRevision'
 
 type AppDialog = {
@@ -219,6 +223,26 @@ export default function DataTools({
     )
 
   const [
+    showCloudAdvanced,
+    setShowCloudAdvanced,
+  ] =
+    useState(false)
+
+  const [
+    cloudRevision,
+    setCloudRevision,
+  ] =
+    useState<number | null | undefined>(
+      undefined
+    )
+
+  const [
+    cloudRevisionError,
+    setCloudRevisionError,
+  ] =
+    useState('')
+
+  const [
     showCloudLogin,
     setShowCloudLogin,
   ] =
@@ -342,10 +366,28 @@ export default function DataTools({
             null
           )
 
-          setCloudUserId(
+          const userId =
             data.user?.id ??
             null
+
+          const userEmail =
+            data.user?.email ??
+            null
+
+          setCloudUserId(
+            userId
           )
+
+          if (
+            userId &&
+            userEmail &&
+            getLocalCloudOwnerId() ===
+              userId
+          ) {
+            setLocalCloudOwnerEmail(
+              userEmail
+            )
+          }
         }
       )
 
@@ -370,12 +412,32 @@ export default function DataTools({
               null
             )
 
-            setCloudUserId(
+            const userId =
               session
                 ?.user
                 .id ??
               null
+
+            const userEmail =
+              session
+                ?.user
+                .email ??
+              null
+
+            setCloudUserId(
+              userId
             )
+
+            if (
+              userId &&
+              userEmail &&
+              getLocalCloudOwnerId() ===
+                userId
+            ) {
+              setLocalCloudOwnerEmail(
+                userEmail
+              )
+            }
           }
         )
 
@@ -415,6 +477,66 @@ export default function DataTools({
         minute: '2-digit',
       }
     )
+  }
+
+  function shortUserId(
+    value: string | null
+  ) {
+    if (!value) {
+      return 'Not assigned'
+    }
+
+    return `${value.slice(0, 8)}…${value.slice(-4)}`
+  }
+
+  async function refreshCloudRevision() {
+    if (
+      !supabase ||
+      !cloudUserId ||
+      !navigator.onLine
+    ) {
+      setCloudRevision(
+        undefined
+      )
+
+      setCloudRevisionError('')
+
+      return
+    }
+
+    setCloudRevisionError('')
+
+    try {
+      const revision =
+        await getCloudRevision()
+
+      setCloudRevision(
+        revision
+      )
+    } catch (error) {
+      setCloudRevision(
+        undefined
+      )
+
+      setCloudRevisionError(
+        error instanceof Error
+          ? error.message
+          : 'Could not read cloud revision.'
+      )
+    }
+  }
+
+  function toggleCloudAdvanced() {
+    const opening =
+      !showCloudAdvanced
+
+    setShowCloudAdvanced(
+      opening
+    )
+
+    if (opening) {
+      void refreshCloudRevision()
+    }
   }
 
   /*
@@ -1006,6 +1128,10 @@ export default function DataTools({
         )
       }
 
+      if (showCloudAdvanced) {
+        await refreshCloudRevision()
+      }
+
       await appAlert(
         'Cloud Sync',
         'Cloud sync completed successfully.'
@@ -1081,6 +1207,22 @@ export default function DataTools({
 
   const localCloudOwnerId =
     getLocalCloudOwnerId()
+
+  const localCloudOwnerEmail =
+    getLocalCloudOwnerEmail()
+
+  const localRevision =
+    getLocalCloudRevision()
+
+  const localOwnerLabel =
+    localCloudOwnerEmail ??
+    (
+      localCloudOwnerId
+        ? `User ${shortUserId(
+            localCloudOwnerId
+          )}`
+        : 'Not assigned'
+    )
 
   const differentCloudAccount =
     Boolean(
@@ -1223,13 +1365,13 @@ export default function DataTools({
                     ? 'Not connected'
                     : cloudState ===
                         'differentAccount'
-                      ? 'Different cloud account'
+                      ? 'Account mismatch'
                       : cloudState ===
                           'offline'
                         ? 'Offline'
                         : cloudState ===
                             'pending'
-                          ? 'Sync pending'
+                          ? 'Device changes pending'
                           : 'Connected'}
               </span>
             </div>
@@ -1253,47 +1395,58 @@ export default function DataTools({
             ) : (
               <>
                 <p>
-                  Connected as{' '}
-                  {cloudUserEmail}
+                  Signed in as{' '}
+                  <strong>
+                    {cloudUserEmail}
+                  </strong>
+                </p>
+
+                <p>
+                  Device data owner:{' '}
+                  <strong>
+                    {localOwnerLabel}
+                  </strong>
                 </p>
 
                 {cloudState ===
                 'differentAccount' ? (
-                  <p>
-                    This device contains
-                    JIMRAMI data from another
-                    cloud account. Sync is
-                    blocked until you rebuild
-                    this device from the
-                    connected account.
+                  <p className="cloudStatusMessage warning">
+                    The signed-in account and
+                    this device's local data do
+                    not match. Sync is blocked.
+                    Use Rebuild This Device to
+                    load {cloudUserEmail}'s
+                    cloud data here.
                   </p>
                 ) : cloudState ===
                   'offline' ? (
-                  <p>
-                    Local data is safe.
-                    Changes will sync
-                    automatically when
-                    you reconnect.
+                  <p className="cloudStatusMessage">
+                    This device is offline.
+                    Local data is still safe.
+                    Pending changes will retry
+                    when you reconnect.
                   </p>
                 ) : cloudState ===
                   'pending' ? (
-                  <p>
-                    Changes are waiting
-                    to sync
+                  <p className="cloudStatusMessage">
+                    This device has changes
+                    waiting to upload
                     {cloudStatus.pendingDeletions >
                     0
-                      ? ` (${cloudStatus.pendingDeletions} deletion${
+                      ? `, including ${cloudStatus.pendingDeletions} queued deletion${
                           cloudStatus.pendingDeletions ===
                           1
                             ? ''
                             : 's'
-                        } queued)`
+                        }`
                       : ''}
                     .
                   </p>
                 ) : (
-                  <p>
-                    Last synced:{' '}
+                  <p className="cloudStatusMessage">
+                    No local changes are waiting
+                    to sync. Last successful
+                    sync:{' '}
                     {formatLastSync(
                       cloudStatus.lastSync
                     )}
@@ -1335,6 +1488,141 @@ export default function DataTools({
               </button>
             )}
         </div>
+
+        {cloudConfigured &&
+          cloudUserEmail && (
+            <div className="cloudAdvancedWrap">
+              <button
+                type="button"
+                className="cloudAdvancedToggle"
+                onClick={
+                  toggleCloudAdvanced
+                }
+              >
+                <span>
+                  Advanced
+                </span>
+
+                <span
+                  aria-hidden="true"
+                >
+                  {showCloudAdvanced
+                    ? '−'
+                    : '+'}
+                </span>
+              </button>
+
+              {showCloudAdvanced && (
+                <div className="cloudAdvancedPanel">
+                  <div className="cloudAdvancedHeader">
+                    <strong>
+                      Sync details
+                    </strong>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        void refreshCloudRevision()
+                      }
+                      disabled={
+                        busy ||
+                        !cloudStatus.online
+                      }
+                    >
+                      Refresh
+                    </button>
+                  </div>
+
+                  <dl className="cloudAdvancedGrid">
+                    {differentCloudAccount && (
+                      <>
+                        <div>
+                          <dt>
+                            Signed-in account
+                          </dt>
+                          <dd>
+                            {cloudUserEmail}
+                          </dd>
+                        </div>
+
+                        <div>
+                          <dt>
+                            Device data owner
+                          </dt>
+                          <dd>
+                            {localOwnerLabel}
+                          </dd>
+                        </div>
+
+                        <div>
+                          <dt>
+                            Signed-in user ID
+                          </dt>
+                          <dd>
+                            {shortUserId(
+                              cloudUserId
+                            )}
+                          </dd>
+                        </div>
+
+                        <div>
+                          <dt>
+                            Device owner ID
+                          </dt>
+                          <dd>
+                            {shortUserId(
+                              localCloudOwnerId
+                            )}
+                          </dd>
+                        </div>
+                      </>
+                    )}
+
+                    <div>
+                      <dt>
+                        Device revision
+                      </dt>
+                      <dd>
+                        {localRevision ??
+                          'None'}
+                      </dd>
+                    </div>
+
+                    <div>
+                      <dt>
+                        Cloud revision
+                      </dt>
+                      <dd>
+                        {!cloudStatus.online
+                          ? 'Offline'
+                          : cloudRevision ===
+                              undefined
+                            ? 'Checking…'
+                            : cloudRevision ===
+                                null
+                              ? 'None'
+                              : cloudRevision}
+                      </dd>
+                    </div>
+                  </dl>
+
+                  {cloudRevisionError && (
+                    <p className="cloudAdvancedError">
+                      {cloudRevisionError}
+                    </p>
+                  )}
+
+                  <p className="cloudAdvancedNote">
+                    Revision is only a sync
+                    counter. Matching device and
+                    cloud revisions means they
+                    last agreed on the same sync
+                    point.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
 
         {cloudConfigured &&
           !cloudUserEmail &&

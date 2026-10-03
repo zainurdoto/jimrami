@@ -8,6 +8,9 @@ const LOCAL_REVISION_KEY =
 const LOCAL_OWNER_KEY =
   'jimrami-cloud-owner-id'
 
+const LOCAL_OWNER_EMAIL_KEY =
+  'jimrami-cloud-owner-email'
+
 export function getLocalCloudRevision() {
   const raw =
     localStorage.getItem(
@@ -64,6 +67,29 @@ export function setLocalCloudOwnerId(
   )
 }
 
+export function getLocalCloudOwnerEmail() {
+  return (
+    localStorage.getItem(
+      LOCAL_OWNER_EMAIL_KEY
+    ) ?? null
+  )
+}
+
+export function setLocalCloudOwnerEmail(
+  email: string
+) {
+  localStorage.setItem(
+    LOCAL_OWNER_EMAIL_KEY,
+    email
+  )
+
+  window.dispatchEvent(
+    new Event(
+      'jimrami-cloud-sync-status'
+    )
+  )
+}
+
 async function getUserId() {
   const supabase =
     requireSupabase()
@@ -84,6 +110,37 @@ async function getUserId() {
   }
 
   return data.user.id
+}
+
+export async function getCloudRevision() {
+  const supabase =
+    requireSupabase()
+
+  const userId =
+    await getUserId()
+
+  const {
+    data,
+    error,
+  } =
+    await supabase
+      .from('sync_state')
+      .select('revision')
+      .eq(
+        'owner_id',
+        userId
+      )
+      .maybeSingle()
+
+  if (error) {
+    throw new Error(
+      `sync_state read: ${error.message}`
+    )
+  }
+
+  return data
+    ? Number(data.revision)
+    : null
 }
 
 export async function getOrCreateCloudRevision() {
