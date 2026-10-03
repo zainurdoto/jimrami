@@ -24,8 +24,13 @@ import {
   getLastCloudSync,
   getPendingDeletionCount,
   hasPendingCloudSync,
+  rebuildDeviceFromCloud,
   runCloudSync,
 } from './lib/cloudSync'
+
+import {
+  getLocalCloudOwnerId,
+} from './lib/cloudRevision'
 
 type AppDialog = {
   title: string
@@ -206,6 +211,14 @@ export default function DataTools({
     )
 
   const [
+    cloudUserId,
+    setCloudUserId,
+  ] =
+    useState<string | null>(
+      null
+    )
+
+  const [
     showCloudLogin,
     setShowCloudLogin,
   ] =
@@ -305,6 +318,10 @@ export default function DataTools({
         null
       )
 
+      setCloudUserId(
+        null
+      )
+
       return
     }
 
@@ -322,6 +339,11 @@ export default function DataTools({
 
           setCloudUserEmail(
             data.user?.email ??
+            null
+          )
+
+          setCloudUserId(
+            data.user?.id ??
             null
           )
         }
@@ -345,6 +367,13 @@ export default function DataTools({
               session
                 ?.user
                 .email ??
+              null
+            )
+
+            setCloudUserId(
+              session
+                ?.user
+                .id ??
               null
             )
           }
@@ -906,6 +935,7 @@ export default function DataTools({
       }
 
       setCloudUserEmail(null)
+      setCloudUserId(null)
       setShowCloudLogin(false)
       setCloudLoginEmail('')
       setCloudLoginPassword('')
@@ -997,18 +1027,83 @@ export default function DataTools({
     }
   }
 
+  async function rebuildFromCloud() {
+    if (busy) return
+
+    if (!cloudUserEmail) {
+      await appAlert(
+        'Not Connected',
+        'Sign in to JIMRAMI Cloud before rebuilding this device.'
+      )
+
+      return
+    }
+
+    const confirmed =
+      await appConfirm(
+        'Rebuild This Device?',
+        `Cloud account: ${cloudUserEmail}\n\nThis will replace ALL JIMRAMI data stored on this device with the data from this cloud account.\n\nCloud data will NOT be changed.\n\nAny unsynced data on this device will be lost.`,
+        'Rebuild from Cloud'
+      )
+
+    if (!confirmed) {
+      return
+    }
+
+    setBusy(true)
+
+    try {
+      const result =
+        await rebuildDeviceFromCloud()
+
+      await appAlert(
+        'Device Rebuilt',
+        `This device was rebuilt from cloud successfully.\n\nPlayers: ${result.players}\nSessions: ${result.sessions}\nCloud revision: ${result.revision}`
+      )
+
+      window.location.reload()
+    } catch (error) {
+      console.error(
+        'Cloud rebuild failed:',
+        error
+      )
+
+      await appAlert(
+        'Rebuild Failed',
+        error instanceof Error
+          ? error.message
+          : 'Could not rebuild this device from cloud.'
+      )
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const localCloudOwnerId =
+    getLocalCloudOwnerId()
+
+  const differentCloudAccount =
+    Boolean(
+      cloudUserId &&
+      localCloudOwnerId &&
+      cloudUserId !==
+        localCloudOwnerId
+    )
+
   const cloudState =
     !cloudConfigured
       ? 'local'
       : !cloudUserEmail
         ? 'signedOut'
-        : !cloudStatus.online
-          ? 'offline'
-          : cloudStatus.pending ||
-              cloudStatus.pendingDeletions >
-                0
-            ? 'pending'
-            : 'connected'
+        : differentCloudAccount
+          ? 'differentAccount'
+          : !cloudStatus.online
+            ? 'offline'
+            : cloudStatus.pending ||
+                cloudStatus.pendingDeletions >
+                  0
+              ? 'pending'
+              : 'connected'
 
   return (
     <div
@@ -1127,12 +1222,15 @@ export default function DataTools({
                       'signedOut'
                     ? 'Not connected'
                     : cloudState ===
-                        'offline'
-                      ? 'Offline'
+                        'differentAccount'
+                      ? 'Different cloud account'
                       : cloudState ===
-                          'pending'
-                        ? 'Sync pending'
-                        : 'Connected'}
+                          'offline'
+                        ? 'Offline'
+                        : cloudState ===
+                            'pending'
+                          ? 'Sync pending'
+                          : 'Connected'}
               </span>
             </div>
 
@@ -1160,7 +1258,17 @@ export default function DataTools({
                 </p>
 
                 {cloudState ===
-                'offline' ? (
+                'differentAccount' ? (
+                  <p>
+                    This device contains
+                    JIMRAMI data from another
+                    cloud account. Sync is
+                    blocked until you rebuild
+                    this device from the
+                    connected account.
+                  </p>
+                ) : cloudState ===
+                  'offline' ? (
                   <p>
                     Local data is safe.
                     Changes will sync
@@ -1322,13 +1430,47 @@ export default function DataTools({
                 onClick={syncNow}
                 disabled={
                   busy ||
-                  !cloudStatus.online
+                  !cloudStatus.online ||
+                  differentCloudAccount
                 }
               >
                 {busy
                   ? 'Syncing...'
                   : cloudStatus.online
                     ? 'Sync Now'
+                    : 'Offline'}
+              </button>
+            </div>
+          )}
+
+        {cloudConfigured &&
+          cloudUserEmail && (
+            <div className="dataOption">
+              <div>
+                <strong>
+                  Rebuild This Device
+                </strong>
+
+                <p>
+                  Replace the JIMRAMI data
+                  stored on this device with
+                  the connected account's
+                  cloud data. The cloud copy
+                  will not be changed.
+                </p>
+              </div>
+
+              <button
+                onClick={rebuildFromCloud}
+                disabled={
+                  busy ||
+                  !cloudStatus.online
+                }
+              >
+                {busy
+                  ? 'Working...'
+                  : cloudStatus.online
+                    ? 'Rebuild'
                     : 'Offline'}
               </button>
             </div>

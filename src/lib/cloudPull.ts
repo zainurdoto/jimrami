@@ -5,6 +5,7 @@ import {
 } from './supabase'
 
 import {
+  setLocalCloudOwnerId,
   setLocalCloudRevision,
 } from './cloudRevision'
 
@@ -692,6 +693,10 @@ export async function pullCloudSnapshot(
 
   setLocalCloudRevision(
     cloudRevision
+  )
+
+  setLocalCloudOwnerId(
+    authData.user.id
   )
 
   localStorage.setItem(

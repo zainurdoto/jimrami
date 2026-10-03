@@ -5,6 +5,9 @@ import {
 const LOCAL_REVISION_KEY =
   'jimrami-cloud-revision'
 
+const LOCAL_OWNER_KEY =
+  'jimrami-cloud-owner-id'
+
 export function getLocalCloudRevision() {
   const raw =
     localStorage.getItem(
@@ -29,6 +32,29 @@ export function setLocalCloudRevision(
   localStorage.setItem(
     LOCAL_REVISION_KEY,
     String(revision)
+  )
+
+  window.dispatchEvent(
+    new Event(
+      'jimrami-cloud-sync-status'
+    )
+  )
+}
+
+export function getLocalCloudOwnerId() {
+  return (
+    localStorage.getItem(
+      LOCAL_OWNER_KEY
+    ) ?? null
+  )
+}
+
+export function setLocalCloudOwnerId(
+  userId: string
+) {
+  localStorage.setItem(
+    LOCAL_OWNER_KEY,
+    userId
   )
 
   window.dispatchEvent(

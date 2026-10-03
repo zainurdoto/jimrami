@@ -11,8 +11,10 @@ import {
 
 import {
   advanceCloudRevision,
+  getLocalCloudOwnerId,
   getLocalCloudRevision,
   getOrCreateCloudRevision,
+  setLocalCloudOwnerId,
   setLocalCloudRevision,
 } from './cloudRevision'
 
@@ -293,6 +295,126 @@ async function localDatabaseIsEmpty() {
   )
 }
 
+
+async function localDataMatchesCurrentCloudUser() {
+  if (!supabase) {
+    return false
+  }
+
+  /*
+    Existing installations were created before
+    JIMRAMI stored a local owner marker.
+
+    To migrate those devices safely, check one
+    stable cloudId against the currently signed-in
+    user's Supabase rows. RLS makes another user's
+    row invisible, so a match is strong evidence
+    that this local database belongs to this user.
+  */
+  const candidates: Array<{
+    table: CloudTableName
+    cloudId?: string
+  }> = [
+    {
+      table: 'players',
+      cloudId:
+        (
+          await db.players
+            .toCollection()
+            .first()
+        )?.cloudId,
+    },
+    {
+      table: 'sessions',
+      cloudId:
+        (
+          await db.sessions
+            .toCollection()
+            .first()
+        )?.cloudId,
+    },
+    {
+      table: 'rounds',
+      cloudId:
+        (
+          await db.rounds
+            .toCollection()
+            .first()
+        )?.cloudId,
+    },
+  ]
+
+  for (
+    const candidate of candidates
+  ) {
+    if (!candidate.cloudId) {
+      continue
+    }
+
+    const {
+      data,
+      error,
+    } =
+      await supabase
+        .from(candidate.table)
+        .select('id')
+        .eq(
+          'id',
+          candidate.cloudId
+        )
+        .maybeSingle()
+
+    if (error) {
+      throw new Error(
+        `${candidate.table} ownership check: ${error.message}`
+      )
+    }
+
+    return Boolean(data)
+  }
+
+  return false
+}
+
+async function ensureLocalOwnerMatchesSession(
+  userId: string
+) {
+  const localOwnerId =
+    getLocalCloudOwnerId()
+
+  if (localOwnerId) {
+    if (
+      localOwnerId !== userId
+    ) {
+      throw new Error(
+        'This device currently contains JIMRAMI data from another cloud account. Rebuild this device from the signed-in account before syncing.'
+      )
+    }
+
+    return
+  }
+
+  if (
+    await localDatabaseIsEmpty()
+  ) {
+    return
+  }
+
+  if (
+    await localDataMatchesCurrentCloudUser()
+  ) {
+    setLocalCloudOwnerId(
+      userId
+    )
+
+    return
+  }
+
+  throw new Error(
+    'This device contains JIMRAMI data from another or unknown cloud account. Rebuild this device from the signed-in account before syncing.'
+  )
+}
+
 export async function checkForCloudUpdates() {
   if (
     !cloudConfigured ||
@@ -316,6 +438,10 @@ export async function checkForCloudUpdates() {
   syncRunning = true
 
   try {
+    await ensureLocalOwnerMatchesSession(
+      data.session.user.id
+    )
+
     const cloudRevision =
       await getOrCreateCloudRevision()
 
@@ -333,9 +459,17 @@ export async function checkForCloudUpdates() {
       if (
         cloudRevision === 0
       ) {
-        setLocalCloudRevision(
-          0
-        )
+        if (
+          await localDatabaseIsEmpty()
+        ) {
+          setLocalCloudOwnerId(
+            data.session.user.id
+          )
+
+          setLocalCloudRevision(
+            0
+          )
+        }
 
         return false
       }
@@ -417,6 +551,62 @@ export async function checkForCloudUpdates() {
   }
 }
 
+export async function rebuildDeviceFromCloud() {
+  if (
+    !cloudConfigured ||
+    !supabase
+  ) {
+    throw new Error(
+      'Cloud sync is not configured on this deployment.'
+    )
+  }
+
+  if (!navigator.onLine) {
+    throw new Error(
+      'You are offline. Connect to the internet before rebuilding this device.'
+    )
+  }
+
+  if (syncRunning) {
+    throw new Error(
+      'Cloud sync is currently running. Wait a moment and try Rebuild again.'
+    )
+  }
+
+  const {
+    data,
+  } =
+    await supabase.auth
+      .getSession()
+
+  if (!data.session) {
+    throw new Error(
+      'You are not signed in to cloud sync.'
+    )
+  }
+
+  /*
+    Rebuild is the explicit escape hatch for an
+    account change or damaged/stale local state.
+
+    It intentionally ignores the old local owner
+    and revision. The signed-in user's cloud copy
+    becomes authoritative.
+  */
+  syncRunning = true
+
+  try {
+    const cloudRevision =
+      await getOrCreateCloudRevision()
+
+    return await pullCloudSnapshot(
+      cloudRevision
+    )
+  } finally {
+    syncRunning = false
+  }
+}
+
 export type CloudSyncResult =
   | {
       status: 'synced'
@@ -490,6 +680,10 @@ export async function runCloudSync():
   syncRunning = true
 
   try {
+    await ensureLocalOwnerMatchesSession(
+      data.session.user.id
+    )
+
     /*
       Revision protection.
 
@@ -565,6 +759,10 @@ export async function runCloudSync():
 
     setLocalCloudRevision(
       nextRevision
+    )
+
+    setLocalCloudOwnerId(
+      data.session.user.id
     )
 
     localStorage.removeItem(
