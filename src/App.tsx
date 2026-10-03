@@ -1374,7 +1374,7 @@ function LaunchIntro() {
           alt=""
         />
 
-        <strong>
+        <strong className="jimramiLatin">
           JIMRAMI
         </strong>
       </div>
@@ -3916,36 +3916,77 @@ if (
               )
             }
           >
-            Standard Round
+            <span className="gameActionContent">
+              <span
+                className="gameActionIcon standardActionIcon"
+                aria-hidden="true"
+              />
+
+              <span className="gameActionLabel">
+                Standard Round
+              </span>
+            </span>
           </button>
 
           <button
-              className="jimAction"
-             onClick={() =>
-             setScreen('jim')
-              }
->
-              ★ Jim Round
-          </button>
-
-          <button
-             className="raceAction"
-             onClick={() =>
-             setScreen('race')
+            className="jimAction"
+            onClick={() =>
+              setScreen('jim')
             }
->
-  Title Race
-</button>
+          >
+            <span className="gameActionContent">
+              <span
+                className="gameActionIcon jimActionIcon"
+                aria-hidden="true"
+              >
+                ★
+              </span>
 
-<button
-  className="penaltyAction"
-  onClick={() =>
-    setScreen('penalty')
-  }
->
-  Penalty
-</button>
+              <span className="gameActionLabel">
+                Jim Round
+              </span>
+            </span>
+          </button>
 
+          <button
+            className="raceAction"
+            onClick={() =>
+              setScreen('race')
+            }
+          >
+            <span className="gameActionContent">
+              <span
+                className="gameActionIcon raceActionIcon"
+                aria-hidden="true"
+              >
+                ⚑
+              </span>
+
+              <span className="gameActionLabel">
+                Title Race
+              </span>
+            </span>
+          </button>
+
+          <button
+            className="penaltyAction"
+            onClick={() =>
+              setScreen('penalty')
+            }
+          >
+            <span className="gameActionContent">
+              <span
+                className="gameActionIcon penaltyActionIcon"
+                aria-hidden="true"
+              >
+                −1
+              </span>
+
+              <span className="gameActionLabel">
+                Penalty
+              </span>
+            </span>
+          </button>
         </footer>
         {goalpostPrompt?.kind ===
           'deuce' && (

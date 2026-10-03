@@ -72,11 +72,6 @@ button {
   justify-self: end;
 }
 
-.setupHeader span {
-  color: #8a95a4;
-  font-size: 15px;
-  font-weight: 700;
-}
 
 @media (max-width: 700px) {
   .setupHeader {
@@ -4446,7 +4441,7 @@ span {
 
 /* ---------- TABLET / MOBILE ---------- */
 
-@media (max-width: 820px) {
+@media (max-width: 520px) {
   .gameHeader.gameHeaderPolished {
     grid-template-columns:
       1fr auto;
@@ -6028,11 +6023,6 @@ button {
   justify-self: end;
 }
 
-.setupHeader span {
-  color: #8a95a4;
-  font-size: 15px;
-  font-weight: 700;
-}
 
 @media (max-width: 700px) {
   .setupHeader {
@@ -17917,11 +17907,6 @@ button {
   justify-self: end;
 }
 
-.setupHeader span {
-  color: #8a95a4;
-  font-size: 15px;
-  font-weight: 700;
-}
 
 @media (max-width: 700px) {
   .setupHeader {
@@ -23873,11 +23858,6 @@ button {
   justify-self: end;
 }
 
-.setupHeader span {
-  color: #8a95a4;
-  font-size: 15px;
-  font-weight: 700;
-}
 
 @media (max-width: 700px) {
   .setupHeader {
@@ -32314,11 +32294,6 @@ button {
   justify-self: end;
 }
 
-.setupHeader span {
-  color: #8a95a4;
-  font-size: 15px;
-  font-weight: 700;
-}
 
 @media (max-width: 700px) {
   .setupHeader {
@@ -38268,12 +38243,6 @@ button {
 .setupHeaderActions {
   grid-column: 3;
   justify-self: end;
-}
-
-.setupHeader span {
-  color: #8a95a4;
-  font-size: 15px;
-  font-weight: 700;
 }
 
 @media (max-width: 700px) {
@@ -47477,11 +47446,6 @@ body::-webkit-scrollbar,
   place-items: center !important;
 }
 
-@media (max-width: 700px) {
-  .jimramiLatin {
-    font-size: 32px !important;
-  }
-}
 
 /* =========================================
    GAME ACTION DOCK
@@ -48225,4 +48189,349 @@ body::-webkit-scrollbar,
     15px center,
     19px center
     !important;
+}
+
+/* =========================================
+   FINAL GAME ACTION RESPONSIVE LAYOUT
+========================================= */
+
+/* Default / desktop / tablet */
+.gameActions {
+  grid-template-columns:
+    repeat(4, minmax(0, 1fr))
+    !important;
+}
+
+.gameActions .penaltyAction {
+  grid-column: auto !important;
+}
+
+
+/* Any landscape screen:
+   always keep the four actions in one row */
+@media (orientation: landscape) {
+  .gameActions {
+    grid-template-columns:
+      repeat(4, minmax(0, 1fr))
+      !important;
+  }
+
+  .gameActions .penaltyAction {
+    grid-column: auto !important;
+  }
+}
+
+
+/* Portrait phones */
+@media
+  (orientation: portrait)
+  and (max-width: 600px) {
+
+  .gameActions {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr))
+      !important;
+  }
+}
+
+
+/* Very narrow portrait phones */
+@media
+  (orientation: portrait)
+  and (max-width: 360px) {
+
+  .gameActions {
+    grid-template-columns:
+      1fr !important;
+  }
+}
+
+/* =========================================
+   ACTION BUTTON TRUE CENTERING
+========================================= */
+
+.gameActions > button {
+  display: grid !important;
+
+  grid-template-columns:
+    32px minmax(0, 1fr) 32px;
+
+  align-items: center;
+  justify-items: center;
+
+  column-gap: 12px;
+
+  padding:
+    18px 20px !important;
+
+  text-align: center !important;
+}
+
+
+/* icon becomes part of the grid */
+
+.gameActions > button::before {
+  position: static !important;
+
+  grid-column: 1;
+
+  transform: none !important;
+
+  left: auto !important;
+  top: auto !important;
+
+  justify-self: center;
+}
+
+
+/* the raw button label occupies the
+   middle grid track automatically */
+
+
+/* accent line stays at the bottom */
+
+.gameActions > button::after {
+  position: absolute;
+}
+
+
+/* Slightly reduce label size on narrower
+   Android/tablet layouts */
+
+@media (max-width: 700px) {
+  .gameActions > button {
+    column-gap: 8px;
+
+    padding:
+      16px 14px !important;
+
+    font-size:
+      14px !important;
+  }
+}
+
+/* =========================================
+   FINAL ACTION BUTTON CONTENT LAYOUT
+========================================= */
+
+.gameActions > button {
+  display: flex !important;
+
+  align-items: center !important;
+  justify-content: center !important;
+
+  padding: 16px !important;
+
+  text-align: center !important;
+}
+
+
+/* stop old ::before icons */
+
+.gameActions > button::before {
+  content: none !important;
+}
+
+
+/* icon + label move as ONE centred unit */
+
+.gameActionContent {
+  display: inline-flex;
+
+  align-items: center;
+  justify-content: center;
+
+  gap: 12px;
+
+  max-width: 100%;
+}
+
+
+/* common icon box */
+
+.gameActionIcon {
+  display: grid;
+  place-items: center;
+
+  flex:
+    0 0 38px;
+
+  width: 38px;
+  height: 38px;
+
+  border-radius: 11px;
+
+  font-size: 15px;
+  font-weight: 900;
+}
+
+
+/* label */
+
+.gameActionLabel {
+  display: block;
+
+  /* Let action labels fit inside their cards */
+
+.gameActionContent {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.gameActionLabel {
+  min-width: 0;
+
+  white-space: normal !important;
+  text-align: center !important;
+
+  line-height: 1.15;
+}
+
+  line-height: 1;
+
+  font-size: 16px;
+  font-weight: 850;
+
+  text-align: left;
+}
+
+
+/* STANDARD */
+
+.standardActionIcon {
+  background-color:
+    #293341;
+
+  background-image:
+    linear-gradient(
+      125deg,
+      transparent 45%,
+      #8fb7df 46%,
+      #8fb7df 54%,
+      transparent 55%
+    ),
+    linear-gradient(
+      #8fb7df,
+      #8fb7df
+    ),
+    linear-gradient(
+      #8fb7df,
+      #8fb7df
+    ),
+    linear-gradient(
+      #8fb7df,
+      #8fb7df
+    ),
+    linear-gradient(
+      #8fb7df,
+      #8fb7df
+    );
+
+  background-repeat:
+    no-repeat;
+
+  background-size:
+    18px 16px,
+    2px 14px,
+    2px 14px,
+    2px 14px,
+    2px 14px;
+
+  background-position:
+    center,
+    12px center,
+    16px center,
+    20px center,
+    24px center;
+}
+
+
+/* JIM */
+
+.jimActionIcon {
+  background:
+    #514018;
+
+  color:
+    #ffd462;
+}
+
+
+/* TITLE RACE */
+
+.raceActionIcon {
+  background:
+    #24374a;
+
+  color:
+    #9cc8ec;
+}
+
+
+/* PENALTY */
+
+.penaltyActionIcon {
+  background:
+    #4b252c;
+
+  color:
+    #ff9ca8;
+
+  font-size: 13px;
+}
+
+
+/* smaller screens */
+
+@media (max-width: 700px) {
+  .gameActionContent {
+    gap: 8px;
+  }
+
+  .gameActionIcon {
+    flex-basis: 32px;
+
+    width: 32px;
+    height: 32px;
+
+    border-radius: 9px;
+  }
+
+  .gameActionLabel {
+    font-size: 13px;
+  }
+}
+
+/* Kill all old pseudo-element action icons */
+
+.gameActions > button:first-child::before,
+.gameActions > button.jimAction::before,
+.gameActions > button.raceAction::before,
+.gameActions > button.penaltyAction::before {
+  content: none !important;
+  display: none !important;
+  background: none !important;
+}
+
+.launchIntroBrand > strong {
+  font-size:
+    clamp(42px, 4.5vw, 42px)
+    !important;
+}
+
+/* Splash JIMRAMI = same size as normal brand */
+
+.launchIntro
+.launchIntroBrand
+.jimramiLatin {
+  font-size: 50px !important;
+  font-weight: 900 !important;
+  line-height: 1 !important;
+  letter-spacing: 0 !important;
+}
+
+.setupHeaderActions > span {
+  color: #8a95a4;
+  font-size: 15px;
+  font-weight: 700;
 }
