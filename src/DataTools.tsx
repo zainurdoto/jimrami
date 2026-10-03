@@ -5,6 +5,12 @@ import {
 } from 'react'
 
 import {
+  Capacitor,
+} from '@capacitor/core'
+
+import SaveFile from './lib/saveFile'
+
+import {
   db,
   type GameRound,
   type GameSession,
@@ -642,6 +648,51 @@ export default function DataTools({
           2
         )
 
+      const today =
+        new Date()
+          .toISOString()
+          .slice(0, 10)
+
+      const fileName =
+        `jim-backup-${today}.json`
+
+      /*
+        Android app:
+        open Android's normal Save As
+        document picker so the user can
+        choose Downloads, Documents,
+        SD card, etc.
+      */
+      if (
+        Capacitor.getPlatform() ===
+        'android'
+      ) {
+        const result =
+          await SaveFile.saveJson({
+            filename: fileName,
+            content: json,
+          })
+
+        /*
+          Pressing Back / Cancel in the
+          Android picker is not an error.
+        */
+        if (!result.saved) {
+          return
+        }
+
+        await appAlert(
+          'Backup Saved',
+          'Backup saved successfully.'
+        )
+
+        return
+      }
+
+      /*
+        Browser / GitHub Pages:
+        keep the normal web download.
+      */
       const blob =
         new Blob(
           [json],
@@ -657,15 +708,9 @@ export default function DataTools({
       const link =
         document.createElement('a')
 
-      const today =
-        new Date()
-          .toISOString()
-          .slice(0, 10)
-
       link.href = url
 
-      link.download =
-        `jim-backup-${today}.json`
+      link.download = fileName
 
       document.body.appendChild(
         link
