@@ -1,5 +1,9 @@
 # JIMRAMI
 
+<p align="center">
+  <img src="public/Jim_README.png" alt="JIMRAMI" width="300">
+</p>
+
 JIMRAMI is a four-player card game derived from "Rummy" or "Gin Rummy", with its own scoring and round rules. This project is a score and session tracker for the game.
 
 It can be used as a **web app** in the browser, or built as an **Android app** with Capacitor.
@@ -12,14 +16,14 @@ It can be used as a **web app** in the browser, or built as an **Android app** w
 
 - Standard rounds
 - Jim rounds
-- Penalty rounds
+- Penalty
 - Goalpost and Deuce
 - Player names and nicknames
 - Session history
 - Player statistics and awards
 - Title Race
 - Local backup and restore
-- Optional Supabase sync between devices
+- (Optional) Supabase sync between devices 
 
 ## Built with
 
@@ -33,6 +37,7 @@ It can be used as a **web app** in the browser, or built as an **Android app** w
 - Motion for UI animation
 - Capacitor for Android
 - Supabase for optional cloud sync
+- Github Pages for web hosting
 
 JIMRAMI uses **React with Vite**. It does not use Next.js or React Router.
 
@@ -142,6 +147,54 @@ If Supabase sync is required in the APK, configure Supabase **before** running `
 
 </details>
 
+## Deploy to GitHub Pages
+
+<details>
+<summary><strong>Show setup instructions</strong></summary>
+
+GitHub Pages hosts the web version of JIMRAMI.
+
+### First-time setup
+
+1. Push the JIMRAMI repository to GitHub.
+2. Open **Settings → Pages**.
+3. Under **Build and deployment**, set **Source** to **GitHub Actions**.
+4. Push a commit to the `main` branch.
+
+That is all that is required for a normal local-only deployment.
+
+GitHub Actions will automatically build JIMRAMI and publish the web app. The `dist` folder does **not** need to be uploaded or committed manually.
+
+The site will normally be available at:
+
+```text
+https://USERNAME.github.io/REPOSITORY/
+```
+
+For this repository:
+
+https://zainurdoto.github.io/jimrami/
+
+### Optional Supabase setup for GitHub Pages
+
+Only do this if Supabase cloud sync is configured.
+
+1. Open **Settings → Secrets and variables → Actions**.
+2. Open the **Variables** tab.
+3. Add these 2 variables:
+
+```text
+VITE_SUPABASE_URL
+VITE_SUPABASE_PUBLISHABLE_KEY
+```
+with values obtained from Supabase - **Connect**. See [Optional Supabase cloud sync](#optional-supabase-cloud-sync).
+
+4. Push a new commit to `main`, or rerun the deployment workflow.
+
+If these variables are not configured, JIMRAMI still works normally with local data only.
+
+</details>
+
 ## Optional Supabase cloud sync
 
 <details>
@@ -178,9 +231,7 @@ Use the **Framework** client-library setup.
 For JIMRAMI:
 
 - Framework: **React**
-- Build tool: **Vite**
-- Next.js: **not used**
-- React Router: **not used**
+- Build tool (Variant): **Vite**
 
 Copy the:
 
