@@ -1,5 +1,3 @@
-# JIMRAMI
-
 <p align="center">
   <img src="public/Jim_README.png" alt="JIMRAMI" width="300">
 </p>
