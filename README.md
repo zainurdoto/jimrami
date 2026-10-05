@@ -39,7 +39,6 @@ It can be used as a **web app** in the browser, or built as an **Android app** w
 - Supabase for optional cloud sync
 - Github Pages for web hosting
 
-JIMRAMI uses **React with Vite**. It does not use Next.js or React Router.
 
 </details>
 
@@ -260,7 +259,7 @@ JIMRAMI/
 └─ android/
 ```
 
-Add:
+Paste inside:
 
 ```env
 VITE_SUPABASE_URL=your_project_url
