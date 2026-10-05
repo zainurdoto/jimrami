@@ -1,111 +1,210 @@
 # JIMRAMI
 
-A browser-based score and session tracker for JIMRAMI card game. Try the [demo](http://zainurdoto.github.io/jimrami/) and import this [mock data](https://zainurdoto.github.io/jimrami/demo_data.zip) for preview 
+JIMRAMI is a scorekeeper for our family card game. It keeps scores, rounds, player history, stats and awards in one place.
 
-JIMRAMI stores data locally in the browser with Dexie. Supabase is optional and adds cloud backup and syncing between devices.
+It can be used as a **web app** in the browser, or built as an **Android app** with Capacitor.
 
-## Run locally
+- [Open the web app](https://zainurdoto.github.io/jimrami/)
+- [Download sample data](https://zainurdoto.github.io/jimrami/demo_data.zip)
+- [Download the latest Android APK](https://github.com/zainurdoto/jimrami/releases/latest)
+
+## Built with
+
+- React
+- TypeScript
+- Vite
+- Dexie / IndexedDB for local data
+- Motion for UI animation
+- Capacitor for Android
+- Supabase for optional cloud sync
+
+## Development setup
+
+I developed JIMRAMI using:
+
+- Node.js
+- npm
+- VSCodium
+- Android Studio for Android builds
+
+VSCodium is not required. Any suitable code editor can be used.
+
+## What it does
+
+JIMRAMI supports the parts of the game that we normally need while playing:
+
+- Standard rounds
+- Jim rounds
+- Penalty rounds
+- Goalpost and Deuce
+- Player names and nicknames
+- Session history
+- Player statistics and awards
+- Title Race
+- Local backup and restore
+- Optional Supabase sync between devices
+
+## Try it with sample data
+
+The web app starts with its own local data on your device.
+
+If you want to see the history, statistics and awards pages without playing a full session first:
+
+1. Open the [web app](https://zainurdoto.github.io/jimrami/).
+2. Download the [sample data](https://zainurdoto.github.io/jimrami/demo_data.zip).
+3. Unzip it.
+4. In JIMRAMI, open **Data**.
+5. Choose **Import Backup** and select the JSON file.
+
+Importing a backup replaces the JIMRAMI data currently stored on that device, so export your own backup first if you want to keep it.
+
+## Where the data is stored
+
+JIMRAMI is **local-first**.
+
+This means the data is stored on the device you are using. You do not need an account, a server or Supabase to use the app.
+
+Use **Data → Export Backup** to save a copy of the players, sessions, rounds and results as a JSON file.
+
+That backup can later be imported on the same device or another device.
+
+## Run it on your computer
+
+Make sure Node.js and npm are installed.
+
+Install the project packages:
 
 ```bash
 npm install
+```
+
+Start the development server:
+
+```bash
 npm run dev
 ```
 
-## Supabase cloud sync
+Open the local address shown in the terminal.
+
+To make a production build:
+
+```bash
+npm run build
+```
+
+## Build the Android app
+
+JIMRAMI uses Capacitor to turn the web app into an Android app.
+
+Build the web app first:
+
+```bash
+npm run build
+```
+
+Then sync the build to the Android project:
+
+```bash
+npx cap sync android
+```
+
+Open the Android project:
+
+```bash
+npx cap open android
+```
+
+Android Studio will open. The APK can then be built from Android Studio.
+
+If Supabase sync is required in the APK, configure Supabase **before** running `npm run build`.
+
+<details>
+<summary><strong>Optional Supabase cloud sync</strong></summary>
+
+JIMRAMI works normally without Supabase.
+
+Supabase is only used if you want the same JIMRAMI data to sync between devices.
 
 ### 1. Create a Supabase project
 
-Create a new Supabase project.
+Create a project in Supabase.
 
-Recommended setup:
+Then open the **SQL Editor** and run:
 
-- Data API: **On**
-- Automatically expose new tables: **Off**
-- Row Level Security (RLS): **On**
+```text
+supabase/schema.sql
+```
 
-Keep the database password private.
+This creates the tables and other database setup used by JIMRAMI.
 
-### 2. Create the database
+### 2. Create a user
 
-Open:
+Open **Authentication** in Supabase and create the user that will be allowed to connect to the JIMRAMI database.
 
-**Supabase → SQL Editor**
+JIMRAMI does not provide public account registration.
 
-Run:
+### 3. Get the connection details
 
-[`supabase/schema.sql`](supabase/schema.sql)
+In your Supabase project, click **Connect**.
 
-This creates the JIMRAMI cloud tables and RLS policies.
+Use the **Framework** / client-library setup.
 
-### 3. Create the cloud user
+JIMRAMI is a **React + Vite** app. It does not use Next.js.
 
-Open:
-
-**Supabase → Authentication → Users → Add user**
-
-Create an email/password user.
-
-Use the same Supabase account on every device that should share the same JIMRAMI data.
-
-### 4. Add local environment variables
-
-From your Supabase project, copy the:
+For this setup you need:
 
 - Project URL
 - Publishable key
 
-Create `.env.local` in the project root:
+Do not use the service-role or secret key in the app.
+
+### 4. Create `.env.local`
+
+Create a file called:
+
+```text
+.env.local
+```
+
+Put it in the main JIMRAMI project folder, beside `package.json`.
+
+```text
+JIMRAMI/
+├─ .env.local
+├─ package.json
+├─ vite.config.ts
+├─ src/
+├─ public/
+└─ android/
+```
+
+Add:
 
 ```env
 VITE_SUPABASE_URL=your_project_url
 VITE_SUPABASE_PUBLISHABLE_KEY=your_publishable_key
 ```
 
-Restart the dev server after changing `.env.local`:
+`.env.local` should not be committed to Git.
+
+### 5. Rebuild JIMRAMI
+
+After changing `.env.local`, rebuild the app:
 
 ```bash
-npm run dev
+npm run build
 ```
 
-Never commit `.env.local`, the database password, or a Supabase secret/service-role key.
+The Supabase project details are added to the app during the build.
 
-### 5. GitHub Pages
+For Android, this means the configured Supabase project is built into the APK.
 
-For hosting on GitHub Pages,
+If you want an APK to use another Supabase project, change the configuration and build a new APK.
 
-In Settings-Secrets and variables-Actions, Add these repository secrets:
+After Supabase is configured, its connection and sync controls are available under **Data** in JIMRAMI.
 
-```text
-VITE_SUPABASE_URL
-VITE_SUPABASE_PUBLISHABLE_KEY
-```
+</details>
 
-Then expose them to the `npm run build` step in `.github/workflows/deploy.yml`:
+## About this project
 
-```yaml
-- name: Build
-  run: npm run build
-  env:
-    VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-    VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
-```
-
-Push normally after changing the workflow:
-
-```bash
-git add .
-git commit -m "Configure Supabase"
-git push
-```
-
-GitHub Actions builds `dist` and deploys it to GitHub Pages.
-
-## How cloud sync works
-
-JIMRAMI always saves gameplay locally first.
-
-- **Device → Cloud:** changes upload automatically. **Cloud Backup** manually pushes the current device data to Supabase.
-- **Cloud → Device:** newer cloud data downloads automatically when it is safe to do so.
-- Revision checks stop one device from overwriting newer data from another device.
-- If a sync fails, local gameplay still works and JIMRAMI keeps the change pending for a retry.
-- Without Supabase configuration, JIMRAMI stays in local-only mode.
+JIMRAMI was made for our own family card game, so some rules, names and scoring are specific to how we play.
