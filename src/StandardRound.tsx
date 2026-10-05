@@ -1,9 +1,14 @@
 import {
+  Fragment,
   useEffect,
   useRef,
   useState,
 } from 'react'
-import { Reorder } from 'motion/react'
+import {
+  AnimatePresence,
+  motion,
+  Reorder,
+} from 'motion/react'
 
 import {
   type ScoreTransitionData,
@@ -188,6 +193,12 @@ export default function StandardRound({
     useState<TieResolutions>(
       {}
     )
+
+  const [
+    dismissedTieSignature,
+    setDismissedTieSignature,
+  ] =
+    useState('')
 
   useEffect(
     () => {
@@ -451,6 +462,261 @@ export default function StandardRound({
         ] !== ''
     )
 
+  const countReady =
+    allScoresEntered &&
+    cardTotal === 312
+
+  /*
+    Counting mode always sorts as soon as the
+    four values make a valid 312 total. Equal
+    values stay in rotation order until a tie
+    resolution says otherwise.
+  */
+  const countDisplayPlayers =
+    countReady
+      ? [...playing].sort(
+          (a, b) => {
+            const aScore =
+              Number(scores[a.id])
+
+            const bScore =
+              Number(scores[b.id])
+
+            if (aScore !== bScore) {
+              return bScore - aScore
+            }
+
+            const resolution =
+              tieResolutions[
+                String(aScore)
+              ]
+
+            if (resolution) {
+              return (
+                resolution.indexOf(a.id) -
+                resolution.indexOf(b.id)
+              )
+            }
+
+            return (
+              a.rotationOrder -
+              b.rotationOrder
+            )
+          }
+        )
+      : playing
+
+  const countTieGroups =
+    countReady
+      ? (() => {
+          const groups:
+            Array<{
+              score: string
+              playerIds: number[]
+              startIndex: number
+            }> = []
+
+          countDisplayPlayers.forEach(
+            (player, index) => {
+              const score =
+                scores[player.id]
+
+              const previous =
+                groups[
+                  groups.length - 1
+                ]
+
+              if (
+                previous &&
+                previous.score === score
+              ) {
+                previous.playerIds.push(
+                  player.id
+                )
+              } else {
+                groups.push({
+                  score,
+                  playerIds: [player.id],
+                  startIndex: index,
+                })
+              }
+            }
+          )
+
+          return groups.filter(
+            (group) =>
+              group.playerIds.length > 1
+          )
+        })()
+      : []
+
+  /*
+    Ties that can remain visible without a
+    decider:
+    - 2nd + 3rd share +2
+    - 3rd + 4th may share 0 only when both
+      card scores are exactly zero
+  */
+  const countAllowedPassiveTie =
+    countTieGroups.find(
+      (group) =>
+        (
+          group.startIndex === 1 &&
+          group.playerIds.length === 2
+        ) ||
+        (
+          group.startIndex === 2 &&
+          group.playerIds.length === 2 &&
+          group.score === '0'
+        )
+    ) ?? null
+
+  const countManualTieGroups =
+    countTieGroups.filter(
+      (group) =>
+        !(
+          (
+            group.startIndex === 1 &&
+            group.playerIds.length === 2
+          ) ||
+          (
+            group.startIndex === 2 &&
+            group.playerIds.length === 2 &&
+            group.score === '0'
+          )
+        )
+    )
+
+  const countUnresolvedManualTieGroups =
+    countManualTieGroups.filter(
+      (group) => {
+        const resolution =
+          tieResolutions[group.score]
+
+        return !(
+          resolution &&
+          resolution.length ===
+            group.playerIds.length &&
+          group.playerIds.every(
+            (id) =>
+              resolution.includes(id)
+          )
+        )
+      }
+    )
+
+  const countAwardsReady =
+    countReady &&
+    countUnresolvedManualTieGroups.length === 0
+
+  const countScoreSignature =
+    countReady
+      ? countDisplayPlayers
+          .map(
+            (player) =>
+              `${player.id}:${scores[player.id]}`
+          )
+          .join('|')
+      : ''
+
+  const countTiePromptSignature =
+    countReady &&
+    countUnresolvedManualTieGroups.length > 0
+      ? `${countScoreSignature}::${countUnresolvedManualTieGroups
+          .map(
+            (group) =>
+              `${group.score}:${group.playerIds.join(',')}`
+          )
+          .join(';')}`
+      : ''
+
+  useEffect(
+    () => {
+      if (
+        mode !== 'count' ||
+        !countTiePromptSignature ||
+        dismissedTieSignature ===
+          countTiePromptSignature ||
+        tieGroups.length > 0
+      ) {
+        return
+      }
+
+      /* Let the cards finish their short slide first. */
+      const timer =
+        window.setTimeout(
+          () => {
+            setTieGroups(
+              countUnresolvedManualTieGroups.map(
+                (group) => [
+                  ...group.playerIds,
+                ]
+              )
+            )
+
+            setTieOrder([])
+          },
+          320
+        )
+
+      return () =>
+        window.clearTimeout(timer)
+    },
+    [
+      mode,
+      countTiePromptSignature,
+      dismissedTieSignature,
+      tieGroups.length,
+      tieResolutions,
+    ]
+  )
+
+  function invalidateCountTieState() {
+    setTieGroups([])
+    setTieOrder([])
+    setTieResolutions({})
+    setDismissedTieSignature('')
+  }
+
+  function closeCountTieDialog() {
+    setDismissedTieSignature(
+      countTiePromptSignature
+    )
+
+    setTieGroups([])
+    setTieOrder([])
+  }
+
+  function countAwardLabel(
+    sessionPlayerId: number
+  ) {
+    if (!countAwardsReady) {
+      return ''
+    }
+
+    const index =
+      countDisplayPlayers.findIndex(
+        (player) =>
+          player.id ===
+          sessionPlayerId
+      )
+
+    const awardedPoints =
+      countAllowedPassiveTie?.startIndex === 1
+        ? [3, 2, 2, 0]
+        : countAllowedPassiveTie?.startIndex === 2 &&
+            countAllowedPassiveTie.score === '0'
+          ? [3, 2, 0, 0]
+          : [3, 2, 1, 0]
+
+    const award =
+      awardedPoints[index] ?? 0
+
+    return award > 0
+      ? `+${award}`
+      : '0'
+  }
+
   function selectPlayer(
     sessionPlayerId:
       number
@@ -460,6 +726,86 @@ export default function StandardRound({
     )
 
     setMessage('')
+  }
+
+  function setPlayerZero(
+    sessionPlayerId: number
+  ) {
+    setMessage('')
+    invalidateCountTieState()
+
+    const editingAuto =
+      autoPlayerId ===
+      sessionPlayerId
+
+    const currentAutoId =
+      editingAuto
+        ? null
+        : autoPlayerId
+
+    if (editingAuto) {
+      setAutoPlayerId(
+        null
+      )
+    }
+
+    setActivePlayerId(
+      sessionPlayerId
+    )
+
+    setScores(
+      (current) => {
+        const next = {
+          ...current,
+          [sessionPlayerId]: '0',
+        }
+
+        if (
+          currentAutoId !==
+            null &&
+          sessionPlayerId !==
+            currentAutoId
+        ) {
+          const manualTotal =
+            playing
+              .filter(
+                (player) =>
+                  player.id !==
+                  currentAutoId
+              )
+              .reduce(
+                (
+                  total,
+                  player
+                ) =>
+                  total +
+                  (
+                    Number(
+                      next[
+                        player.id
+                      ]
+                    ) || 0
+                  ),
+                0
+              )
+
+          const remainder =
+            312 -
+            manualTotal
+
+          next[
+            currentAutoId
+          ] =
+            remainder >= 0
+              ? String(
+                  remainder
+                )
+              : ''
+        }
+
+        return next
+      }
+    )
   }
 
   function pressKey(
@@ -472,6 +818,7 @@ export default function StandardRound({
     }
 
     setMessage('')
+    invalidateCountTieState()
 
     const editingAuto =
       autoPlayerId ===
@@ -657,6 +1004,8 @@ export default function StandardRound({
       312 -
       enteredTotal
 
+    invalidateCountTieState()
+
     setScores(
       (current) => ({
         ...current,
@@ -733,12 +1082,6 @@ export default function StandardRound({
               )
             }
 
-            /*
-              Exact-score ties are
-              decided manually, except
-              the special bottom 0–0
-              rule handled below.
-            */
             const order =
               resolutions[
                 String(
@@ -747,7 +1090,10 @@ export default function StandardRound({
               ]
 
             if (!order) {
-              return 0
+              return (
+                a.rotationOrder -
+                b.rotationOrder
+              )
             }
 
             return (
@@ -761,17 +1107,27 @@ export default function StandardRound({
           }
         )
 
+    const middleTie =
+      ordered.length === 4 &&
+      ordered[0].cardScore !==
+        ordered[1].cardScore &&
+      ordered[1].cardScore ===
+        ordered[2].cardScore &&
+      ordered[2].cardScore !==
+        ordered[3].cardScore
+
     const zeroBottomTie =
       ordered.length === 4 &&
-      ordered[2].cardScore ===
-        0 &&
-      ordered[3].cardScore ===
-        0
+      ordered[2].cardScore === 0 &&
+      ordered[3].cardScore === 0 &&
+      ordered[1].cardScore !== 0
 
     const awardedPoints =
-      zeroBottomTie
-        ? [3, 2, 0, 0]
-        : [3, 2, 1, 0]
+      middleTie
+        ? [3, 2, 2, 0]
+        : zeroBottomTie
+          ? [3, 2, 0, 0]
+          : [3, 2, 1, 0]
 
     return ordered.map(
       (
@@ -781,7 +1137,13 @@ export default function StandardRound({
         ...player,
 
         position:
-          index + 1,
+          middleTie &&
+          (index === 1 || index === 2)
+            ? 2
+            : zeroBottomTie &&
+                (index === 2 || index === 3)
+              ? 3
+              : index + 1,
 
         pointsAwarded:
           awardedPoints[
@@ -792,9 +1154,7 @@ export default function StandardRound({
   }
 
   function beginCountTieResolution() {
-    if (
-      !allScoresEntered
-    ) {
+    if (!allScoresEntered) {
       setMessage(
         'All four scores are required.'
       )
@@ -802,9 +1162,7 @@ export default function StandardRound({
       return false
     }
 
-    if (
-      cardTotal !== 312
-    ) {
+    if (cardTotal !== 312) {
       setMessage(
         `Total must equal 312. Current total: ${cardTotal}.`
       )
@@ -812,74 +1170,23 @@ export default function StandardRound({
       return false
     }
 
-    const scoreGroups:
-      Record<
-        string,
-        number[]
-      > = {}
-
-    playing.forEach(
-      (player) => {
-        const score =
-          scores[
-            player.id
-          ]
-
-        if (
-          !scoreGroups[
-            score
-          ]
-        ) {
-          scoreGroups[
-            score
-          ] = []
-        }
-
-        scoreGroups[
-          score
-        ].push(
-          player.id
-        )
-      }
-    )
-
-    /*
-      A 0–0 tie is the one special
-      case that does NOT need a
-      manual order. Every other
-      equal score is ranked manually.
-    */
-    const ties =
-      Object.entries(
-        scoreGroups
-      )
-        .filter(
-          ([score, group]) =>
-            group.length > 1 &&
-            score !== '0'
-        )
-        .map(
-          ([, group]) =>
-            group
-        )
-
     if (
-      ties.length === 0
+      countUnresolvedManualTieGroups.length === 0
     ) {
       return false
     }
 
+    setDismissedTieSignature('')
+
     setTieGroups(
-      ties
+      countUnresolvedManualTieGroups.map(
+        (group) => [
+          ...group.playerIds,
+        ]
+      )
     )
 
-    setTieOrder(
-      []
-    )
-
-    setTieResolutions(
-      {}
-    )
+    setTieOrder([])
 
     return true
   }
@@ -959,30 +1266,12 @@ export default function StandardRound({
         return
       }
 
-      setTieGroups(
-        []
-      )
-
-      setTieOrder(
-        []
-      )
-
+      setTieGroups([])
+      setTieOrder([])
       setTieResolutions(
-        {}
+        resolutions
       )
-
-      const results =
-        prepareCountResults(
-          resolutions
-        )
-
-      if (!results) {
-        return
-      }
-
-      finishRound(
-        results
-      )
+      setDismissedTieSignature('')
 
       return
     }
@@ -1234,7 +1523,7 @@ export default function StandardRound({
 
     const results =
       prepareCountResults(
-        {}
+        tieResolutions
       )
 
     if (!results) {
@@ -1491,10 +1780,16 @@ export default function StandardRound({
         </>
       ) : (
         <>
-          <div className="roundEntryLayout">
+          <div className="roundEntryLayout countRoundLayout">
             <section>
-              <div className="roundPlayers">
-                {playing.map(
+              <div
+                className={`roundPlayers countRoundPlayers ${
+                  countReady
+                    ? 'ranked'
+                    : ''
+                }`}
+              >
+                {countDisplayPlayers.map(
                   (player) => {
                     const active =
                       player.id ===
@@ -1504,42 +1799,153 @@ export default function StandardRound({
                       player.id ===
                       autoPlayerId
 
-                    return (
-                      <button
-                        key={
+                    const awardLabel =
+                      countAwardLabel(
+                        player.id
+                      )
+
+                    const displayIndex =
+                      countDisplayPlayers.findIndex(
+                        (entry) =>
+                          entry.id ===
                           player.id
-                        }
-                        className={`roundPlayerCard ${
-                          active
-                            ? 'active'
-                            : ''
-                        }`}
-                        onClick={() =>
-                          selectPlayer(
-                            player.id
-                          )
-                        }
+                      )
+
+                    const tiedWithNext =
+                      countAllowedPassiveTie !== null &&
+                      displayIndex ===
+                        countAllowedPassiveTie.startIndex
+
+                    const tiedWithPrevious =
+                      countAllowedPassiveTie !== null &&
+                      displayIndex ===
+                        countAllowedPassiveTie.startIndex + 1
+
+                    return (
+                      <Fragment
+                        key={player.id}
                       >
-                        <div>
-                          <strong>
-                            {getName(
-                              player.playerId
-                            )}
-                          </strong>
+                        <motion.div
+                          layout
+                          className={`roundPlayerCardShell ${
+                            countReady
+                              ? 'isRanked'
+                              : ''
+                          }`}
+                          transition={{
+                            type: 'spring',
+                            stiffness: 420,
+                            damping: 34,
+                          }}
+                        >
+                          <div
+                            className={`roundPlayerCard ${
+                              active
+                                ? 'active'
+                                : ''
+                            } ${
+                              tiedWithNext
+                                ? 'tiedWithNext'
+                                : ''
+                            } ${
+                              tiedWithPrevious
+                                ? 'tiedWithPrevious'
+                                : ''
+                            }`}
+                          >
+                          <button
+                            type="button"
+                            className="roundPlayerSelectButton"
+                            onClick={() =>
+                              selectPlayer(
+                                player.id
+                              )
+                            }
+                          >
+                            <motion.span
+                              className={`roundAwardBadge ${
+                                countAwardsReady
+                                  ? 'visible'
+                                  : ''
+                              } ${
+                                awardLabel === '0'
+                                  ? 'zero'
+                                  : ''
+                              }`}
+                              initial={false}
+                              animate={{
+                                opacity:
+                                  countAwardsReady
+                                    ? 1
+                                    : 0,
+                                scale:
+                                  countAwardsReady
+                                    ? 1
+                                    : 0.86,
+                              }}
+                              aria-hidden={
+                                !countAwardsReady
+                              }
+                            >
+                              {awardLabel}
+                            </motion.span>
 
-                          {automatic && (
-                            <span className="autoScore">
-                              AUTO
+                            <div className="roundPlayerIdentity">
+                              <strong>
+                                {getName(
+                                  player.playerId
+                                )}
+                              </strong>
+
+                              {automatic && (
+                                <span className="autoScore">
+                                  AUTO
+                                </span>
+                              )}
+                            </div>
+
+                            <span className="roundPlayerScore">
+                              {scores[
+                                player.id
+                              ] || '—'}
                             </span>
-                          )}
-                        </div>
+                          </button>
 
-                        <span className="roundPlayerScore">
-                          {scores[
-                            player.id
-                          ] || '—'}
-                        </span>
-                      </button>
+                          <button
+                            type="button"
+                            className="roundZeroButton"
+                            onClick={() =>
+                              setPlayerZero(
+                                player.id
+                              )
+                            }
+                            aria-label={`Set ${getName(
+                              player.playerId
+                            )} score to zero`}
+                            title="Set score to 0"
+                          >
+                            0
+                          </button>
+                        </div>
+                      </motion.div>
+
+                      {countAllowedPassiveTie &&
+                        displayIndex ===
+                          countAllowedPassiveTie.startIndex && (
+                          <div
+                            className="rankTieConnector active countTieConnector"
+                            aria-label={`Positions ${
+                              countAllowedPassiveTie.startIndex + 1
+                            } and ${
+                              countAllowedPassiveTie.startIndex + 2
+                            } are tied`}
+                          >
+                            <span>
+                              TIED
+                            </span>
+                          </div>
+                        )}
+                      </Fragment>
                     )
                   }
                 )}
@@ -1573,7 +1979,7 @@ export default function StandardRound({
               )}
             </section>
 
-            <aside className="numberPadPanel">
+            <aside className="numberPadPanel standardCountPad">
               <div className="numberPadPlayer">
                 <span>
                   ENTERING
@@ -1617,7 +2023,7 @@ export default function StandardRound({
                 )}
 
                 <button
-                  className="numberPadSecondary"
+                  className="numberPadSecondary clearKey"
                   onClick={() =>
                     pressKey(
                       'clear'
@@ -1628,6 +2034,7 @@ export default function StandardRound({
                 </button>
 
                 <button
+                  className="zeroKey"
                   onClick={() =>
                     pressKey(
                       '0'
@@ -1638,7 +2045,7 @@ export default function StandardRound({
                 </button>
 
                 <button
-                  className="numberPadSecondary"
+                  className="numberPadSecondary backspaceKey"
                   onClick={() =>
                     pressKey(
                       'backspace'
@@ -1678,49 +2085,101 @@ export default function StandardRound({
         </>
       )}
 
-      {currentTie && (
-        <div className="tieOverlay">
-          <div className="tieDialog">
-            <span className="tieLabel">
-              TIE
-            </span>
+      <AnimatePresence>
+        {currentTie && (
+          <motion.div
+            className="tieOverlay"
+            initial={{
+              opacity: 0,
+            }}
+            animate={{
+              opacity: 1,
+            }}
+            exit={{
+              opacity: 0,
+            }}
+            transition={{
+              duration: 0.18,
+              ease: 'easeOut',
+            }}
+          >
+            <motion.div
+              className="tieDialog"
+              initial={{
+                opacity: 0,
+                y: 18,
+                scale: 0.97,
+              }}
+              animate={{
+                opacity: 1,
+                y: 0,
+                scale: 1,
+              }}
+              exit={{
+                opacity: 0,
+                y: 10,
+                scale: 0.985,
+              }}
+              transition={{
+                type: 'spring',
+                stiffness: 340,
+                damping: 28,
+                mass: 0.72,
+              }}
+            >
+              <button
+                type="button"
+                className="tieCloseButton"
+                onClick={
+                  closeCountTieDialog
+                }
+                aria-label="Close tie decider"
+                title="Close"
+              >
+                ×
+              </button>
 
-            <h2>
-              {scores[
-                currentTie[0]
-              ]}{' '}
-              points
-            </h2>
+              <span className="tieLabel">
+                TIE DECIDER
+              </span>
 
-            <p>
-              Who ranks higher?
-            </p>
+              <h2>
+                {scores[
+                  currentTie[0]
+                ]}{' '}
+                points
+              </h2>
 
-            <div className="tieChoices">
-              {remainingTiePlayers.map(
-                (
-                  sessionPlayerId
-                ) => (
-                  <button
-                    key={
-                      sessionPlayerId
-                    }
-                    onClick={() =>
-                      chooseTiePlayer(
+              <p>
+                Choose who ranks higher.
+              </p>
+
+              <div className="tieChoices">
+                {remainingTiePlayers.map(
+                  (
+                    sessionPlayerId
+                  ) => (
+                    <button
+                      key={
                         sessionPlayerId
-                      )
-                    }
-                  >
-                    {getSessionPlayerName(
-                      sessionPlayerId
-                    )}
-                  </button>
-                )
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+                      }
+                      onClick={() =>
+                        chooseTiePlayer(
+                          sessionPlayerId
+                        )
+                      }
+                    >
+                      {getSessionPlayerName(
+                        sessionPlayerId
+                      )}
+                    </button>
+                  )
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </main>
   )
 }

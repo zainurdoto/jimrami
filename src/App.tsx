@@ -1043,6 +1043,65 @@ function GoalpostSessionComplete({
   )
 }
 
+function useViewportModalLock() {
+  useEffect(
+    () => {
+      /*
+        Same behaviour as the History delete
+        confirmation: freeze the document at its
+        exact scroll position while a viewport
+        modal is open, then restore it on close.
+      */
+      const scrollX =
+        window.scrollX
+      const scrollY =
+        window.scrollY
+
+      const oldPosition =
+        document.body.style.position
+      const oldTop =
+        document.body.style.top
+      const oldLeft =
+        document.body.style.left
+      const oldWidth =
+        document.body.style.width
+      const oldOverflow =
+        document.body.style.overflow
+
+      document.body.style.position =
+        'fixed'
+      document.body.style.top =
+        `-${scrollY}px`
+      document.body.style.left =
+        `-${scrollX}px`
+      document.body.style.width =
+        '100%'
+      document.body.style.overflow =
+        'hidden'
+
+      return () => {
+        document.body.style.position =
+          oldPosition
+        document.body.style.top =
+          oldTop
+        document.body.style.left =
+          oldLeft
+        document.body.style.width =
+          oldWidth
+        document.body.style.overflow =
+          oldOverflow
+
+        window.scrollTo(
+          scrollX,
+          scrollY
+        )
+      }
+    },
+    []
+  )
+}
+
+
 function EndSessionConfirmModal({
   onCancel,
   onConfirm,
@@ -1050,6 +1109,8 @@ function EndSessionConfirmModal({
   onCancel: () => void
   onConfirm: () => void | Promise<void>
 }) {
+  useViewportModalLock()
+
   const [
     secondsLeft,
     setSecondsLeft,
@@ -1086,7 +1147,7 @@ function EndSessionConfirmModal({
   const canConfirm =
     secondsLeft === 0
 
-  return (
+  return createPortal(
     <div
       className="penaltyConfirmOverlay"
       onClick={onCancel}
@@ -1137,7 +1198,112 @@ function EndSessionConfirmModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
+  )
+}
+
+
+function BlockedDeletePlayerModal({
+  playerName,
+  onClose,
+}: {
+  playerName: string
+  onClose: () => void
+}) {
+  useViewportModalLock()
+
+  return createPortal(
+    <div
+      className="playerEditorOverlay"
+      role="presentation"
+      onClick={onClose}
+    >
+      <div
+        className="playerEditorDialog"
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="delete-blocked-title"
+        aria-describedby="delete-blocked-description"
+        onClick={(event) =>
+          event.stopPropagation()
+        }
+        style={{
+          position: 'relative',
+          width: 'min(100%, 430px)',
+        }}
+      >
+        <button
+          type="button"
+          aria-label="Close"
+          onClick={onClose}
+          style={{
+            position: 'absolute',
+            top: 14,
+            right: 14,
+            display: 'grid',
+            placeItems: 'center',
+            width: 34,
+            height: 34,
+            padding: 0,
+            border:
+              '1px solid #36404d',
+            borderRadius: 10,
+            background: '#1c232d',
+            color: '#9eabb9',
+            fontSize: 20,
+            fontWeight: 800,
+            lineHeight: 1,
+          }}
+        >
+          ×
+        </button>
+
+        <span
+          className="playerEditorLabel"
+          style={{
+            color: '#ef99a4',
+          }}
+        >
+          DELETE BLOCKED
+        </span>
+
+        <h2
+          id="delete-blocked-title"
+          style={{
+            marginRight: 42,
+          }}
+        >
+          {playerName}{' '}
+          can’t be deleted
+        </h2>
+
+        <p
+          id="delete-blocked-description"
+          className="playerEditorNote"
+          style={{
+            marginBottom: 22,
+            lineHeight: 1.55,
+          }}
+        >
+          This player already has game
+          history. Keeping the player
+          preserves past sessions,
+          statistics and awards.
+        </p>
+
+        <div className="playerEditorActions">
+          <button
+            type="button"
+            className="playerEditorSave"
+            onClick={onClose}
+          >
+            OK
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body
   )
 }
 
@@ -1735,6 +1901,13 @@ useState<
   ] = useState(false)
 
   const [
+    blockedDeletePlayer,
+    setBlockedDeletePlayer,
+  ] = useState<string | null>(
+    null
+  )
+
+  const [
     showExitHint,
     setShowExitHint,
   ] = useState(false)
@@ -2192,8 +2365,15 @@ useState<
         .count()
 
     if (previousGames > 0) {
-      window.alert(
-        'This player already has game history and cannot be deleted.'
+      const player =
+        players?.find(
+          (entry) =>
+            entry.id === id
+        )
+
+      setBlockedDeletePlayer(
+        player?.name ??
+          'This player'
       )
 
       return
@@ -3075,6 +3255,15 @@ useState<
           }
 
           if (
+            blockedDeletePlayer !== null
+          ) {
+            setBlockedDeletePlayer(
+              null
+            )
+            return
+          }
+
+          if (
             showEndSessionConfirm
           ) {
             setShowEndSessionConfirm(
@@ -3232,6 +3421,7 @@ useState<
     },
     [
       activeSession,
+      blockedDeletePlayer,
       editingPlayerId,
       goalpostPrompt,
       postGame,
@@ -4667,6 +4857,19 @@ if (
             </div>
           </div>
         </div>
+      )}
+
+      {blockedDeletePlayer && (
+        <BlockedDeletePlayerModal
+          playerName={
+            blockedDeletePlayer
+          }
+          onClose={() =>
+            setBlockedDeletePlayer(
+              null
+            )
+          }
+        />
       )}
 
       {showLaunchIntro && (

@@ -48535,3 +48535,1019 @@ body::-webkit-scrollbar,
   font-size: 15px;
   font-weight: 700;
 }
+
+/* =========================================
+   JIMRAMI BRAND — MATCH NEW SESSION
+========================================= */
+
+/* ACTIVE SESSION: match New Session */
+.gameBrand .jimramiCardLogo {
+  width: 160px !important;
+  height: auto !important;
+  max-height: 150px !important;
+  margin-bottom: 4px !important;
+}
+
+.gameBrand .jimramiLogo {
+  width: 190px !important;
+  height: auto !important;
+  max-width: none !important;
+  max-height: none !important;
+}
+
+.gameBrand .jimramiLatin {
+  font-size: 50px !important;
+  line-height: 1 !important;
+}
+
+
+/* SPLASH: match New Session */
+.launchIntroBrand {
+  gap: 5px !important;
+}
+
+.launchIntroCardLogo {
+  width: 160px !important;
+  height: auto !important;
+  max-width: none !important;
+  max-height: 150px !important;
+  margin-bottom: 4px !important;
+}
+
+.launchIntroJawiLogo {
+  width: 190px !important;
+  height: auto !important;
+  max-width: none !important;
+  max-height: none !important;
+}
+
+.launchIntroBrand > .jimramiLatin {
+  font-size: 50px !important;
+  line-height: 1 !important;
+  letter-spacing: 0 !important;
+}
+
+/* =========================================
+   TABLET HEADER
+   NOTHING BELOW BOTTOM OF JIMRAMI BRAND
+========================================= */
+
+@media (hover: none) and (pointer: coarse)
+       and (min-width: 700px)
+       and (max-width: 1400px) {
+
+  .gameHeader.gameHeaderPolished {
+    display: grid !important;
+
+    grid-template-columns:
+      minmax(0, 1fr)
+      auto
+      minmax(0, 1fr) !important;
+
+    grid-template-rows: auto !important;
+
+    align-items: end !important;
+
+    column-gap: 24px !important;
+    row-gap: 0 !important;
+
+    margin-bottom: 28px !important;
+  }
+
+
+  /* LEFT */
+  .gameRoundArea {
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+
+    justify-self: start !important;
+    align-self: end !important;
+
+    display: grid !important;
+    justify-items: start !important;
+
+    gap: 10px !important;
+  }
+
+
+  /* CENTRE BRAND
+     This determines the bottom boundary */
+  .gameBrand {
+    grid-column: 2 !important;
+    grid-row: 1 !important;
+
+    justify-self: center !important;
+    align-self: end !important;
+  }
+
+
+  /* RIGHT */
+  .gameHeaderTools {
+    grid-column: 3 !important;
+    grid-row: 1 !important;
+
+    justify-self: end !important;
+    align-self: end !important;
+
+    display: grid !important;
+    justify-items: end !important;
+
+    gap: 8px !important;
+  }
+
+
+  .gameHeaderPolished
+  .gameHeaderTools
+  .gameHeaderActions {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+
+    gap: 9px !important;
+
+    grid-column: auto !important;
+    grid-row: auto !important;
+  }
+}
+
+
+/* =========================================
+   TABLET PORTRAIT
+   Compact side controls so they still fit
+   ABOVE the JIMRAMI baseline
+========================================= */
+
+@media (hover: none) and (pointer: coarse)
+       and (min-width: 700px)
+       and (max-width: 1400px)
+       and (orientation: portrait) {
+
+  .gameHeader.gameHeaderPolished {
+    column-gap: 18px !important;
+  }
+
+
+  /* LEFT SIDE */
+
+  .gameRoundArea {
+    gap: 8px !important;
+  }
+
+  .roundLiveClock {
+    padding: 8px 11px !important;
+  }
+
+  .roundLiveClock > strong {
+    font-size: 24px !important;
+  }
+
+  .gameRoundHero > strong {
+    font-size: 40px !important;
+  }
+
+
+  /* RIGHT SIDE:
+     History + Data
+     End Session below
+     Elapsed below that */
+
+  .gameHeaderPolished
+  .gameHeaderTools
+  .gameHeaderActions {
+    display: grid !important;
+
+    grid-template-columns:
+      auto auto !important;
+
+    gap: 7px !important;
+  }
+
+  .gameHeaderActions .endSession {
+    grid-column: 1 / -1 !important;
+    width: 100% !important;
+  }
+
+  .gameHeaderActions button {
+    min-height: 42px !important;
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+
+    font-size: 12px !important;
+  }
+}
+
+/* ============================================================
+   JIMRAMI — STANDARD ROUND COUNT MODE POLISH V2
+
+   Replace the previous STANDARD ROUND COUNT MODE POLISH block
+   with this one, or paste this AFTER it at the very bottom.
+
+   V2:
+   - tablet portrait AND landscape use 1×4 player rows
+   - tablet portrait AND landscape use the compact square keypad
+   - tiny neutral per-player 0 shortcut sits inside the card
+   - completed ranking shows the real +3 / +2 / +1 / 0 award
+     using the same positive green as ScoreTransition
+============================================================ */
+
+/* ---------- PLAYER CARD STRUCTURE ---------- */
+
+.roundPlayerCardShell {
+  min-width: 0;
+}
+
+.roundPlayerCardShell .roundPlayerCard {
+  position: relative;
+  display: block !important;
+  width: 100%;
+  min-width: 0;
+  padding: 0 !important;
+  overflow: hidden;
+}
+
+.roundPlayerSelectButton {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+
+  width: 100%;
+  min-height: 125px;
+  padding: 20px 56px 20px 20px;
+
+  border: 0;
+  background: transparent;
+  color: inherit;
+
+  text-align: left;
+}
+
+.roundPlayerIdentity {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.roundPlayerIdentity > strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---------- +3 / +2 / +1 / 0 RESULT ---------- */
+
+.roundAwardBadge {
+  width: 0;
+  max-width: 0;
+  overflow: hidden;
+
+  color: #8fd6a3;
+  opacity: 0;
+
+  font-size: 19px;
+  font-weight: 950;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.roundAwardBadge.visible {
+  width: auto;
+  max-width: 48px;
+  overflow: visible;
+  opacity: 1;
+}
+
+/* ScoreTransition does not highlight a zero change green. */
+.roundAwardBadge.visible.zero {
+  color: #7f8a98;
+}
+
+/* ---------- TINY ZERO SHORTCUT ---------- */
+
+.roundZeroButton {
+  position: absolute;
+  right: 10px;
+  bottom: 9px;
+  z-index: 2;
+
+  display: grid;
+  place-items: center;
+
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
+  padding: 0;
+
+  border: 1px solid #343e4a;
+  border-radius: 9px;
+
+  background: rgba(20, 25, 32, 0.72);
+  color: #8995a3;
+
+  font-size: 11px;
+  font-weight: 950;
+  line-height: 1;
+}
+
+.roundZeroButton:active {
+  border-color: #566576;
+  background: #222b35;
+  color: #dce4ec;
+  transform: scale(0.94);
+}
+
+/* ============================================================
+   ANDROID / TOUCH TABLET — BOTH ORIENTATIONS
+============================================================ */
+
+@media (hover: none) and (pointer: coarse) and (min-width: 700px) {
+
+  /* Always use four compact rows on tablet. */
+  .countRoundPlayers {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+  }
+
+  .countRoundPlayers .roundPlayerCard {
+    min-height: 76px !important;
+    border-radius: 14px !important;
+    background: #171c24;
+  }
+
+  .countRoundPlayers .roundPlayerCard.active {
+    background: #192131;
+  }
+
+  .countRoundPlayers .roundPlayerSelectButton {
+    min-height: 76px !important;
+    padding: 11px 52px 11px 16px !important;
+    column-gap: 12px !important;
+  }
+
+  .countRoundPlayers .roundPlayerIdentity > strong {
+    font-size: 19px !important;
+  }
+
+  .countRoundPlayers .roundPlayerScore {
+    min-width: 58px !important;
+    text-align: right;
+    font-size: 30px !important;
+  }
+
+  .countRoundPlayers .autoScore {
+    margin-top: 0 !important;
+  }
+
+  .countRoundPlayers .roundAwardBadge {
+    font-size: 18px;
+  }
+
+  .roundZeroButton {
+    right: 9px;
+    bottom: 8px;
+    width: 30px;
+    min-width: 30px;
+    height: 30px;
+    border-radius: 8px;
+  }
+
+  .cardTotal {
+    margin-top: 10px !important;
+    padding: 16px 20px !important;
+  }
+
+  /* ---------- COMPACT CALCULATOR — BOTH ORIENTATIONS ---------- */
+
+  .standardCountPad {
+    justify-self: center;
+    align-self: start;
+
+    width: 302px !important;
+    max-width: 100%;
+    padding: 15px !important;
+
+    border: 1px solid #2b435b !important;
+    border-radius: 19px !important;
+
+    background:
+      linear-gradient(
+        180deg,
+        #111c28,
+        #0f1721
+      ) !important;
+  }
+
+  .standardCountPad .numberPadPlayer {
+    margin-bottom: 12px !important;
+  }
+
+  .standardCountPad .numberPadPlayer > span {
+    color: #7894ad !important;
+  }
+
+  .standardCountPad .numberPadPlayer > strong {
+    color: #edf5fb !important;
+  }
+
+  .standardCountPad .numberPad {
+    grid-template-columns: repeat(3, 72px) !important;
+    justify-content: center !important;
+    gap: 9px !important;
+  }
+
+  .standardCountPad .numberPad button {
+    width: 72px !important;
+    min-width: 72px !important;
+    height: 72px !important;
+    min-height: 72px !important;
+    padding: 0 !important;
+
+    border: 1px solid #344e68 !important;
+    border-radius: 15px !important;
+
+    background: #1d3043 !important;
+    color: #f5f8fb !important;
+
+    font-size: 22px !important;
+    font-weight: 900 !important;
+  }
+
+  .standardCountPad .numberPad button:active {
+    background: #29445f !important;
+    transform: scale(0.96);
+  }
+
+  .standardCountPad .numberPad .zeroKey {
+    border-color: #3c5b79 !important;
+    background: #243c53 !important;
+  }
+
+  .standardCountPad .numberPad .clearKey {
+    border-color: #5c4a2c !important;
+    background: #322817 !important;
+    color: #e3bd68 !important;
+  }
+
+  .standardCountPad .numberPad .backspaceKey {
+    border-color: #5c3840 !important;
+    background: #321f25 !important;
+    color: #e89ba6 !important;
+  }
+
+  .standardCountPad .nextScorePlayer {
+    display: block;
+
+    width: 234px !important;
+    min-height: 48px !important;
+    margin: 11px auto 0 !important;
+
+    border: 1px solid #35516d !important;
+    border-radius: 13px !important;
+
+    background: #1b2b3b !important;
+    color: #d9e9f6 !important;
+  }
+
+  .standardCountPad .nextScorePlayer:disabled {
+    border-color: #27333f !important;
+    background: #151e27 !important;
+    color: #526170 !important;
+  }
+}
+
+/* Portrait still stacks the player list above the calculator. */
+@media (hover: none) and (pointer: coarse)
+       and (min-width: 700px)
+       and (orientation: portrait) {
+  .roundEntryLayout {
+    grid-template-columns: 1fr !important;
+    gap: 18px !important;
+  }
+}
+
+/* ============================================================
+   JIMRAMI — STANDARD ROUND COUNT MODE POLISH V4
+
+   Put this AFTER the older Standard Round polish blocks.
+   It intentionally overrides V1/V2.
+
+   V4
+   - same 1 × 4 count-card layout in webapp, landscape and portrait
+   - compact calculator stays BESIDE the cards on tablet portrait
+   - calculator has its own cool-blue visual language
+   - tiny neutral 0 shortcut lives inside each player card
+   - completed values slide into score order even when tied
+   - normal awards use ScoreTransition green: +3 / +2 / +1 / 0
+   - a valid 2nd/3rd tie becomes +3 / +2 / +2 / 0
+   - that middle tie reuses the Quick Rank purple TIED language
+   - tie dialog gets a close button
+   - tie dialog now enters/exits with a soft fade + spring
+   - exact 3rd/4th 0–0 tie stays as a purple tie, no decider
+============================================================ */
+
+/* ---------- COUNT LAYOUT: WEBAPP + TABLET ---------- */
+
+.roundEntryLayout.countRoundLayout {
+  display: grid !important;
+  grid-template-columns:
+    minmax(0, 1fr)
+    268px !important;
+  align-items: start !important;
+  gap: 18px !important;
+}
+
+.roundEntryLayout.countRoundLayout > section {
+  min-width: 0;
+}
+
+.countRoundPlayers {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 8px !important;
+}
+
+.roundPlayerCardShell {
+  min-width: 0;
+}
+
+.countRoundPlayers .roundPlayerCard {
+  position: relative;
+  display: block !important;
+  width: 100%;
+  min-width: 0;
+  min-height: 72px !important;
+  padding: 0 !important;
+  overflow: hidden;
+
+  border: 1px solid #2d3540 !important;
+  border-radius: 14px !important;
+
+  background: #171c24 !important;
+}
+
+.countRoundPlayers .roundPlayerCard.active {
+  border-color: #7f9ff2 !important;
+  background: #192131 !important;
+  box-shadow:
+    inset 0 0 0 1px
+      rgba(127, 159, 242, 0.14);
+}
+
+.roundPlayerSelectButton {
+  display: grid;
+  grid-template-columns:
+    auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 11px;
+
+  width: 100%;
+  min-height: 72px;
+  padding: 11px 46px 11px 16px;
+
+  border: 0;
+  background: transparent;
+  color: inherit;
+
+  text-align: left;
+}
+
+.roundPlayerIdentity {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.roundPlayerIdentity > strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  font-size: 19px !important;
+}
+
+.countRoundPlayers .roundPlayerScore {
+  min-width: 54px !important;
+  text-align: right;
+  font-size: 29px !important;
+}
+
+.countRoundPlayers .autoScore {
+  margin-top: 0 !important;
+}
+
+/* ---------- SCORE AWARD LABEL ---------- */
+
+.roundAwardBadge {
+  width: 0;
+  max-width: 0;
+  overflow: hidden;
+
+  color: #8fd6a3;
+  opacity: 0;
+
+  font-size: 18px;
+  font-weight: 950;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.roundAwardBadge.visible {
+  width: auto;
+  max-width: 52px;
+  overflow: visible;
+  opacity: 1;
+}
+
+.roundAwardBadge.visible.zero {
+  color: #7f8a98;
+}
+
+/* ---------- SMALL ZERO SHORTCUT ---------- */
+
+.roundZeroButton {
+  position: absolute;
+  right: 9px;
+  bottom: 8px;
+  z-index: 3;
+
+  display: grid;
+  place-items: center;
+
+  width: 27px;
+  min-width: 27px;
+  height: 27px;
+  padding: 0;
+
+  border: 1px solid transparent;
+  border-radius: 999px;
+
+  background: transparent;
+  color: #64707e;
+
+  font-size: 10px;
+  font-weight: 950;
+  line-height: 1;
+}
+
+.roundZeroButton:hover,
+.roundZeroButton:focus-visible {
+  border-color: #3b4653;
+  background: #202731;
+  color: #aab5c1;
+}
+
+.roundZeroButton:active {
+  transform: scale(0.92);
+  background: #252e39;
+  color: #e0e7ee;
+}
+
+/* ---------- ALLOWED 2ND / 3RD TIE ---------- */
+
+.countRoundPlayers .roundPlayerCard.tiedWithNext,
+.countRoundPlayers .roundPlayerCard.tiedWithPrevious {
+  border-color: #6757a1 !important;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(116, 91, 180, 0.08),
+      #171c24 45%
+    ) !important;
+}
+
+.countTieConnector {
+  pointer-events: none;
+  width: calc(100% - 30px) !important;
+  margin: -4px 15px !important;
+}
+
+/* ---------- TOTAL ---------- */
+
+.countRoundLayout .cardTotal {
+  margin-top: 10px !important;
+  min-height: 76px !important;
+  padding: 15px 18px !important;
+}
+
+/* ============================================================
+   CALCULATOR — SAME LOOK IN WEBAPP / LANDSCAPE / PORTRAIT
+============================================================ */
+
+.standardCountPad {
+  justify-self: end !important;
+  align-self: start !important;
+
+  width: 268px !important;
+  max-width: 100%;
+  padding: 14px !important;
+
+  border: 1px solid #2b435b !important;
+  border-radius: 18px !important;
+
+  background:
+    linear-gradient(
+      180deg,
+      #111c28,
+      #0f1721
+    ) !important;
+}
+
+.standardCountPad .numberPadPlayer {
+  margin-bottom: 11px !important;
+}
+
+.standardCountPad .numberPadPlayer > span {
+  color: #7894ad !important;
+}
+
+.standardCountPad .numberPadPlayer > strong {
+  color: #edf5fb !important;
+}
+
+.standardCountPad .numberPad {
+  display: grid !important;
+  grid-template-columns:
+    repeat(3, 66px) !important;
+  justify-content: center !important;
+  gap: 8px !important;
+}
+
+.standardCountPad .numberPad button {
+  width: 66px !important;
+  min-width: 66px !important;
+  height: 66px !important;
+  min-height: 66px !important;
+  padding: 0 !important;
+
+  border: 1px solid #344e68 !important;
+  border-radius: 14px !important;
+
+  background: #1d3043 !important;
+  color: #f5f8fb !important;
+
+  font-size: 21px !important;
+  font-weight: 900 !important;
+}
+
+.standardCountPad .numberPad button:hover {
+  background: #243b51 !important;
+}
+
+.standardCountPad .numberPad button:active {
+  background: #29445f !important;
+  transform: scale(0.96);
+}
+
+.standardCountPad .numberPad .zeroKey {
+  border-color: #3c5b79 !important;
+  background: #243c53 !important;
+}
+
+.standardCountPad .numberPad .clearKey {
+  border-color: #5c4a2c !important;
+  background: #322817 !important;
+  color: #e3bd68 !important;
+}
+
+.standardCountPad .numberPad .backspaceKey {
+  border-color: #5c3840 !important;
+  background: #321f25 !important;
+  color: #e89ba6 !important;
+}
+
+.standardCountPad .nextScorePlayer {
+  display: block;
+
+  width: 214px !important;
+  min-height: 46px !important;
+  margin: 10px auto 0 !important;
+
+  border: 1px solid #35516d !important;
+  border-radius: 12px !important;
+
+  background: #1b2b3b !important;
+  color: #d9e9f6 !important;
+}
+
+.standardCountPad .nextScorePlayer:disabled {
+  border-color: #27333f !important;
+  background: #151e27 !important;
+  color: #526170 !important;
+}
+
+/* ---------- TABLET PORTRAIT: KEEP PAD BESIDE THE CARDS ---------- */
+
+@media (min-width: 681px) and (max-width: 850px) {
+  .roundEntryLayout.countRoundLayout {
+    grid-template-columns:
+      minmax(0, 1fr)
+      238px !important;
+    gap: 14px !important;
+  }
+
+  .standardCountPad {
+    width: 238px !important;
+    padding: 12px !important;
+  }
+
+  .standardCountPad .numberPad {
+    grid-template-columns:
+      repeat(3, 58px) !important;
+    gap: 7px !important;
+  }
+
+  .standardCountPad .numberPad button {
+    width: 58px !important;
+    min-width: 58px !important;
+    height: 58px !important;
+    min-height: 58px !important;
+    border-radius: 13px !important;
+    font-size: 19px !important;
+  }
+
+  .standardCountPad .nextScorePlayer {
+    width: 188px !important;
+    min-height: 43px !important;
+  }
+
+  .roundPlayerSelectButton {
+    padding-left: 14px;
+    padding-right: 42px;
+  }
+
+  .roundPlayerIdentity > strong {
+    font-size: 17px !important;
+  }
+
+  .countRoundPlayers .roundPlayerScore {
+    min-width: 48px !important;
+    font-size: 25px !important;
+  }
+
+  .roundAwardBadge {
+    font-size: 16px;
+  }
+}
+
+/* Phones can stack. Tablet portrait should not. */
+@media (max-width: 680px) {
+  .roundEntryLayout.countRoundLayout {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+
+  .standardCountPad {
+    justify-self: center !important;
+  }
+}
+
+/* ============================================================
+   TIE DECIDER
+============================================================ */
+
+.tieDialog {
+  position: relative;
+}
+
+.tieCloseButton {
+  position: absolute;
+  top: 13px;
+  right: 13px;
+  z-index: 2;
+
+  display: grid;
+  place-items: center;
+
+  width: 34px;
+  min-width: 34px;
+  height: 34px;
+  padding: 0;
+
+  border: 1px solid #3a4552;
+  border-radius: 10px;
+
+  background: #202731;
+  color: #aab4c0;
+
+  font-size: 21px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.tieCloseButton:hover,
+.tieCloseButton:focus-visible {
+  border-color: #566473;
+  background: #28313d;
+  color: #f2f5f8;
+}
+
+.tieCloseButton:active {
+  transform: scale(0.94);
+}
+
+/* =========================================
+   PLAYER DELETE BLOCKED DIALOG
+========================================= */
+
+.deleteBlockedOverlay {
+  animation:
+    deleteBlockedBackdropIn
+    180ms ease-out both;
+}
+
+.deleteBlockedDialog {
+  position: relative;
+
+  width: min(100%, 430px);
+
+  animation:
+    deleteBlockedDialogIn
+    260ms cubic-bezier(
+      0.2,
+      0.9,
+      0.25,
+      1.08
+    ) both;
+}
+
+.deleteBlockedLabel {
+  color: #ef99a4;
+}
+
+.deleteBlockedDialog h2 {
+  margin:
+    8px 42px 10px 0;
+}
+
+.deleteBlockedNote {
+  margin: 0 0 22px;
+
+  color: #98a5b5;
+
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.deleteBlockedClose {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+
+  display: grid;
+  place-items: center;
+
+  width: 34px;
+  height: 34px;
+
+  padding: 0;
+
+  border:
+    1px solid #36404d;
+  border-radius: 10px;
+
+  background: #1c232d;
+  color: #9eabb9;
+
+  font-size: 19px;
+  line-height: 1;
+}
+
+.deleteBlockedClose:hover {
+  border-color: #556273;
+  color: #ffffff;
+}
+
+.deleteBlockedOk {
+  min-width: 110px;
+}
+
+@keyframes deleteBlockedBackdropIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes deleteBlockedDialogIn {
+  from {
+    opacity: 0;
+
+    transform:
+      translateY(10px)
+      scale(0.97);
+  }
+
+  to {
+    opacity: 1;
+
+    transform:
+      translateY(0)
+      scale(1);
+  }
+}
