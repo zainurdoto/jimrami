@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { Player } from './db'
-import { deleteJimVoice, getJimVoiceUrl, saveJimVoice } from './lib/jimVoice'
+import { deleteJimVoice, getJimVoiceStorageMode, getJimVoiceUrl, saveJimVoice, type JimVoiceStorageMode } from './lib/jimVoice'
 
 type Props = { player: Player }
 
@@ -123,6 +123,7 @@ function VoicePlayback({ src, label }: { src: string; label: string }) {
 
 export default function JimVoiceRecorder({ player }: Props) {
   const [savedUrl, setSavedUrl] = useState<string | null>(null)
+  const [storageMode, setStorageMode] = useState<JimVoiceStorageMode | null>(null)
   const [recording, setRecording] = useState(false)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
@@ -140,7 +141,11 @@ export default function JimVoiceRecorder({ player }: Props) {
     let mounted = true
     setSavedUrl(null)
     setMessage('')
-    getJimVoiceUrl(player).then(url => { if (mounted) setSavedUrl(url) })
+    setStorageMode(null)
+    void Promise.all([getJimVoiceStorageMode(), getJimVoiceUrl(player)])
+      .then(([mode, url]) => {
+        if (mounted) { setStorageMode(mode); setSavedUrl(url) }
+      })
       .catch(err => { if (mounted) setMessage(String(err.message || err)) })
     return () => { mounted = false }
   }, [player.id, player.cloudId])
@@ -216,7 +221,9 @@ export default function JimVoiceRecorder({ player }: Props) {
       setSavedUrl(await getJimVoiceUrl(player))
       draft.current = null
       setPreview(null)
-      setMessage('JIM voice saved to Supabase!')
+      const mode = await getJimVoiceStorageMode()
+      setStorageMode(mode)
+      setMessage(mode === 'local' ? 'JIM voice saved on this device.' : 'JIM voice saved to Supabase!')
     } catch (err) { setMessage(err instanceof Error ? err.message : 'Upload failed. Your previous voice is still saved.') }
     finally { setBusy(false) }
   }
@@ -234,7 +241,7 @@ export default function JimVoiceRecorder({ player }: Props) {
 
   return <section className="jimVoiceEditor">
     <strong>PERSONAL JIM VOICE</strong>
-    <p>Record a JIIIIIM! shout up to 5 seconds. (Supabase Required) </p>
+    <p>Record a JIIIIIM! shout (up to 5 seconds).</p>
     {savedUrl && <VoicePlayback key={`saved-${savedUrl}`} src={savedUrl} label="Saved voice" />}
     {previewUrl && <VoicePlayback key={`draft-${previewUrl}`} src={previewUrl} label="New recording preview" />}
     <div className="jimVoiceButtons">
@@ -243,12 +250,21 @@ export default function JimVoiceRecorder({ player }: Props) {
       {savedUrl && <button type="button" disabled={busy || recording} onClick={() => setConfirmDelete(true)}>Delete voice</button>}
     </div>
     {recording && (
-  <p className="jimVoiceRecordingStatus" aria-live="polite">
-    <span className="jimVoiceRecordingDot" aria-hidden="true" />
-    <span>Recording… shout JIM! Automatically stops after 5 seconds.</span>
-  </p>
-)}
+      <p className="jimVoiceRecordingStatus" aria-live="polite">
+        <span className="jimVoiceRecordingDot" aria-hidden="true" />
+        <span>Recording… shout JIM! Automatically stops after 5 seconds.</span>
+      </p>
+    )}
     {message && <p role="status">{message}</p>}
+    {storageMode === 'local' ? (
+      <div className="playerEditorNote" role="note">
+        Local-only voice: saved on this device, not included in data backups. Clearing app data may erase it.
+      </div>
+    ) : storageMode === 'cloud' ? (
+      <div className="playerEditorNote" role="note">
+        Saved to Supabase for this account. Voice recordings are not included in JSON backups.
+      </div>
+    ) : null}
 
     {confirmDelete && createPortal(
       <div className="jimVoiceConfirmBackdrop" onMouseDown={event => {
@@ -257,7 +273,7 @@ export default function JimVoiceRecorder({ player }: Props) {
         <div className="jimVoiceConfirmDialog" role="alertdialog" aria-modal="true" aria-labelledby="jim-voice-delete-title" aria-describedby="jim-voice-delete-description">
           <span className="jimVoiceConfirmEyebrow">DELETE RECORDING</span>
           <h3 id="jim-voice-delete-title">Delete JIM voice?</h3>
-          <p id="jim-voice-delete-description">Remove the saved JIM shout for <strong>{player.name}</strong>? This cannot be undone.</p>
+          <p id="jim-voice-delete-description">Remove the saved JIM shout for <strong>{player.name}</strong>? This cannot be undone. Their game history will not change.</p>
           <div className="jimVoiceConfirmActions">
             <button ref={cancelDeleteRef} type="button" className="jimVoiceKeepButton" disabled={busy} onClick={() => setConfirmDelete(false)}>Cancel</button>
             <button type="button" className="jimVoiceDeleteButton" disabled={busy} onClick={remove}>{busy ? 'Deleting…' : 'Delete voice'}</button>

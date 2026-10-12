@@ -1335,6 +1335,11 @@ export default function DataTools({
               and penalties as a
               JSON file.
             </p>
+            <p>
+              Personal JIM voice audio is not included in backups.
+              Local-only recordings stay on this device and cannot be
+              restored from a JSON backup.
+            </p>
           </div>
 
           <button

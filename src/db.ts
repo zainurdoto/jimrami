@@ -40,6 +40,14 @@ function createCloudId() {
     )
 }
 
+// A device-local voice recording. Deliberately omitted from JSON backups
+// and Supabase game-data synchronization.
+export type LocalJimVoice = {
+  id: string
+  audio: Blob
+  updatedAt: Date
+}
+
 export type Player = {
   id: number
   cloudId?: string
@@ -159,6 +167,7 @@ export type PenaltyResult = {
 }
 
 export const db = new Dexie('JimDatabase') as Dexie & {
+  jimVoices: EntityTable<LocalJimVoice, 'id'>
   players: EntityTable<Player, 'id'>
   sessions: EntityTable<GameSession, 'id'>
   sessionPlayers: EntityTable<SessionPlayer, 'id'>
@@ -461,6 +470,22 @@ db.version(7)
       }
     }
   )
+
+/*
+  Version 8 adds device-only voice storage. This table is not included
+  in the JSON export, import, or Supabase game-data sync lists.
+  No changes to existing game tables or their records.
+*/
+db.version(8).stores({
+  players: '++id, name, createdAt',
+  sessions: '++id, status, startedAt',
+  sessionPlayers: '++id, sessionId, playerId, rotationOrder',
+  rounds: '++id, sessionId, roundNumber, type, createdAt',
+  roundResults: '++id, roundId, sessionId, playerId',
+  jimResults: '++id, roundId, sessionId, jimPlayerId, won',
+  penaltyResults: '++id, sessionId, playerId, roundNumber, createdAt',
+  jimVoices: 'id',
+})
 
 /*
   Give every NEW record a cloudId before
