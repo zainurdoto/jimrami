@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import type { Player } from './db'
 import { deleteJimVoice, getJimVoiceStorageMode, getJimVoiceUrl, saveJimVoice, type JimVoiceStorageMode } from './lib/jimVoice'
 
-type Props = { player: Player }
+type Props = { player: Player; onReady?: (ready: boolean) => void }
 
 function formatTime(seconds: number) {
   if (!Number.isFinite(seconds) || seconds < 0) return '0:00'
@@ -121,7 +121,7 @@ function VoicePlayback({ src, label }: { src: string; label: string }) {
   )
 }
 
-export default function JimVoiceRecorder({ player }: Props) {
+export default function JimVoiceRecorder({ player, onReady }: Props) {
   const [savedUrl, setSavedUrl] = useState<string | null>(null)
   const [storageMode, setStorageMode] = useState<JimVoiceStorageMode | null>(null)
   const [recording, setRecording] = useState(false)
@@ -144,11 +144,20 @@ export default function JimVoiceRecorder({ player }: Props) {
     setStorageMode(null)
     void Promise.all([getJimVoiceStorageMode(), getJimVoiceUrl(player)])
       .then(([mode, url]) => {
-        if (mounted) { setStorageMode(mode); setSavedUrl(url) }
+        if (mounted) {
+          setStorageMode(mode)
+          setSavedUrl(url)
+          onReady?.(true)
+        }
       })
-      .catch(err => { if (mounted) setMessage(String(err.message || err)) })
+      .catch(err => {
+        if (mounted) {
+          setMessage(String(err.message || err))
+          onReady?.(true)
+        }
+      })
     return () => { mounted = false }
-  }, [player.id, player.cloudId])
+  }, [player.id, player.cloudId, onReady])
 
   useEffect(() => () => {
     if (timeout.current !== null) window.clearTimeout(timeout.current)
@@ -258,7 +267,8 @@ export default function JimVoiceRecorder({ player }: Props) {
     {message && <p role="status">{message}</p>}
     {storageMode === 'local' ? (
       <div className="playerEditorNote" role="note">
-        Local-only voice: saved on this device, not included in data backups. Clearing app data may erase it.
+        Local-only voice: saved on this device, not included in data backups.
+        It won't transfer to another device, and clearing app data may erase it.
       </div>
     ) : storageMode === 'cloud' ? (
       <div className="playerEditorNote" role="note">

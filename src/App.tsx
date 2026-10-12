@@ -1959,6 +1959,10 @@ useState<
     null
   )
 
+  // Reveal Edit Player only after its voice storage/recording lookup is complete.
+  // Otherwise the newly added voice controls move the centered dialog on entry.
+  const [playerEditorReady, setPlayerEditorReady] = useState(false)
+
   const [
     editPlayerName,
     setEditPlayerName,
@@ -2156,6 +2160,7 @@ useState<
       return
     }
 
+    setPlayerEditorReady(false)
     setEditingPlayerId(
       player.id
     )
@@ -2172,6 +2177,7 @@ useState<
   }
 
   function closePlayerEditor() {
+    setPlayerEditorReady(false)
     setEditingPlayerId(
       null
     )
@@ -4839,7 +4845,14 @@ if (
 )}
 
       {editingPlayerId !== null && (
-        <div className="playerEditorOverlay">
+        <div
+          className="playerEditorOverlay"
+          style={{
+            visibility: playerEditorReady ? 'visible' : 'hidden',
+            opacity: playerEditorReady ? 1 : 0,
+            transition: 'opacity 140ms ease-out',
+          }}
+        >
           <PlayerEditorScrollLock />
           <div className="playerEditorDialog">
             <span className="playerEditorLabel">
@@ -4949,6 +4962,7 @@ if (
               <JimVoiceRecorder
                 key={editingPlayerId}
                 player={players.find(player => player.id === editingPlayerId)!}
+                onReady={setPlayerEditorReady}
               />
             )}
 
