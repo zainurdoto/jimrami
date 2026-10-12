@@ -1,3 +1,4 @@
+import JimVoiceRecorder from './JimVoiceRecorder'
 import ScoreTransition, {
   type ScoreTransitionData,
 } from './ScoreTransition'
@@ -20,6 +21,63 @@ import './index.css'
 import DataTools from './DataTools'
 import Penalty from './Penalty'
 import HistoryStats from './HistoryStats'
+
+/** One skull = one JIM attempt that ended in a catch / failure. */
+export function JimSkullIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.65"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path d="M12 2.5a8.3 8.3 0 0 0-8.3 8.3c0 3.1 1.4 5.4 3.8 7V20a1.5 1.5 0 0 0 1.5 1.5h6A1.5 1.5 0 0 0 16.5 20v-2.2c2.4-1.6 3.8-3.9 3.8-7A8.3 8.3 0 0 0 12 2.5Z" />
+      <circle cx="9" cy="12.5" r="1.4" fill="currentColor" stroke="none" />
+      <circle cx="15" cy="12.5" r="1.4" fill="currentColor" stroke="none" />
+      <path d="m12 15.3-1 1.5h2l-1-1.5Z" fill="currentColor" stroke="none" />
+      <path d="M10 18.5v2.3M14 18.5v2.3" />
+    </svg>
+  )
+}
+
+function JimFailSkulls({
+  failures,
+  transition = false,
+  pop = false,
+}: {
+  failures: JimResult[]
+  transition?: boolean
+  pop?: boolean
+}) {
+  if (!failures.length) return null
+
+  const orderedFailures = [...failures].sort(
+    (a, b) => a.roundId - b.roundId || a.id - b.id
+  )
+
+  return (
+    <div
+      className={`jimFailSkulls${transition ? ' transition' : ''}${pop ? ' pop' : ''}`}
+      title={`${failures.length} failed JIM ${failures.length === 1 ? 'attempt' : 'attempts'}`}
+      aria-label={`${failures.length} failed JIM ${failures.length === 1 ? 'attempt' : 'attempts'}`}
+    >
+      {orderedFailures.map((result) => (
+        <span
+          key={result.id}
+          className="jimFailSkull"
+          title={`JIM caught after surviving ${result.stepsSurvived} of 6 stages`}
+          aria-hidden="true"
+        >
+          <JimSkullIcon />
+        </span>
+      ))}
+    </div>
+  )
+}
 
 function StandardWinTally({
   count,
@@ -399,6 +457,7 @@ type GoalpostStanding = {
   standardWins: number
   jimWins: JimResult[]
   catches: JimResult[]
+  failures: JimResult[]
 }
 
 function GoalpostPodium({
@@ -499,6 +558,8 @@ function GoalpostPodium({
                       }
                     />
                   )}
+
+                  <JimFailSkulls failures={player.failures} />
                 </div>
               </div>
             </div>
@@ -1102,6 +1163,12 @@ function useViewportModalLock() {
 }
 
 
+// Keep the page behind Edit Player still; the modal itself can scroll.
+function PlayerEditorScrollLock() {
+  useViewportModalLock()
+  return null
+}
+
 function EndSessionConfirmModal({
   onCancel,
   onConfirm,
@@ -1650,6 +1717,23 @@ function App() {
       ]
     ) ?? []
 
+
+  // Failed JIM attempts belong to the player who called JIM,
+  // not to the player awarded scissors for catching them.
+  const jimFailResults =
+    useLiveQuery(
+      async () => {
+        if (!activeSession) return []
+
+        const results = await db.jimResults
+          .where('sessionId')
+          .equals(activeSession.id)
+          .toArray()
+
+        return results.filter((result) => !result.won)
+      },
+      [activeSession?.id, activeSession?.roundNumber]
+    ) ?? []
 
   const previousRoundWinner =
     useLiveQuery(
@@ -3502,6 +3586,13 @@ useState<
                   result.caughtByPlayerId ===
                     player.playerId
               ),
+
+            failures:
+              postGame.jimResults.filter(
+                (result) =>
+                  !result.won &&
+                  result.jimPlayerId === player.playerId
+              ),
           })
         )
 
@@ -3684,6 +3775,7 @@ if (
         players={activeDisplayPlayers}
         jimWins={jimWinResults}
         jimCatches={jimCatchResults}
+        jimFails={jimFailResults}
         onDone={() => {
           if (
             transitionExitRunning.current
@@ -3985,6 +4077,13 @@ if (
                     sessionPlayer.playerId
                 )
 
+              const playerJimFails =
+                jimFailResults.filter(
+                  (result) =>
+                    result.jimPlayerId ===
+                    sessionPlayer.playerId
+                )
+
               return (
                 <article
                   className={`standingRow ${
@@ -4027,6 +4126,8 @@ if (
                         playerJimWins.length >
                           0 ||
                         playerJimCatches.length >
+                          0 ||
+                        playerJimFails.length >
                           0) && (
                         <div className="standingAchievements">
                           {sessionPlayer.wins >
@@ -4055,6 +4156,8 @@ if (
                               }
                             />
                           )}
+
+                          <JimFailSkulls failures={playerJimFails} />
                         </div>
                       )}
                     </div>
@@ -4224,6 +4327,12 @@ if (
                           result.caughtByPlayerId ===
                           player.playerId
                       ),
+
+                    failures:
+                      jimFailResults.filter(
+                        (result) =>
+                          result.jimPlayerId === player.playerId
+                      ),
                   })
                 )
             }
@@ -4270,6 +4379,12 @@ if (
                       (result) =>
                         result.caughtByPlayerId ===
                         player.playerId
+                    ),
+
+                  failures:
+                    jimFailResults.filter(
+                      (result) =>
+                        result.jimPlayerId === player.playerId
                     ),
                 })
               )
@@ -4725,6 +4840,7 @@ if (
 
       {editingPlayerId !== null && (
         <div className="playerEditorOverlay">
+          <PlayerEditorScrollLock />
           <div className="playerEditorDialog">
             <span className="playerEditorLabel">
               PLAYER ID #{editingPlayerId}
@@ -4828,6 +4944,13 @@ if (
                 </button>
               </div>
             </div>
+
+            {players?.find(player => player.id === editingPlayerId) && (
+              <JimVoiceRecorder
+                key={editingPlayerId}
+                player={players.find(player => player.id === editingPlayerId)!}
+              />
+            )}
 
             <p className="playerEditorNote">
               All names above belong to

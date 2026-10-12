@@ -19,6 +19,63 @@ import TitleRace from './TitleRace'
 import RoundEditor from './RoundEditor'
 
 
+/** One skull = one JIM attempt that ended in a catch / failure. */
+export function JimSkullIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.65"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path d="M12 2.5a8.3 8.3 0 0 0-8.3 8.3c0 3.1 1.4 5.4 3.8 7V20a1.5 1.5 0 0 0 1.5 1.5h6A1.5 1.5 0 0 0 16.5 20v-2.2c2.4-1.6 3.8-3.9 3.8-7A8.3 8.3 0 0 0 12 2.5Z" />
+      <circle cx="9" cy="12.5" r="1.4" fill="currentColor" stroke="none" />
+      <circle cx="15" cy="12.5" r="1.4" fill="currentColor" stroke="none" />
+      <path d="m12 15.3-1 1.5h2l-1-1.5Z" fill="currentColor" stroke="none" />
+      <path d="M10 18.5v2.3M14 18.5v2.3" />
+    </svg>
+  )
+}
+
+function JimFailSkulls({
+  failures,
+  transition = false,
+  pop = false,
+}: {
+  failures: JimResult[]
+  transition?: boolean
+  pop?: boolean
+}) {
+  if (!failures.length) return null
+
+  const orderedFailures = [...failures].sort(
+    (a, b) => a.roundId - b.roundId || a.id - b.id
+  )
+
+  return (
+    <div
+      className={`jimFailSkulls${transition ? ' transition' : ''}${pop ? ' pop' : ''}`}
+      title={`${failures.length} failed JIM ${failures.length === 1 ? 'attempt' : 'attempts'}`}
+      aria-label={`${failures.length} failed JIM ${failures.length === 1 ? 'attempt' : 'attempts'}`}
+    >
+      {orderedFailures.map((result) => (
+        <span
+          key={result.id}
+          className="jimFailSkull"
+          title={`JIM caught after surviving ${result.stepsSurvived} of 6 stages`}
+          aria-hidden="true"
+        >
+          <JimSkullIcon />
+        </span>
+      ))}
+    </div>
+  )
+}
+
 function HistoryStandardWinTally({
   count,
 }: {
@@ -5833,6 +5890,7 @@ export default function HistoryStats({
             jimRate,
             averageStages,
             catches,
+            caughtFailures: caught,
             caught:
               caught.length,
             penalties:
@@ -6220,6 +6278,14 @@ export default function HistoryStats({
                                           result.won
                                       )
 
+                                    const playerFails =
+                                      jimResults.filter(
+                                        (result) =>
+                                          result.sessionId === session.id &&
+                                          result.jimPlayerId === player.playerId &&
+                                          !result.won
+                                      )
+
                                     const playerCatches =
                                       jimResults.filter(
                                         (result) =>
@@ -6234,7 +6300,8 @@ export default function HistoryStats({
                                       playerJimWins.length >
                                         0 ||
                                       playerCatches.length >
-                                        0
+                                        0 ||
+                                      playerFails.length > 0
 
                                     return hasAchievements ? (
                                       <div className="historyStandingAchievements">
@@ -6264,6 +6331,8 @@ export default function HistoryStats({
                                             }
                                           />
                                         )}
+
+                                        <JimFailSkulls failures={playerFails} />
                                       </div>
                                     ) : null
                                   })()}
@@ -8122,6 +8191,17 @@ export default function HistoryStats({
                     catches={
                       sessionPlayerDetailData.catches
                     }
+                  />
+                ) : (
+                  <b>0</b>
+                )}
+              </div>
+
+              <div>
+                <span>JIM FAILED</span>
+                {sessionPlayerDetailData.caughtFailures.length > 0 ? (
+                  <JimFailSkulls
+                    failures={sessionPlayerDetailData.caughtFailures}
                   />
                 ) : (
                   <b>0</b>

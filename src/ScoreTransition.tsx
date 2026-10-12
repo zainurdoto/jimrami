@@ -10,6 +10,63 @@ import type {
   SessionPlayer,
 } from './db'
 
+/** One skull = one JIM attempt that ended in a catch / failure. */
+export function JimSkullIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.65"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path d="M12 2.5a8.3 8.3 0 0 0-8.3 8.3c0 3.1 1.4 5.4 3.8 7V20a1.5 1.5 0 0 0 1.5 1.5h6A1.5 1.5 0 0 0 16.5 20v-2.2c2.4-1.6 3.8-3.9 3.8-7A8.3 8.3 0 0 0 12 2.5Z" />
+      <circle cx="9" cy="12.5" r="1.4" fill="currentColor" stroke="none" />
+      <circle cx="15" cy="12.5" r="1.4" fill="currentColor" stroke="none" />
+      <path d="m12 15.3-1 1.5h2l-1-1.5Z" fill="currentColor" stroke="none" />
+      <path d="M10 18.5v2.3M14 18.5v2.3" />
+    </svg>
+  )
+}
+
+function JimFailSkulls({
+  failures,
+  transition = false,
+  pop = false,
+}: {
+  failures: JimResult[]
+  transition?: boolean
+  pop?: boolean
+}) {
+  if (!failures.length) return null
+
+  const orderedFailures = [...failures].sort(
+    (a, b) => a.roundId - b.roundId || a.id - b.id
+  )
+
+  return (
+    <div
+      className={`jimFailSkulls${transition ? ' transition' : ''}${pop ? ' pop' : ''}`}
+      title={`${failures.length} failed JIM ${failures.length === 1 ? 'attempt' : 'attempts'}`}
+      aria-label={`${failures.length} failed JIM ${failures.length === 1 ? 'attempt' : 'attempts'}`}
+    >
+      {orderedFailures.map((result) => (
+        <span
+          key={result.id}
+          className="jimFailSkull"
+          title={`JIM caught after surviving ${result.stepsSurvived} of 6 stages`}
+          aria-hidden="true"
+        >
+          <JimSkullIcon />
+        </span>
+      ))}
+    </div>
+  )
+}
+
 export type ScoreTransitionChange = {
   sessionPlayerId: number
   amount: number
@@ -27,6 +84,7 @@ type Props = {
   players: Player[]
   jimWins: JimResult[]
   jimCatches: JimResult[]
+  jimFails: JimResult[]
   onDone: () => void
 }
 
@@ -369,6 +427,7 @@ export default function ScoreTransition({
   players,
   jimWins,
   jimCatches,
+  jimFails,
   onDone,
 }: Props) {
   const [
@@ -459,6 +518,9 @@ export default function ScoreTransition({
       (change) =>
         change.amount === 1
     )
+
+  const jimFailChange =
+    data.changes.find((change) => change.amount === -3)
 
   const isCaughtJimTransition =
     data.changes.some(
@@ -716,6 +778,24 @@ const rewardTimer =
                 ?.sessionPlayerId ===
                 row.id
 
+            const failedJimThisRound =
+              isCaughtJimTransition &&
+              jimFailChange?.sessionPlayerId === row.id
+
+            const allPlayerJimFails =
+              jimFails
+                .filter((result) =>
+                  result.jimPlayerId === row.afterPlayer.playerId
+                )
+                .sort((a, b) => a.roundId - b.roundId || a.id - b.id)
+
+            // The new skull follows the same delayed reveal as
+            // the star and scissors after the number animation.
+            const visibleJimFails =
+              failedJimThisRound && !revealAchievements
+                ? allPlayerJimFails.slice(0, -1)
+                : allPlayerJimFails
+
             /*
               Hide the newly earned scissors
               until the normal delayed
@@ -768,7 +848,8 @@ const rewardTimer =
                       0) >
                       0 ||
                     visibleJimCatches.length >
-                      0) && (
+                      0 ||
+                    visibleJimFails.length > 0) && (
                     <div className="cleanTransitionMeta">
                       {achievementPlayer.wins >
                         0 && (
@@ -811,6 +892,12 @@ const rewardTimer =
                           }
                         />
                       )}
+
+                      <JimFailSkulls
+                        failures={visibleJimFails}
+                        transition
+                        pop={revealAchievements && failedJimThisRound}
+                      />
                     </div>
                   )}
                 </div>
@@ -870,6 +957,12 @@ const rewardTimer =
                         title="Caught Jim"
                       >
                         ✂︎
+                      </span>
+                    )}
+
+                    {failedJimThisRound && (
+                      <span className="rewardJimSkull" title="JIM failed">
+                        <JimSkullIcon />
                       </span>
                     )}
                   </div>

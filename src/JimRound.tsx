@@ -1,4 +1,19 @@
-import { useEffect, useState } from 'react'
+import { getJimVoiceUrl } from './lib/jimVoice'
+import { getJimSoundEnabled, JimSoundEngine, saveJimSoundEnabled } from './lib/JimSound'
+import './jimSound.css'
+import { useEffect, useRef, useState } from 'react'
+
+// Start loading AND decoding the JIM emblem when this module is imported.
+// App.tsx imports JimRound at startup, so the SVG is normally ready
+// before anyone opens the JIM stage screen.
+const JIM_MODE_SVG_URL = `${import.meta.env.BASE_URL}Jim_Mode.svg`
+const preloadedJimEmblem = typeof Image !== 'undefined' ? new Image() : null
+if (preloadedJimEmblem) {
+  preloadedJimEmblem.src = JIM_MODE_SVG_URL
+  void preloadedJimEmblem.decode?.().catch(() => {
+    // Rendering the regular <img> still works if pre-decoding fails.
+  })
+}
 
 import {
   db,
@@ -143,95 +158,75 @@ function JimProgressWheel({
           viewBox="0 0 300 300"
           aria-hidden="true"
         >
-          {stageAngles.map(
-            (centerAngle, index) => {
-              const stage = index + 1
+          {/* Draw all six arcs first. Only survival makes a segment gold. */}
+          {stageAngles.map((centerAngle, index) => {
+            const stage = index + 1
+            const survived = stage <= stepsSurvived
+            const hidden = stage === hideStage
+            const failed = outcome === 'caught' && stage === currentStage
 
-              const survived =
-                stage <= stepsSurvived
-
-              const current =
-                stage === currentStage
-
-              const hidden =
-                stage === hideStage
-
-              const failed =
-                outcome === 'caught' &&
-                current
-
-              /*
-                Labels sit outside the
-                progress bars.
-              */
-              const label =
-                wheelPoint(
-                  140,
-                  centerAngle
-                )
-
-              return (
-                <g key={stage}>
-                  {hidden && (
-                    <path
-                      className="jimWheelHideOutline"
-                      d={wheelArc(
-                        118,
-                        centerAngle - 23.2,
-                        centerAngle + 23.2
-                      )}
-                    />
-                  )}
-
+            return (
+              <g key={`arc-${stage}`}>
+                {hidden && (
                   <path
-                    className={[
-                      'jimWheelSegment',
-                      survived
-                        ? 'survived'
-                        : '',
-                      current
-                        ? 'current'
-                        : '',
-                      failed
-                        ? 'failed'
-                        : '',
-                    ]
-                      .filter(Boolean)
-                      .join(' ')}
-                    d={wheelArc(
-                      118,
-                      centerAngle - 22,
-                      centerAngle + 22
-                    )}
+                    className="jimWheelHideOutline"
+                    d={wheelArc(118, centerAngle - 23.2, centerAngle + 23.2)}
                   />
+                )}
+                <path
+                  className={[
+                    'jimWheelSegment',
+                    survived ? 'survived' : '',
+                    failed ? 'failed' : '',
+                  ].filter(Boolean).join(' ')}
+                  d={wheelArc(118, centerAngle - 22, centerAngle + 22)}
+                />
+              </g>
+            )
+          })}
 
-                  <text
-                    className={[
-                      'jimWheelNumber',
-                      survived
-                        ? 'survived'
-                        : '',
-                      current
-                        ? 'current'
-                        : '',
-                      hidden
-                        ? 'hidden'
-                        : '',
-                      failed
-                        ? 'failed'
-                        : '',
-                    ]
-                      .filter(Boolean)
-                      .join(' ')}
-                    x={label.x}
-                    y={label.y}
-                  >
-                    {stage}
-                  </text>
-                </g>
-              )
-            }
-          )}
+          {/* Labels render AFTER the arcs so the active number stays visible.
+              The underline, not the segment colour, marks the current stage. */}
+          {stageAngles.map((centerAngle, index) => {
+            const stage = index + 1
+            const survived = stage <= stepsSurvived
+            const hidden = stage === hideStage
+            const failed = outcome === 'caught' && stage === currentStage
+            const active = stage === currentStage && !outcome
+            // Position every stage number at the same distance from the
+            // wheel center, including Stage 3 at the bottom.
+            const labelRadius = 152
+            const label = wheelPoint(labelRadius, centerAngle)
+
+            return (
+              <g key={`label-${stage}`}>
+                <text
+                  className={[
+                    'jimWheelNumber',
+                    survived ? 'survived' : '',
+                    hidden ? 'hidden' : '',
+                    failed ? 'failed' : '',
+                  ].filter(Boolean).join(' ')}
+                  x={label.x}
+                  y={label.y}
+                >
+                  {stage}
+                </text>
+                {active && (
+                  <line
+                    className="jimWheelActiveUnderline"
+                    x1={label.x - 6}
+                    y1={label.y + 11}
+                    x2={label.x + 6}
+                    y2={label.y + 11}
+                    stroke="#9aa6b5"
+                    strokeWidth={2.5}
+                    strokeLinecap="round"
+                  />
+                )}
+              </g>
+            )
+          })}
         </svg>
 
         <div
@@ -240,7 +235,7 @@ function JimProgressWheel({
         >
           <img
             className="jimModeLogo jimModeLogoGhost"
-            src={`${import.meta.env.BASE_URL}Jim_Mode.svg`}
+            src={JIM_MODE_SVG_URL}
             alt=""
           />
 
@@ -261,7 +256,7 @@ function JimProgressWheel({
                 <div key={index}>
                   <img
                     className="jimModeLogo jimModeLogoBand"
-                    src={`${import.meta.env.BASE_URL}Jim_Mode.svg`}
+                    src={JIM_MODE_SVG_URL}
                     alt=""
                     style={{
                       clipPath:
@@ -282,7 +277,7 @@ function JimProgressWheel({
                     >
                       <img
                         className="jimModeLogo jimModeLogoCaughtBand"
-                        src={`${import.meta.env.BASE_URL}Jim_Mode.svg`}
+                        src={JIM_MODE_SVG_URL}
                         alt=""
                         style={{
                           clipPath:
@@ -299,7 +294,7 @@ function JimProgressWheel({
           {outcome === 'win' && (
             <img
               className="jimModeLogo jimModeLogoWinTint"
-              src={`${import.meta.env.BASE_URL}Jim_Mode.svg`}
+              src={JIM_MODE_SVG_URL}
               alt=""
             />
           )}
@@ -395,6 +390,44 @@ export default function JimRound({
   const [saving, setSaving] =
     useState(false)
 
+  // Muting affects both the personal JIM shout and generated sound effects.
+  // Persist only on this device: players can choose their own preferred volume.
+  const [soundEnabled, setSoundEnabled] = useState(getJimSoundEnabled)
+
+  // Show a cinematic intro only for a player who has a saved JIM recording.
+  const [introPlayerId, setIntroPlayerId] = useState<number | null>(null)
+  const [introNeedsTap, setIntroNeedsTap] = useState(false)
+  const introPlayerRef = useRef<number | null>(null)
+  const introAudio = useRef<HTMLAudioElement | null>(null)
+  const introTimeout = useRef<number | null>(null)
+
+  const soundEngine = useRef<JimSoundEngine | null>(null)
+
+  function engine() {
+    if (!soundEngine.current) soundEngine.current = new JimSoundEngine()
+    return soundEngine.current
+  }
+
+  // Download and decode drum recordings before the first JIM press.
+  useEffect(() => {
+    void engine().preload()
+  }, [])
+
+  // Stop all sound when navigating away, including in React Strict Mode.
+  useEffect(() => () => {
+    // Clear any pending intro callback if the round is closed mid-recording.
+    if (introTimeout.current !== null) window.clearTimeout(introTimeout.current)
+    if (introAudio.current) {
+      introAudio.current.onended = null
+      introAudio.current.onerror = null
+      introAudio.current.pause()
+      introAudio.current = null
+    }
+    introPlayerRef.current = null
+    soundEngine.current?.dispose()
+    soundEngine.current = null
+  }, [])
+
   const [
     caughtTintActive,
     setCaughtTintActive,
@@ -487,16 +520,154 @@ export default function JimRound({
     )
   }
 
-  function chooseJim(
-    player: SessionPlayer
-  ) {
-    setJimSessionPlayerId(
-      player.id
-    )
+  // A Supabase signed-URL lookup is asynchronous. Keep the pending promises,
+  // not only the loaded audio, so a player selected immediately after opening
+  // JIM waits for their actual recording instead of being mistaken for silent.
+  const jimSounds = useRef<Map<number, HTMLAudioElement>>(new Map())
+  const voiceLookups = useRef<Map<number, Promise<HTMLAudioElement | null>>>(new Map())
+  const voicePlayerKey = players.map(player => `${player.id}:${player.cloudId ?? ''}`).join('|')
+  useEffect(() => {
+    let cancelled = false
+    const cache = jimSounds.current
+    const pending = voiceLookups.current
+    cache.clear()
+    pending.clear()
+    players.forEach(player => {
+      const lookup = getJimVoiceUrl(player).then(url => {
+        if (cancelled || !url) return null
+        const audio = new Audio(url)
+        audio.preload = 'auto'
+        cache.set(player.id, audio)
+        return audio
+      }).catch(() => null) // Offline/missing sound: proceed without a shout.
+      pending.set(player.id, lookup)
+    })
+    return () => {
+      cancelled = true
+      cache.forEach(audio => audio.pause())
+      cache.clear()
+      pending.clear()
+    }
+  }, [voicePlayerKey])
 
+  function pausePersonalVoices() {
+    jimSounds.current.forEach(sound => {
+      sound.pause()
+      sound.currentTime = 0
+    })
+  }
+
+  function clearIntro() {
+    // Remove handlers BEFORE pausing, so a skipped recording cannot advance twice.
+    introPlayerRef.current = null
+    if (introTimeout.current !== null) window.clearTimeout(introTimeout.current)
+    introTimeout.current = null
+    const audio = introAudio.current
+    introAudio.current = null
+    if (audio) {
+      audio.onended = null
+      audio.onerror = null
+      audio.pause()
+      audio.currentTime = 0
+    }
+    setIntroPlayerId(null)
+    setIntroNeedsTap(false)
+  }
+
+  function beginStages(withSound: boolean) {
+    clearIntro()
+    setPhase('running')
+    if (withSound) engine().start(1)
+  }
+
+  function toggleSound() {
+    const enabled = !soundEnabled
+    setSoundEnabled(enabled)
+    saveJimSoundEnabled(enabled)
+    if (!enabled) {
+      if (introPlayerRef.current !== null) beginStages(false)
+      pausePersonalVoices()
+      soundEngine.current?.stopAll()
+    } else if (phase === 'running') {
+      // This button tap also unlocks audio on mobile browsers / APK WebViews.
+      engine().start(currentStage)
+    }
+  }
+
+  function chooseJim(player: SessionPlayer) {
+    if (introPlayerRef.current !== null) return
+
+    pausePersonalVoices()
+    soundEngine.current?.stopAll()
+    setJimSessionPlayerId(player.id)
     setStepsSurvived(0)
     setHideStage(null)
-    setPhase('running')
+
+    if (!soundEnabled) {
+      beginStages(false)
+      return
+    }
+
+    const cachedAudio = jimSounds.current.get(player.playerId)
+    let pendingAudio = voiceLookups.current.get(player.playerId)
+    if (!cachedAudio && !pendingAudio) {
+      // Extra safeguard if the user taps before the preloading effect runs.
+      const profile = players.find(p => p.id === player.playerId)
+      if (profile) {
+        pendingAudio = getJimVoiceUrl(profile).then(url => {
+          if (!url) return null
+          const audio = new Audio(url)
+          audio.preload = 'auto'
+          jimSounds.current.set(player.playerId, audio)
+          return audio
+        }).catch(() => null)
+        voiceLookups.current.set(player.playerId, pendingAudio)
+      }
+    }
+    if (!cachedAudio && !pendingAudio) {
+      beginStages(true)
+      return
+    }
+
+    // Unlock the drum engine on the actual player tap. Waiting for Supabase
+    // must not be mistaken for "this player has no saved voice".
+    engine().unlock()
+    introPlayerRef.current = player.id
+    setIntroPlayerId(player.id)
+    setIntroNeedsTap(false)
+
+    const done = () => {
+      if (introPlayerRef.current === player.id) beginStages(true)
+    }
+
+    const playShout = (recording: HTMLAudioElement | null) => {
+      if (introPlayerRef.current !== player.id) return // User skipped or left.
+      if (!recording) {
+        done() // Confirmed no saved recording.
+        return
+      }
+      introAudio.current = recording
+      recording.currentTime = 0
+      recording.onended = done
+      recording.onerror = done
+      void recording.play().then(() => {
+        if (introPlayerRef.current === player.id) setIntroNeedsTap(false)
+      }).catch((error: unknown) => {
+        if (introPlayerRef.current !== player.id) return
+        // Mobile WebViews can reject play() after an asynchronous cloud lookup.
+        // Offer an explicit tap instead of silently discarding the JIM shout.
+        if ((error as { name?: string } | null)?.name === 'NotAllowedError') {
+          setIntroNeedsTap(true)
+        } else {
+          done()
+        }
+      })
+    }
+
+    // Failsafe for a stalled network. The modal also has a Skip button.
+    introTimeout.current = window.setTimeout(done, 15000)
+    if (cachedAudio) playShout(cachedAudio) // Synchronous user gesture.
+    else void pendingAudio?.then(playShout, done)
   }
 
   function useHide() {
@@ -509,6 +680,8 @@ export default function JimRound({
           return
         }
 
+    // Hide overlays an acoustic stealth cue; the gendang never stops.
+    if (soundEnabled) engine().hide()
     setHideStage(
       currentStage
     )
@@ -524,15 +697,34 @@ export default function JimRound({
       Jim wins.
     */
     if (currentStage === 6) {
+      pausePersonalVoices()
+      if (soundEnabled) engine().win()
+      else soundEngine.current?.stopAll()
       setStepsSurvived(6)
       setPhase('win')
 
       return
     }
 
+    if (soundEnabled) soundEngine.current?.setStage(currentStage + 1)
     setStepsSurvived(
       (value) => value + 1
     )
+  }
+
+  function caughtJim() {
+    if (phase !== 'running') return
+    pausePersonalVoices()
+    if (soundEnabled) engine().caught()
+    else soundEngine.current?.stopAll()
+    setPhase('caught')
+  }
+
+  function leaveJimRound() {
+    clearIntro()
+    pausePersonalVoices()
+    soundEngine.current?.stopAll()
+    onBack()
   }
 
   /*
@@ -971,7 +1163,7 @@ export default function JimRound({
       <header className="roundHeader">
         <button
           className="roundBack"
-          onClick={onBack}
+          onClick={leaveJimRound}
           disabled={saving}
         >
           ←
@@ -987,6 +1179,18 @@ export default function JimRound({
             {session.roundNumber}
           </h1>
         </div>
+
+        <button
+          type="button"
+          className="jimSoundToggle"
+          onClick={toggleSound}
+          aria-label={soundEnabled ? 'Mute JIM sounds' : 'Unmute JIM sounds'}
+          aria-pressed={!soundEnabled}
+          title={soundEnabled ? 'Mute JIM sounds' : 'Enable JIM sounds'}
+        >
+          <span aria-hidden="true">{soundEnabled ? '🔊' : '🔇'}</span>
+          <span>{soundEnabled ? 'Sound on' : 'Muted'}</span>
+        </button>
       </header>
 
       <div
@@ -1005,24 +1209,17 @@ export default function JimRound({
             </h2>
           </div>
 
-          <div className="jimPlayerChoices">
-            {playing.map(
-              (player) => (
-                <button
-                  key={player.id}
-                  className="jimPlayerChoice"
-                  onClick={() =>
-                    chooseJim(
-                      player
-                    )
-                  }
-                >
-                  {getName(
-                    player.playerId
-                  )}
-                </button>
-              )
-            )}
+          <div className="jimPlayerChoices jimCallerChoices">
+            {playing.map((player) => (
+              <button
+                key={player.id}
+                className="jimPlayerChoice jimCallerChoice"
+                disabled={introPlayerId !== null}
+                onClick={() => chooseJim(player)}
+              >
+                {getName(player.playerId)}
+              </button>
+            ))}
           </div>
         </section>
       )}
@@ -1035,11 +1232,7 @@ export default function JimRound({
                 JIM
               </span>
 
-              <h2>
-                {getName(
-                  jimPlayer.playerId
-                )}
-              </h2>
+              <h2>{getName(jimPlayer.playerId)}</h2>
             </div>
 
             <div className="jimProgress jimProgressWheelCard">
@@ -1094,11 +1287,7 @@ export default function JimRound({
 
               <button
                 className="jimCaughtButton"
-                onClick={() =>
-                  setPhase(
-                    'caught'
-                  )
-                }
+                onClick={caughtJim}
                 disabled={saving}
               >
                 Caught
@@ -1374,6 +1563,49 @@ export default function JimRound({
         )}
       </div>
 
+      {phase === 'choose' && introPlayerId !== null && (
+        <div className="jimIntroOverlay">
+          <div
+            className="jimIntroModal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="jimIntroPlayerName"
+          >
+            <h2 id="jimIntroPlayerName">
+              {getName(sessionPlayers.find(p => p.id === introPlayerId)?.playerId ?? -1)}
+            </h2>
+            <div className="jimIntroWave" aria-hidden="true">
+              {Array.from({ length: 19 }, (_, i) => (
+                <span key={i} style={{ animationDelay: `${(i % 7) * -0.11}s` }} />
+              ))}
+            </div>
+            {introNeedsTap && (
+              <button
+                className="jimIntroSkip"
+                type="button"
+                onClick={() => {
+                  const recording = introAudio.current
+                  if (!recording) return
+                  // This second, direct tap satisfies Android/iOS autoplay rules.
+                  void recording.play().then(() => setIntroNeedsTap(false)).catch(() => {
+                    beginStages(soundEnabled)
+                  })
+                }}
+              >
+                Play shout
+              </button>
+            )}
+            <button
+              className="jimIntroSkip"
+              type="button"
+              autoFocus={!introNeedsTap}
+              onClick={() => beginStages(soundEnabled)}
+            >
+              Skip
+            </button>
+          </div>
+        </div>
+      )}
     </main>
   )
 }

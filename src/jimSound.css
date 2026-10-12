@@ -1,0 +1,31 @@
+/* Compact, persistent JIM audio toggle in the round header. */
+.jimRoundPage .jimSoundToggle {
+  margin-left: auto;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1px solid #354254;
+  border-radius: 12px;
+  background: #171c24;
+  color: #f1f5fa;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.jimRoundPage .jimSoundToggle[aria-pressed='true'] {
+  border-color: #735461;
+  color: #bac1cb;
+}
+.jimRoundPage .jimSoundToggle:focus-visible {
+  outline: 2px solid #95b8e6;
+  outline-offset: 3px;
+}
+@media (max-width: 450px) {
+  .jimRoundPage .roundHeader { gap: 10px; }
+  .jimRoundPage .jimSoundToggle { padding: 8px 10px; font-size: 12px; }
+}
