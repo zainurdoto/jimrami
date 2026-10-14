@@ -1,4 +1,4 @@
-import { getJimVoiceUrl } from './lib/jimVoice'
+import { getJimVoiceUrl, getJimVoiceWaveform } from './lib/jimVoice'
 import { getJimSoundEnabled, JimSoundEngine, saveJimSoundEnabled } from './lib/JimSound'
 import './jimSound.css'
 import { useEffect, useRef, useState } from 'react'
@@ -397,9 +397,36 @@ export default function JimRound({
   // Show a cinematic intro only for a player who has a saved JIM recording.
   const [introPlayerId, setIntroPlayerId] = useState<number | null>(null)
   const [introNeedsTap, setIntroNeedsTap] = useState(false)
+  const [introWaveform, setIntroWaveform] = useState<number[]>([])
+  const [introProgress, setIntroProgress] = useState(0)
   const introPlayerRef = useRef<number | null>(null)
   const introAudio = useRef<HTMLAudioElement | null>(null)
   const introTimeout = useRef<number | null>(null)
+  const introProgressFrame = useRef<number | null>(null)
+
+  function stopIntroProgress() {
+    if (introProgressFrame.current !== null) {
+      cancelAnimationFrame(introProgressFrame.current)
+      introProgressFrame.current = null
+    }
+  }
+
+  function trackIntroProgress(recording: HTMLAudioElement) {
+    stopIntroProgress()
+    const update = () => {
+      if (introAudio.current !== recording || introPlayerRef.current === null) return
+      const duration = recording.duration
+      if (Number.isFinite(duration) && duration > 0) {
+        setIntroProgress(Math.max(0, Math.min(1, recording.currentTime / duration)))
+      }
+      if (!recording.paused && !recording.ended) {
+        introProgressFrame.current = requestAnimationFrame(update)
+      } else {
+        introProgressFrame.current = null
+      }
+    }
+    update()
+  }
 
   const soundEngine = useRef<JimSoundEngine | null>(null)
 
@@ -417,9 +444,13 @@ export default function JimRound({
   useEffect(() => () => {
     // Clear any pending intro callback if the round is closed mid-recording.
     if (introTimeout.current !== null) window.clearTimeout(introTimeout.current)
+    if (introProgressFrame.current !== null) cancelAnimationFrame(introProgressFrame.current)
+    introProgressFrame.current = null
     if (introAudio.current) {
       introAudio.current.onended = null
       introAudio.current.onerror = null
+      introAudio.current.onplay = null
+      introAudio.current.onpause = null
       introAudio.current.pause()
       introAudio.current = null
     }
@@ -537,6 +568,9 @@ export default function JimRound({
         if (cancelled || !url) return null
         const audio = new Audio(url)
         audio.preload = 'auto'
+        // Decode the high-resolution waveform while the player is being selected.
+        // Playback never waits on the visualization.
+        void getJimVoiceWaveform(url, 60)
         cache.set(player.id, audio)
         return audio
       }).catch(() => null) // Offline/missing sound: proceed without a shout.
@@ -562,16 +596,21 @@ export default function JimRound({
     introPlayerRef.current = null
     if (introTimeout.current !== null) window.clearTimeout(introTimeout.current)
     introTimeout.current = null
+    stopIntroProgress()
     const audio = introAudio.current
     introAudio.current = null
     if (audio) {
       audio.onended = null
       audio.onerror = null
+      audio.onplay = null
+      audio.onpause = null
       audio.pause()
       audio.currentTime = 0
     }
     setIntroPlayerId(null)
     setIntroNeedsTap(false)
+    setIntroWaveform([])
+    setIntroProgress(0)
   }
 
   function beginStages(withSound: boolean) {
@@ -618,6 +657,7 @@ export default function JimRound({
           if (!url) return null
           const audio = new Audio(url)
           audio.preload = 'auto'
+          void getJimVoiceWaveform(url, 60)
           jimSounds.current.set(player.playerId, audio)
           return audio
         }).catch(() => null)
@@ -635,6 +675,8 @@ export default function JimRound({
     introPlayerRef.current = player.id
     setIntroPlayerId(player.id)
     setIntroNeedsTap(false)
+    setIntroWaveform([])
+    setIntroProgress(0)
 
     const done = () => {
       if (introPlayerRef.current === player.id) beginStages(true)
@@ -647,9 +689,15 @@ export default function JimRound({
         return
       }
       introAudio.current = recording
+      void getJimVoiceWaveform(recording.src, 60).then(values => {
+        if (introPlayerRef.current === player.id) setIntroWaveform(values)
+      })
       recording.currentTime = 0
       recording.onended = done
       recording.onerror = done
+      // Follow actual media playback, including a second tap on Android.
+      recording.onplay = () => trackIntroProgress(recording)
+      recording.onpause = stopIntroProgress
       void recording.play().then(() => {
         if (introPlayerRef.current === player.id) setIntroNeedsTap(false)
       }).catch((error: unknown) => {
@@ -1574,10 +1622,44 @@ export default function JimRound({
             <h2 id="jimIntroPlayerName">
               {getName(sessionPlayers.find(p => p.id === introPlayerId)?.playerId ?? -1)}
             </h2>
-            <div className="jimIntroWave" aria-hidden="true">
-              {Array.from({ length: 19 }, (_, i) => (
-                <span key={i} style={{ animationDelay: `${(i % 7) * -0.11}s` }} />
-              ))}
+            <div
+              className="jimIntroWave"
+              aria-hidden="true"
+              style={{
+                width: 'min(100%, 330px)',
+                height: '60px',
+                gap: '2px',
+                overflow: 'hidden',
+              }}
+            >
+              {(introWaveform.length ? introWaveform : Array.from({ length: 60 }, () => 0.34)).map((value, index, bars) => {
+                // The audio progress is updated with requestAnimationFrame, so
+                // bars rise one at a time rather than appearing all at once.
+                const playhead = introProgress * bars.length
+                const reveal = Math.max(0, Math.min(1, (playhead - index) * 1.8))
+                // The leading few bars glow brighter, like a traveling spark.
+                const glow = Math.max(0, 1 - Math.abs(playhead - index - 0.5) / 4)
+                return (
+                  <span
+                    key={index}
+                    style={{
+                      flex: '1 1 0',
+                      width: 'auto',
+                      minWidth: 0,
+                      maxWidth: '4px',
+                      height: `${14 + value * 82}%`,
+                      opacity: reveal * (0.76 + glow * 0.24),
+                      transform: `scaleY(${0.18 + reveal * 0.82})`,
+                      transformOrigin: 'center',
+                      background: glow > 0.4 ? '#ffe09a' : '#e8b75e',
+                      boxShadow: glow > 0.45
+                        ? `0 0 ${3 + glow * 7}px rgba(255, 200, 93, ${0.12 + glow * 0.38})`
+                        : 'none',
+                      animation: 'none',
+                    }}
+                  />
+                )
+              })}
             </div>
             {introNeedsTap && (
               <button

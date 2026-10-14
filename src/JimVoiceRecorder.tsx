@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { Player } from './db'
-import { deleteJimVoice, getJimVoiceStorageMode, getJimVoiceUrl, saveJimVoice, type JimVoiceStorageMode } from './lib/jimVoice'
+import { deleteJimVoice, getJimVoiceStorageMode, getJimVoiceUrl, getJimVoiceWaveform, saveJimVoice, type JimVoiceStorageMode } from './lib/jimVoice'
 
 type Props = { player: Player; onReady?: (ready: boolean) => void }
 
@@ -18,13 +18,22 @@ function VoicePlayback({ src, label }: { src: string; label: string }) {
   const [position, setPosition] = useState(0)
   const [duration, setDuration] = useState(0)
   const [error, setError] = useState(false)
+  const [waveform, setWaveform] = useState<number[]>([])
 
   useEffect(() => {
+    let active = true
     setPlaying(false)
     setPosition(0)
     setDuration(0)
     setError(false)
-    return () => { audioRef.current?.pause() }
+    setWaveform([])
+    void getJimVoiceWaveform(src, 45).then(values => {
+      if (active) setWaveform(values)
+    })
+    return () => {
+      active = false
+      audioRef.current?.pause()
+    }
   }, [src])
 
   async function toggle() {
@@ -88,9 +97,9 @@ function VoicePlayback({ src, label }: { src: string; label: string }) {
         </button>
         <div className="jimVoiceWaveArea">
           <div className="jimVoiceWave" aria-hidden="true">
-            {Array.from({ length: 45 }, (_, index) => {
-              const height = 22 + Math.abs(Math.sin(index * 1.73) * Math.cos(index * .39)) * 76
-              const filled = (index / 44) * 100 <= progress
+            {(waveform.length ? waveform : Array.from({ length: 45 }, () => 0.32)).map((value, index, bars) => {
+              const height = 18 + value * 82
+              const filled = bars.length <= 1 ? progress > 0 : (index / (bars.length - 1)) * 100 <= progress
               return <span key={index} style={{ height: `${height}%` }} className={filled ? 'played' : undefined} />
             })}
           </div>

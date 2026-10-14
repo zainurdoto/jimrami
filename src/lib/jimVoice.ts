@@ -105,3 +105,79 @@ export async function deleteJimVoice(player: Player): Promise<void> {
     .remove([cloudPlayerPath(player, context.userId)])
   if (error) throw error
 }
+
+
+const waveformCache = new Map<string, Promise<number[]>>()
+let waveformAudioContext: AudioContext | null = null
+
+function getWaveformAudioContext() {
+  if (waveformAudioContext) return waveformAudioContext
+  const AudioContextCtor = window.AudioContext || (window as Window & typeof globalThis & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
+  if (!AudioContextCtor) return null
+  waveformAudioContext = new AudioContextCtor()
+  return waveformAudioContext
+}
+
+function buildWaveformBars(channelData: Float32Array, barCount: number) {
+  if (!channelData.length || barCount <= 0) return []
+  const bars: number[] = []
+  const samplesPerBar = Math.max(1, Math.floor(channelData.length / barCount))
+  for (let index = 0; index < barCount; index += 1) {
+    const start = index * samplesPerBar
+    const end = index === barCount - 1 ? channelData.length : Math.min(channelData.length, start + samplesPerBar)
+    let peak = 0
+    for (let sample = start; sample < end; sample += 1) {
+      const amplitude = Math.abs(channelData[sample] || 0)
+      if (amplitude > peak) peak = amplitude
+    }
+    bars.push(peak)
+  }
+
+  const smoothed = bars.map((value, index) => {
+    const previous = bars[index - 1] ?? value
+    const next = bars[index + 1] ?? value
+    return (previous + value + next) / 3
+  })
+  const max = Math.max(...smoothed, 0)
+  if (max <= 0) return Array.from({ length: barCount }, () => 0.32)
+
+  return smoothed.map(value => {
+    const normalized = Math.pow(value / max, 0.72)
+    return Math.max(0.16, Math.min(1, normalized))
+  })
+}
+
+export async function getJimVoiceWaveform(src: string, barCount = 45): Promise<number[]> {
+  if (!src || barCount <= 0 || typeof window === 'undefined' || typeof fetch === 'undefined') {
+    return []
+  }
+  const key = `${barCount}:${src}`
+  const cached = waveformCache.get(key)
+  if (cached) return cached
+
+  const task = (async () => {
+    try {
+      const response = await fetch(src)
+      if (!response.ok) throw new Error(`Waveform fetch failed: ${response.status}`)
+      const arrayBuffer = await response.arrayBuffer()
+      const audioContext = getWaveformAudioContext()
+      if (!audioContext) return []
+      const decoded = await audioContext.decodeAudioData(arrayBuffer.slice(0))
+      const channelData = decoded.numberOfChannels > 1
+        ? (() => {
+            const left = decoded.getChannelData(0)
+            const right = decoded.getChannelData(1)
+            const mixed = new Float32Array(Math.min(left.length, right.length))
+            for (let i = 0; i < mixed.length; i += 1) mixed[i] = (left[i] + right[i]) / 2
+            return mixed
+          })()
+        : decoded.getChannelData(0)
+      return buildWaveformBars(channelData, barCount)
+    } catch {
+      return []
+    }
+  })()
+
+  waveformCache.set(key, task)
+  return task
+}

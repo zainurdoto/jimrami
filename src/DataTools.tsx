@@ -1310,7 +1310,7 @@ export default function DataTools({
             </span>
 
             <h2>
-              Backup & Restore
+              Backup, Restore & Sync
             </h2>
           </div>
 

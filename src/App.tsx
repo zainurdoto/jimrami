@@ -4855,10 +4855,6 @@ if (
         >
           <PlayerEditorScrollLock />
           <div className="playerEditorDialog">
-            <span className="playerEditorLabel">
-              PLAYER ID #{editingPlayerId}
-            </span>
-
             <h2>
               Edit Player
             </h2>

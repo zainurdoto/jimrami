@@ -1088,6 +1088,7 @@ if (
               height={CHART_HEIGHT}
             >
               <LineChart
+                accessibilityLayer={false}
                 data={visibleData}
                 margin={{
                   top: 25,

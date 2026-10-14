@@ -6,6 +6,15 @@ import {
 } from 'react'
 
 import { createPortal } from 'react-dom'
+import {
+  PolarAngleAxis,
+  PolarGrid,
+  PolarRadiusAxis,
+  Radar,
+  RadarChart,
+  ResponsiveContainer,
+  Tooltip,
+} from 'recharts'
 
 import { useLiveQuery } from 'dexie-react-hooks'
 
@@ -638,6 +647,22 @@ type MvpStat = {
   standardRounds: number
   jimAttempts: number
 }
+
+// The radar breaks down the SAME measures as MVP v1. All axes are
+// normalized to 0–100, without modifying the actual MVP formula.
+const MVP_RADAR_COLORS = ['#b98421', '#378aaf', '#cc695d', '#8f76ca'] as const
+
+const MVP_RADAR_AXES: {
+  label: string
+  value: (player: MvpStat) => number
+}[] = [
+  { label: 'Standard wins', value: player => player.standardWinRate },
+  { label: 'Avg points', value: player => (player.averageStandardPoints / 3) * 100 },
+  { label: 'JIM success', value: player => player.jimWinRate },
+  { label: 'JIM slayer', value: player => player.catchesPerSession * 100 },
+  { label: 'Session wins', value: player => player.sessionWinRate },
+  { label: 'Consistency', value: player => player.consistencyScore },
+]
 
 type WinStreakPathEvent = {
   type:
@@ -1592,6 +1617,31 @@ export default function HistoryStats({
 }: Props) {
   const [tab, setTab] =
     useState<Tab>('sessions')
+
+  // The comparison starts with the top MVP player. Additional players are
+  // explicitly added and can be hidden without losing their selections.
+  const [radarSelection, setRadarSelection] =
+    useState<Array<{ playerId: number; visible: boolean }> | null>(null)
+  const [radarPickerOpen, setRadarPickerOpen] = useState(false)
+  const radarPickerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!radarPickerOpen) return
+    const dismissPicker = (event: PointerEvent) => {
+      if (!radarPickerRef.current?.contains(event.target as Node)) {
+        setRadarPickerOpen(false)
+      }
+    }
+    const dismissOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setRadarPickerOpen(false)
+    }
+    document.addEventListener('pointerdown', dismissPicker)
+    document.addEventListener('keydown', dismissOnEscape)
+    return () => {
+      document.removeEventListener('pointerdown', dismissPicker)
+      document.removeEventListener('keydown', dismissOnEscape)
+    }
+  }, [radarPickerOpen])
 
   const [
     playerSort,
@@ -3032,6 +3082,49 @@ export default function HistoryStats({
       ): player is MvpStat =>
         Boolean(player)
     )
+
+  const radarSelected = (radarSelection ?? [
+    ...(mvpStats[0] ? [{ playerId: mvpStats[0].playerId, visible: true }] : []),
+  ]).filter(item => mvpStats.some(player => player.playerId === item.playerId))
+
+  const radarPlayers = radarSelected.map(item =>
+    mvpStats.find(player => player.playerId === item.playerId) ?? null
+  )
+
+  const visibleRadarPlayers = radarPlayers.filter((player, index) =>
+    player !== null && radarSelected[index]?.visible
+  )
+
+  function addRadarPlayer(playerId: number) {
+    if (radarSelected.length >= 4 || radarSelected.some(item => item.playerId === playerId)) return
+    setRadarSelection([...radarSelected, { playerId, visible: true }])
+    setRadarPickerOpen(false)
+  }
+
+  function toggleRadarPlayer(playerId: number) {
+    setRadarSelection(radarSelected.map(item =>
+      item.playerId === playerId ? { ...item, visible: !item.visible } : item
+    ))
+  }
+
+  function removeRadarPlayer(playerId: number) {
+    if (radarSelected.length === 1) return
+    setRadarSelection(radarSelected.filter(item => item.playerId !== playerId))
+  }
+
+  const remainingRadarPlayers = mvpStats.filter(player =>
+    !radarSelected.some(item => item.playerId === player.playerId)
+  )
+
+  const radarData = MVP_RADAR_AXES.map(axis => {
+    const row: Record<string, string | number> = { metric: axis.label }
+    radarPlayers.forEach((player, slot) => {
+      row[`p${slot}`] = player
+        ? Math.round(Math.max(0, Math.min(100, axis.value(player))) * 10) / 10
+        : 0
+    })
+    return row
+  })
 
   const classicArtetaAllTimeAward =
     useMemo<Award>(() => {
@@ -7404,6 +7497,166 @@ export default function HistoryStats({
             </p>
           </div>
 
+          {mvpStats.length > 0 && (
+            <section className="mvpRadarSection" aria-labelledby="mvp-radar-title">
+              <div className="mvpRadarHeader">
+                <h3 id="mvp-radar-title">Performance radar</h3>
+              </div>
+
+              <div className="mvpRadarControls" aria-label="Players in radar comparison">
+                <div className="mvpRadarChips">
+                  {radarSelected.map((selection, index) => {
+                    const player = radarPlayers[index]
+                    if (!player) return null
+                    const color = MVP_RADAR_COLORS[index]
+                    return (
+                      <div
+                        className={`mvpRadarChip${selection.visible ? '' : ' is-hidden'}`}
+                        key={selection.playerId}
+                        style={{ borderColor: `${color}8a` }}
+                      >
+                        <button
+                          type="button"
+                          className="mvpRadarVisibility"
+                          onClick={() => toggleRadarPlayer(selection.playerId)}
+                          aria-label={`${selection.visible ? 'Hide' : 'Show'} ${player.name} on radar`}
+                          aria-pressed={selection.visible}
+                          title={selection.visible ? 'Hide from chart' : 'Show on chart'}
+                          style={{ color }}
+                        >
+                          <span className="mvpRadarChipDot" aria-hidden="true" style={{ backgroundColor: color }} />
+                          <span className="mvpRadarChipName">{player.name}</span>
+                          <svg className="mvpRadarEye" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            {selection.visible ? (
+                              <>
+                                <path d="M2.5 12s3.7-6 9.5-6 9.5 6 9.5 6-3.7 6-9.5 6-9.5-6-9.5-6Z" />
+                                <circle cx="12" cy="12" r="2.7" />
+                              </>
+                            ) : (
+                              <>
+                                <path d="M3 3 21 21" />
+                                <path d="M10.7 6.1A11 11 0 0 1 12 6c5.8 0 9.5 6 9.5 6a16 16 0 0 1-3.1 3.7M6.3 7.4A17 17 0 0 0 2.5 12s3.7 6 9.5 6c1.4 0 2.8-.4 4-1" />
+                              </>
+                            )}
+                          </svg>
+                        </button>
+                        {radarSelected.length > 1 && (
+                          <button
+                            type="button"
+                            className="mvpRadarRemove"
+                            onClick={() => removeRadarPlayer(selection.playerId)}
+                            aria-label={`Remove ${player.name} from comparison`}
+                            title="Remove player"
+                          >×</button>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+                {radarSelected.length < 4 && remainingRadarPlayers.length > 0 && (
+                  <div className="mvpRadarPicker" ref={radarPickerRef}>
+                    <button
+                      type="button"
+                      className={`mvpRadarAddButton${radarPickerOpen ? ' is-open' : ''}`}
+                      onClick={() => setRadarPickerOpen(open => !open)}
+                      aria-expanded={radarPickerOpen}
+                      aria-haspopup="true"
+                    >
+                      <span aria-hidden="true">+</span> Add player
+                    </button>
+                    {radarPickerOpen && (
+                      <div className="mvpRadarPickerMenu" role="group" aria-label="Choose player to compare">
+                        <div className="mvpRadarPickerList">
+                          {remainingRadarPlayers.map(player => (
+                            <button
+                              type="button"
+                              key={player.playerId}
+                              onClick={() => addRadarPlayer(player.playerId)}
+                            >
+                              <span>{player.name}</span>
+                              <span className="mvpRadarPickerPlus" aria-hidden="true">+</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <div
+                className="mvpRadarChart"
+                style={{
+                  width: '100%',
+                  height: 'clamp(440px, 78vw, 760px)',
+                  minWidth: 0,
+                  background: 'linear-gradient(160deg, #f7f1e4, #ece3d1)',
+                  border: '1px solid #d6c9b5',
+                  boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, .6)',
+                }}
+                role="img"
+                aria-label={`Radar comparison of ${visibleRadarPlayers.map(player => player!.name).join(', ') || 'no visible players'}. Axes are Standard wins, average points, JIM success, JIM slayer, session wins and consistency. Values range from 0 to 100.`}
+              >
+                <ResponsiveContainer width="100%" height="100%">
+                  <RadarChart
+                    accessibilityLayer={false}
+                    data={radarData}
+                    cx="50%"
+                    cy="50%"
+                    outerRadius="96%"
+                    margin={{ top: 42, bottom: 42, left: 56, right: 56 }}
+                  >
+                    <PolarGrid gridType="polygon" stroke="#bbae9a" strokeWidth={1.1} />
+                    <PolarAngleAxis
+                      dataKey="metric"
+                      axisLine={false}
+                      tick={{ fill: '#2b3744', stroke: 'none', strokeWidth: 0, fontSize: 16, fontWeight: 700 }}
+                      tickSize={20}
+                      tickLine={false}
+                    />
+                    <PolarRadiusAxis
+                      angle={70}
+                      domain={[0, 100]}
+                      tickCount={6}
+                      tick={{ fill: '#5d6874', stroke: 'none', strokeWidth: 0, fontSize: 12, fontWeight: 650 }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    {radarPlayers.map((player, slot) => player && radarSelected[slot]?.visible ? (
+                      <Radar
+                        key={player.playerId}
+                        name={player.name}
+                        dataKey={`p${slot}`}
+                        stroke={MVP_RADAR_COLORS[slot]}
+                        fill={MVP_RADAR_COLORS[slot]}
+                        fillOpacity={0.07}
+                        strokeWidth={3.6}
+                        dot={{ r: 4.1, fill: MVP_RADAR_COLORS[slot], stroke: '#f4ecdd', strokeWidth: 1.3 }}
+                        isAnimationActive={false}
+                      />
+                    ) : null)}
+                    <Tooltip
+                      formatter={(value, name) => [`${Number(value ?? 0).toFixed(1)} / 100`, name]}
+                      contentStyle={{
+                        background: '#fffaf1',
+                        border: '1px solid #d6c9b5',
+                        borderRadius: 12,
+                        color: '#1c2b3a',
+                        fontSize: 14,
+                        boxShadow: '0 8px 30px rgba(10, 20, 40, .18)',
+                      }}
+                      labelStyle={{ color: '#1c2b3a', fontWeight: 800 }}
+                      itemStyle={{ padding: 0 }}
+                    />
+                  </RadarChart>
+                </ResponsiveContainer>
+                {visibleRadarPlayers.length === 0 && (
+                  <div className="mvpRadarEmpty">Select a player to display.</div>
+                )}
+              </div>
+            </section>
+          )}
+
           <section className="mvpLeaderboardSection">
             <div className="mvpLeaderboardHeader">
               <span>
@@ -7604,22 +7857,6 @@ export default function HistoryStats({
             </div>
           </section>
 
-          <div className="mvpMethodNote">
-            <strong>
-              MVP v1
-            </strong>
-
-            <p>
-              Jim catch opportunity is
-              not stored for every
-              historical round, so the
-              catcher part currently uses
-              catches per session. We can
-              make this exact later if we
-              start storing every active
-              player for each Jim round.
-            </p>
-          </div>
         </section>
       )}
 
