@@ -6,6 +6,7 @@ import {
 } from 'react'
 
 import { createPortal } from 'react-dom'
+import { AnimatePresence, motion } from 'motion/react'
 import {
   PolarAngleAxis,
   PolarGrid,
@@ -659,7 +660,7 @@ const MVP_RADAR_AXES: {
   { label: 'Standard wins', value: player => player.standardWinRate },
   { label: 'Avg points', value: player => (player.averageStandardPoints / 3) * 100 },
   { label: 'JIM success', value: player => player.jimWinRate },
-  { label: 'JIM slayer', value: player => player.catchesPerSession * 100 },
+  { label: 'JIM catch', value: player => player.catchesPerSession * 100 },
   { label: 'Session wins', value: player => player.sessionWinRate },
   { label: 'Consistency', value: player => player.consistencyScore },
 ]
@@ -1624,6 +1625,16 @@ export default function HistoryStats({
     useState<Array<{ playerId: number; visible: boolean }> | null>(null)
   const [radarPickerOpen, setRadarPickerOpen] = useState(false)
   const radarPickerRef = useRef<HTMLDivElement>(null)
+  const [radarIsMobile, setRadarIsMobile] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia('(max-width: 650px)').matches
+  )
+  useEffect(() => {
+    const media = window.matchMedia('(max-width: 650px)')
+    const update = () => setRadarIsMobile(media.matches)
+    media.addEventListener('change', update)
+    update()
+    return () => media.removeEventListener('change', update)
+  }, [])
 
   useEffect(() => {
     if (!radarPickerOpen) return
@@ -1650,6 +1661,17 @@ export default function HistoryStats({
     useState<PlayerSort>(
       'total'
     )
+
+  const [collapsedPlayerIds, setCollapsedPlayerIds] = useState<Set<number>>(() => new Set())
+
+  function togglePlayerStats(playerId: number) {
+    setCollapsedPlayerIds(previous => {
+      const next = new Set(previous)
+      if (next.has(playerId)) next.delete(playerId)
+      else next.add(playerId)
+      return next
+    })
+  }
 
   const [
     expandedSessionId,
@@ -1691,6 +1713,9 @@ export default function HistoryStats({
     useState<number | null>(
       null
     )
+
+  // Lets Android Back close the expanded Title Race before leaving its page.
+  const [raceFullscreenActive, setRaceFullscreenActive] = useState(false)
 
 
   const [
@@ -1858,9 +1883,12 @@ export default function HistoryStats({
         if (
           raceSessionId !== null
         ) {
-          setRaceSessionId(
-            null
-          )
+          if (raceFullscreenActive) {
+            window.dispatchEvent(new Event('jimrami-title-race-close-expanded'))
+            setRaceFullscreenActive(false)
+          } else {
+            setRaceSessionId(null)
+          }
           event.preventDefault()
           return
         }
@@ -1915,6 +1943,7 @@ export default function HistoryStats({
       initialAwardSessionId,
       onBack,
       raceSessionId,
+      raceFullscreenActive,
       roundDetailsSessionId,
       sessionPlayerDetail,
     ]
@@ -3125,6 +3154,51 @@ export default function HistoryStats({
     })
     return row
   })
+
+
+  // Keep the original clear one-line desktop ticks. Only phones use
+  // compact two-line labels so the chart fits without clipping.
+  function renderRadarMobileTick(props: any) {
+    const label = String(props?.payload?.value ?? '')
+    const x = Number(props?.x ?? 0)
+    const y = Number(props?.y ?? 0)
+    const anchor = props?.textAnchor === 'start' || props?.textAnchor === 'end'
+      ? props.textAnchor
+      : 'middle'
+    const parts: Record<string, string[]> = {
+      'Standard wins': ['Standard', 'wins'],
+      'Avg points': ['Avg', 'points'],
+      'JIM success': ['JIM', 'success'],
+      'JIM catch': ['JIM', 'catch'],
+      'Session wins': ['Session', 'wins'],
+    }
+    const lines = parts[label] ?? [label]
+    return (
+      <text
+        x={x}
+        y={y}
+        fill="#2b3744"
+        textAnchor={anchor}
+        fontSize={12}
+        fontWeight={700}
+        stroke="none"
+        strokeWidth={0}
+        style={{
+          stroke: 'none',
+          strokeWidth: 0,
+          WebkitTextStroke: '0px transparent',
+          textShadow: 'none',
+          paintOrder: 'normal',
+        }}
+      >
+        {lines.map((line, index) => (
+          <tspan key={`${label}-${index}`} x={x} dy={index === 0 ? 0 : 15}>
+            {line}
+          </tspan>
+        ))}
+      </text>
+    )
+  }
 
   const classicArtetaAllTimeAward =
     useMemo<Award>(() => {
@@ -5734,6 +5808,7 @@ export default function HistoryStats({
           players={
             sessionDisplayPlayers
           }
+          onExpandedChange={setRaceFullscreenActive}
           onBack={() =>
             setRaceSessionId(
               null
@@ -5992,6 +6067,66 @@ export default function HistoryStats({
           }
         })()
 
+  const radarPlot = (
+                <ResponsiveContainer width="100%" height="100%">
+                  <RadarChart
+                    accessibilityLayer={false}
+                    data={radarData}
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={radarIsMobile ? '80%' : '96%'}
+                    margin={radarIsMobile
+                      ? { top: 48, bottom: 48, left: 52, right: 52 }
+                      : { top: 42, bottom: 42, left: 56, right: 56 }}
+                  >
+                    <PolarGrid gridType="polygon" stroke="#bbae9a" strokeWidth={1.1} />
+                    <PolarAngleAxis
+                      dataKey="metric"
+                      axisLine={false}
+                      tick={radarIsMobile
+                        ? renderRadarMobileTick
+                        : { fill: '#2b3744', stroke: 'none', strokeWidth: 0, fontSize: 16, fontWeight: 700 }}
+                      tickSize={radarIsMobile ? 12 : 20}
+                      tickLine={false}
+                    />
+                    <PolarRadiusAxis
+                      angle={70}
+                      domain={[0, 100]}
+                      tickCount={6}
+                      tick={{ fill: '#5d6874', stroke: 'none', strokeWidth: 0, fontSize: 12, fontWeight: 650 }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    {radarPlayers.map((player, slot) => player && radarSelected[slot]?.visible ? (
+                      <Radar
+                        key={player.playerId}
+                        name={player.name}
+                        dataKey={`p${slot}`}
+                        stroke={MVP_RADAR_COLORS[slot]}
+                        fill={MVP_RADAR_COLORS[slot]}
+                        fillOpacity={0.07}
+                        strokeWidth={3.6}
+                        dot={{ r: 4.1, fill: MVP_RADAR_COLORS[slot], stroke: '#f4ecdd', strokeWidth: 1.3 }}
+                        isAnimationActive={false}
+                      />
+                    ) : null)}
+                    <Tooltip
+                      formatter={(value, name) => [`${Number(value ?? 0).toFixed(1)} / 100`, name]}
+                      contentStyle={{
+                        background: '#fffaf1',
+                        border: '1px solid #d6c9b5',
+                        borderRadius: 12,
+                        color: '#1c2b3a',
+                        fontSize: 14,
+                        boxShadow: '0 8px 30px rgba(10, 20, 40, .18)',
+                      }}
+                      labelStyle={{ color: '#1c2b3a', fontWeight: 800 }}
+                      itemStyle={{ padding: 0 }}
+                    />
+                  </RadarChart>
+                </ResponsiveContainer>
+  )
+
   return (
     <main
       className="app historyPage"
@@ -6186,6 +6321,7 @@ export default function HistoryStats({
                   >
                     <button
                       className="historySessionSummary"
+                      aria-expanded={expanded}
                       onClick={() =>
                         setExpandedSessionId(
                           expanded
@@ -6240,7 +6376,17 @@ export default function HistoryStats({
                       </div>
                     </button>
 
-                    {expanded && (
+                    <AnimatePresence initial={false}>
+                      {expanded && (
+                        <motion.div
+                          key="session-details"
+                          className="jimHistoryCollapse"
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+                          style={{ overflow: 'hidden' }}
+                        >
                       <div className="historySessionDetails">
                         <div className="historySessionMeta historySessionMetaExpanded">
                           <div>
@@ -6514,7 +6660,17 @@ export default function HistoryStats({
                           )}
                         </div>
 
-                        {roundDetailsOpen && (
+                        <AnimatePresence initial={false}>
+                          {roundDetailsOpen && (
+                            <motion.div
+                              key="round-details"
+                              className="jimHistoryCollapse"
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: 'auto', opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              transition={{ duration: 0.26, ease: [0.22, 1, 0.36, 1] }}
+                              style={{ overflow: 'hidden' }}
+                            >
                           <section className="historyRoundDetails">
                             <div className="historyRoundDetailsHeader">
                               <div>
@@ -6916,11 +7072,14 @@ export default function HistoryStats({
                               )}
                             </div>
                           </section>
-                        )}
-
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
 
                       </div>
-                    )}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </article>
                 )
               }
@@ -6944,9 +7103,10 @@ export default function HistoryStats({
 
             <PlayerSortPicker
               value={playerSort}
-              onChange={
-                setPlayerSort
-              }
+              onChange={(next) => {
+                setPlayerSort(next)
+                setCollapsedPlayerIds(new Set())
+              }}
             />
           </section>
 
@@ -6997,7 +7157,41 @@ export default function HistoryStats({
                         TOTAL PTS
                       </span>
                     </div>
+
+                    <button
+                      type="button"
+                      className="playerStatsCollapseButton"
+                      aria-expanded={!collapsedPlayerIds.has(player.id)}
+                      aria-label={`${collapsedPlayerIds.has(player.id) ? 'Expand' : 'Collapse'} ${player.name} statistics`}
+                      onClick={() => togglePlayerStats(player.id)}
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        width="21"
+                        height="21"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        aria-hidden="true"
+                      >
+                        <path d="m6 9 6 6 6-6" />
+                      </svg>
+                    </button>
                   </header>
+
+                  <AnimatePresence initial={false}>
+                    {!collapsedPlayerIds.has(player.id) && (
+                      <motion.div
+                        className="playerStatsBody"
+                        key="statistics"
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+                        style={{ overflow: 'hidden' }}
+                      >
 
                   <div className="playerStatSectionLabel">
                     SESSION
@@ -7353,6 +7547,9 @@ export default function HistoryStats({
                       )}
                     </div>
                   )}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </article>
               )
             )}
@@ -7586,70 +7783,35 @@ export default function HistoryStats({
 
               <div
                 className="mvpRadarChart"
+                onMouseDownCapture={event => {
+                  // Prevent the browser focusing a Recharts SVG shape on mouse click.
+                  // Keep mousemove/touch tooltip interactions intact.
+                  if (event.target instanceof SVGElement) event.preventDefault()
+                }}
+                onFocusCapture={event => {
+                  // Some Android WebViews focus SVG shapes on tap despite the
+                  // CSS reset. Blur the shape, not the player-selection buttons.
+                  if (event.target instanceof SVGElement) {
+                    (event.target as SVGElement & { blur?: () => void }).blur?.()
+                  }
+                }}
+                onClickCapture={event => {
+                  if (event.target instanceof SVGElement) {
+                    (event.target as SVGElement & { blur?: () => void }).blur?.()
+                  }
+                }}
                 style={{
                   width: '100%',
-                  height: 'clamp(440px, 78vw, 760px)',
+                  height: radarIsMobile ? 'clamp(360px, 108vw, 520px)' : 'clamp(440px, 78vw, 760px)',
                   minWidth: 0,
                   background: 'linear-gradient(160deg, #f7f1e4, #ece3d1)',
                   border: '1px solid #d6c9b5',
                   boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, .6)',
                 }}
                 role="img"
-                aria-label={`Radar comparison of ${visibleRadarPlayers.map(player => player!.name).join(', ') || 'no visible players'}. Axes are Standard wins, average points, JIM success, JIM slayer, session wins and consistency. Values range from 0 to 100.`}
+                aria-label={`Radar comparison of ${visibleRadarPlayers.map(player => player!.name).join(', ') || 'no visible players'}. Axes are Standard wins, average points, JIM success, JIM catch, session wins and consistency. Values range from 0 to 100.`}
               >
-                <ResponsiveContainer width="100%" height="100%">
-                  <RadarChart
-                    accessibilityLayer={false}
-                    data={radarData}
-                    cx="50%"
-                    cy="50%"
-                    outerRadius="96%"
-                    margin={{ top: 42, bottom: 42, left: 56, right: 56 }}
-                  >
-                    <PolarGrid gridType="polygon" stroke="#bbae9a" strokeWidth={1.1} />
-                    <PolarAngleAxis
-                      dataKey="metric"
-                      axisLine={false}
-                      tick={{ fill: '#2b3744', stroke: 'none', strokeWidth: 0, fontSize: 16, fontWeight: 700 }}
-                      tickSize={20}
-                      tickLine={false}
-                    />
-                    <PolarRadiusAxis
-                      angle={70}
-                      domain={[0, 100]}
-                      tickCount={6}
-                      tick={{ fill: '#5d6874', stroke: 'none', strokeWidth: 0, fontSize: 12, fontWeight: 650 }}
-                      axisLine={false}
-                      tickLine={false}
-                    />
-                    {radarPlayers.map((player, slot) => player && radarSelected[slot]?.visible ? (
-                      <Radar
-                        key={player.playerId}
-                        name={player.name}
-                        dataKey={`p${slot}`}
-                        stroke={MVP_RADAR_COLORS[slot]}
-                        fill={MVP_RADAR_COLORS[slot]}
-                        fillOpacity={0.07}
-                        strokeWidth={3.6}
-                        dot={{ r: 4.1, fill: MVP_RADAR_COLORS[slot], stroke: '#f4ecdd', strokeWidth: 1.3 }}
-                        isAnimationActive={false}
-                      />
-                    ) : null)}
-                    <Tooltip
-                      formatter={(value, name) => [`${Number(value ?? 0).toFixed(1)} / 100`, name]}
-                      contentStyle={{
-                        background: '#fffaf1',
-                        border: '1px solid #d6c9b5',
-                        borderRadius: 12,
-                        color: '#1c2b3a',
-                        fontSize: 14,
-                        boxShadow: '0 8px 30px rgba(10, 20, 40, .18)',
-                      }}
-                      labelStyle={{ color: '#1c2b3a', fontWeight: 800 }}
-                      itemStyle={{ padding: 0 }}
-                    />
-                  </RadarChart>
-                </ResponsiveContainer>
+                {radarPlot}
                 {visibleRadarPlayers.length === 0 && (
                   <div className="mvpRadarEmpty">Select a player to display.</div>
                 )}
@@ -7856,7 +8018,6 @@ export default function HistoryStats({
               )}
             </div>
           </section>
-
         </section>
       )}
 

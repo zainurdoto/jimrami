@@ -1,11 +1,14 @@
 import {
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react'
+import { createPortal } from 'react-dom'
 
 import { useLiveQuery } from 'dexie-react-hooks'
-import { motion } from 'motion/react'
+import { AnimatePresence, motion } from 'motion/react'
+import { lockChartLandscape, unlockChartLandscape } from './lib/chartOrientation'
 
 import {
   CartesianGrid,
@@ -32,6 +35,7 @@ type Props = {
   sessionPlayers: SessionPlayer[]
   players: Player[]
   onBack: () => void
+  onExpandedChange?: (expanded: boolean) => void
 }
 
 type LabelViewBox = {
@@ -142,6 +146,7 @@ export default function TitleRace({
   sessionPlayers,
   players,
   onBack,
+  onExpandedChange,
 }: Props) {
   const rounds = useLiveQuery(
     () =>
@@ -193,6 +198,92 @@ export default function TitleRace({
 
   const [playing, setPlaying] =
     useState(false)
+
+  const [raceExpanded, setRaceExpanded] = useState(false)
+  // Keep a synchronous flag for Android Back events which may arrive before
+  // React has painted the expanded overlay.
+  const raceExpandedRef = useRef(false)
+  const racePlotRef = useRef<HTMLElement | null>(null)
+  // Native range dragging is unreliable inside a 90-degree rotated
+  // landscape fallback on Android WebView. Track the finger ourselves.
+  const expandedScrubPointer = useRef<number | null>(null)
+
+  function changeRaceExpanded(expanded: boolean) {
+    raceExpandedRef.current = expanded
+    setRaceExpanded(expanded)
+    onExpandedChange?.(expanded)
+  }
+  const [racePlotWidth, setRacePlotWidth] = useState(0)
+
+  // Reserve only the room that endpoint names need. A fixed 120 px
+  // margin was squeezing the plot on phones.
+  useEffect(() => {
+    const element = racePlotRef.current
+    if (!element) return
+
+    const update = () => {
+      const width = Math.round(element.getBoundingClientRect().width)
+      setRacePlotWidth(previous => previous === width ? previous : width)
+    }
+    update()
+    if (typeof ResizeObserver === 'undefined') {
+      window.addEventListener('resize', update)
+      return () => window.removeEventListener('resize', update)
+    }
+    const observer = new ResizeObserver(update)
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [raceExpanded])
+
+  const endpointMargin = racePlotWidth < 450
+    ? 74
+    : racePlotWidth < 760
+      ? 90
+      : 120
+
+  useEffect(() => {
+    if (!raceExpanded) return
+    let active = true
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    void lockChartLandscape().then(locked => {
+      if (!active && locked) void unlockChartLandscape()
+    })
+    return () => {
+      active = false
+      document.body.style.overflow = previousOverflow
+      void unlockChartLandscape()
+    }
+  }, [raceExpanded])
+
+  // Listen while Title Race is mounted, instead of installing Android Back
+  // only after the expansion effect runs. The parent also checks this state
+  // as a fallback before navigating back to Sessions.
+  useEffect(() => {
+    const onBack = (event: Event) => {
+      if (!raceExpandedRef.current) return
+      changeRaceExpanded(false)
+      event.preventDefault()
+      event.stopImmediatePropagation()
+    }
+    const onCloseRequest = () => {
+      if (raceExpandedRef.current) changeRaceExpanded(false)
+    }
+    const onEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && raceExpandedRef.current) {
+        event.preventDefault()
+        changeRaceExpanded(false)
+      }
+    }
+    window.addEventListener('jimrami-back-request', onBack, true)
+    window.addEventListener('jimrami-title-race-close-expanded', onCloseRequest)
+    window.addEventListener('keydown', onEscape)
+    return () => {
+      window.removeEventListener('jimrami-back-request', onBack, true)
+      window.removeEventListener('jimrami-title-race-close-expanded', onCloseRequest)
+      window.removeEventListener('keydown', onEscape)
+    }
+  }, [onExpandedChange])
 
   const [
     playbackSpeed,
@@ -714,19 +805,28 @@ export default function TitleRace({
         undefined
       )
 
+  // A completed session may no longer have a "future" goalpost.
+  // Still draw its saved initial/current target once the race reaches it.
+  const nearbyGoalpostTargets = [
+    session.goalpostInitial,
+    currentGoalpost,
+  ].filter((target): target is number =>
+    typeof target === 'number' &&
+    Number.isFinite(target) &&
+    target > 0 &&
+    rawMaximum >= target * 0.75
+  )
+
   const goalpostLineTargets =
     Array.from(
       new Set([
         ...reachedGoalpostTargets,
-        ...(showFutureGoalpostLine &&
-        futureGoalpost !==
-          undefined
+        ...nearbyGoalpostTargets,
+        ...(showFutureGoalpostLine && futureGoalpost !== undefined
           ? [futureGoalpost]
           : []),
       ])
-    ).sort(
-      (a, b) => a - b
-    )
+    ).sort((a, b) => a - b)
 
   const rawMinimum =
     Math.min(
@@ -981,6 +1081,27 @@ export default function TitleRace({
     setPlaying(true)
   }
 
+  function scrubExpandedRace(
+    input: HTMLInputElement,
+    clientX: number,
+    clientY: number
+  ) {
+    const bounds = input.getBoundingClientRect()
+    if (!bounds.width || !bounds.height || lastIndex === 0) return
+
+    // The portrait fallback rotates the entire chart stage clockwise.
+    // A horizontal range then appears vertical in screen coordinates.
+    const rotated = bounds.height > bounds.width * 1.5
+    const progress = rotated
+      ? (clientY - bounds.top) / bounds.height
+      : (clientX - bounds.left) / bounds.width
+    const nextRound = Math.round(
+      Math.max(0, Math.min(1, progress)) * lastIndex * 100
+    ) / 100
+    setPlaying(false)
+    setPlayhead(nextRound)
+  }
+
   function cycleSpeed() {
     const currentIndex =
       PLAYBACK_SPEEDS.indexOf(
@@ -1011,62 +1132,35 @@ if (
     )
   }
 
-  return (
-    <main className="app racePage">
-      <header className="raceHeader">
-        <button
-          className="roundBack"
-          onClick={onBack}
-        >
-          ←
-        </button>
-
-        <div>
-          <span>
-            TITLE RACE
-          </span>
-
-          <h1>
-            Round{' '}
-            {completedRound}
-          </h1>
-        </div>
-
-        <div className="raceHeaderActions">
-          <button
-            className="raceSpeed"
-            onClick={cycleSpeed}
+  const racePlot = (
+          <section
+            className="raceChart"
+            ref={racePlotRef}
+            onMouseDownCapture={event => {
+              if (event.target instanceof SVGElement) event.preventDefault()
+            }}
+            onFocusCapture={event => {
+              if (event.target instanceof SVGElement) {
+                (event.target as SVGElement & { blur?: () => void }).blur?.()
+              }
+            }}
+            onClickCapture={event => {
+              if (event.target instanceof SVGElement) {
+                (event.target as SVGElement & { blur?: () => void }).blur?.()
+              }
+            }}
           >
-            {playbackSpeed}×
-          </button>
-
-          <button
-            className="racePlay"
-            onClick={
-              togglePlayback
-            }
-            disabled={
-              lastIndex === 0
-            }
-          >
-            {playing
-              ? 'Pause'
-              : playhead >=
-                  lastIndex
-                ? 'Replay'
-                : 'Play'}
-          </button>
-        </div>
-      </header>
-
-      {lastIndex === 0 ? (
-        <div className="raceEmpty">
-          Complete a round to
-          start the title race.
-        </div>
-      ) : (
-        <>
-          <section className="raceChart">
+            <button
+              type="button"
+              className="jimChartExpandButton jimRaceExpandButton"
+              aria-label={raceExpanded ? 'Close landscape view' : 'Expand Title Race in landscape'}
+              title={raceExpanded ? 'Exit landscape' : 'Expand landscape'}
+              onClick={() => changeRaceExpanded(!raceExpandedRef.current)}
+            >
+              <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                {raceExpanded ? <path d="M9 3v6H3M15 3v6h6M3 15h6v6M21 15h-6v6" /> : <path d="M8 3H3v5M16 3h5v5M3 16v5h5M21 16v5h-5" />}
+              </svg>
+            </button>
             {futureGoalpost !==
               undefined &&
               !showFutureGoalpostLine && (
@@ -1085,14 +1179,14 @@ if (
 
             <ResponsiveContainer
               width="100%"
-              height={CHART_HEIGHT}
+              height={raceExpanded ? '100%' : CHART_HEIGHT}
             >
               <LineChart
                 accessibilityLayer={false}
                 data={visibleData}
                 margin={{
                   top: 25,
-                  right: 120,
+                  right: endpointMargin,
                   left: 5,
                   bottom: 5,
                 }}
@@ -1233,9 +1327,7 @@ if (
                         stroke={color}
                         strokeWidth={4}
                         dot={false}
-                        activeDot={{
-                          r: 6,
-                        }}
+                        activeDot={false}
                         isAnimationActive={
                           false
                         }
@@ -1302,6 +1394,134 @@ if (
               </LineChart>
             </ResponsiveContainer>
           </section>
+  )
+
+  return (
+    <main className="app racePage">
+      <header className="raceHeader">
+        <button
+          className="roundBack"
+          onClick={onBack}
+        >
+          ←
+        </button>
+
+        <div>
+          <span>
+            TITLE RACE
+          </span>
+
+          <h1>
+            Round{' '}
+            {completedRound}
+          </h1>
+        </div>
+
+        <div className="raceHeaderActions">
+          <button
+            className="raceSpeed"
+            onClick={cycleSpeed}
+          >
+            {playbackSpeed}×
+          </button>
+
+          <button
+            className="racePlay"
+            onClick={
+              togglePlayback
+            }
+            disabled={
+              lastIndex === 0
+            }
+          >
+            {playing
+              ? 'Pause'
+              : playhead >=
+                  lastIndex
+                ? 'Replay'
+                : 'Play'}
+          </button>
+        </div>
+      </header>
+
+      {lastIndex === 0 ? (
+        <div className="raceEmpty">
+          Complete a round to
+          start the title race.
+        </div>
+      ) : (
+        <>
+          {!raceExpanded && racePlot}
+          {createPortal(
+            <AnimatePresence>
+              {raceExpanded && (
+                <motion.div
+                  key="title-race-overlay"
+                  className="jimChartModalOverlay jimRaceModalOverlay"
+                  role="dialog"
+                  aria-modal="true"
+                  aria-label="Title Race landscape view"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.18 }}
+                >
+                  <div className="jimRaceLandscapeStage">
+                    <div className="jimRaceLandscapeToolbar">
+                      <strong>Title Race • Round {completedRound}</strong>
+                      <div className="jimChartModalActions jimRaceExpandedActions">
+                        <button type="button" className="raceSpeed" onClick={cycleSpeed} aria-label="Change playback speed">{playbackSpeed}×</button>
+                        <button type="button" className="racePlay" onClick={togglePlayback} disabled={lastIndex === 0}>
+                          {playing ? 'Pause' : playhead >= lastIndex ? 'Replay' : 'Play'}
+                        </button>
+                      </div>
+                    </div>
+                    <div className="jimRaceFullscreenChart">{racePlot}</div>
+                    <div className="jimRaceLandscapeControls">
+                      <input
+                        aria-label="Select race round"
+                        type="range"
+                        style={{ accentColor: '#f2f4f6', touchAction: 'none' }}
+                        min="0"
+                        max={lastIndex}
+                        step="0.01"
+                        value={playhead}
+                        onPointerDown={event => {
+                          if (event.pointerType === 'mouse' && event.button !== 0) return
+                          expandedScrubPointer.current = event.pointerId
+                          event.currentTarget.setPointerCapture(event.pointerId)
+                          scrubExpandedRace(event.currentTarget, event.clientX, event.clientY)
+                          event.preventDefault()
+                        }}
+                        onPointerMove={event => {
+                          if (expandedScrubPointer.current !== event.pointerId) return
+                          scrubExpandedRace(event.currentTarget, event.clientX, event.clientY)
+                          event.preventDefault()
+                        }}
+                        onPointerUp={event => {
+                          if (expandedScrubPointer.current !== event.pointerId) return
+                          scrubExpandedRace(event.currentTarget, event.clientX, event.clientY)
+                          expandedScrubPointer.current = null
+                          if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+                            event.currentTarget.releasePointerCapture(event.pointerId)
+                          }
+                        }}
+                        onPointerCancel={() => { expandedScrubPointer.current = null }}
+                        onLostPointerCapture={() => { expandedScrubPointer.current = null }}
+                        onChange={event => {
+                          // Keep keyboard and direct-tap changes working.
+                          if (expandedScrubPointer.current !== null) return
+                          setPlaying(false)
+                          setPlayhead(Number(event.target.value))
+                        }}
+                      />
+                      <span>Round {completedRound} / {lastIndex}</span>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>, document.body
+          )}
 
           <section className="raceControls">
             <input

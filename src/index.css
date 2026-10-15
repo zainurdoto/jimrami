@@ -100793,3 +100793,451 @@ body::-webkit-scrollbar,
   .mvpRadarChart .recharts-polar-angle-axis-tick-value { font-size: 12px; }
   .mvpRadarChart .recharts-polar-radius-axis-tick-value { font-size: 10px; }
 }
+
+/* JIMRAMI chart SVG focus rings — suppress only inside these chart canvases.
+   Do not remove keyboard focus from ordinary buttons or player controls. */
+.mvpRadarChart :is(svg, svg *),
+.raceChart :is(svg, svg *) {
+  outline: none !important;
+  outline-width: 0 !important;
+  box-shadow: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+.mvpRadarChart :is(svg, svg *):focus,
+.mvpRadarChart :is(svg, svg *):focus-visible,
+.raceChart :is(svg, svg *):focus,
+.raceChart :is(svg, svg *):focus-visible {
+  outline: none !important;
+  outline-width: 0 !important;
+  box-shadow: none !important;
+}
+
+/* JIMRAMI MVP radar: clean SVG axis text, including mobile labels. */
+.mvpRadarChart .recharts-polar-angle-axis-tick text,
+.mvpRadarChart .recharts-polar-angle-axis-tick tspan,
+.mvpRadarChart .recharts-polar-radius-axis-tick text,
+.mvpRadarChart .recharts-polar-radius-axis-tick tspan {
+  stroke: none !important;
+  stroke-width: 0 !important;
+  -webkit-text-stroke: 0 !important;
+  text-shadow: none !important;
+  filter: none !important;
+  paint-order: normal !important;
+}
+
+/* History & Stats — fixed 2×2 mobile tabs */
+@media (max-width: 640px) {
+  .historyTabs {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px;
+    overflow: visible;
+    padding: 7px;
+  }
+
+  .historyTabs button {
+    width: 100%;
+    min-width: 0;
+    min-height: 48px;
+    padding: 10px 8px;
+    white-space: nowrap;
+    font-size: 15px;
+  }
+}
+
+/* =========================================
+   JIMRAMI — HISTORY / CHART UX
+   Append to src/index.css, do not replace existing CSS.
+========================================= */
+
+/* Collapsible player statistic cards */
+.playerStatsCard > header {
+  margin-bottom: 0;
+  gap: 12px;
+}
+.playerStatsCard .playerStatsIdentity { min-width: 0; }
+.playerStatsCard .playerStatsHeadline { margin-left: auto; }
+.playerStatsCollapseButton {
+  display: grid;
+  place-items: center;
+  flex: 0 0 42px;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border: 1px solid #384454;
+  border-radius: 12px;
+  background: #222c3a;
+  color: #c3cedc;
+  cursor: pointer;
+  transition: background .16s ease, color .16s ease;
+}
+.playerStatsCollapseButton:hover { background: #304052; color: #fff; }
+.playerStatsCollapseButton svg { transition: transform .23s ease; }
+.playerStatsCollapseButton[aria-expanded="false"] svg { transform: rotate(-90deg); }
+.playerStatsCollapseButton:focus-visible {
+  outline: 2px solid #e4bb65;
+  outline-offset: 3px;
+}
+.playerStatsBody { min-width: 0; padding-top: 7px; }
+.jimHistoryCollapse { min-width: 0; }
+
+/* Expand button, kept clear of both plot labels and tooltips */
+.mvpRadarChart,
+.raceChart { position: relative; }
+.jimChartExpandButton {
+  position: absolute;
+  z-index: 7;
+  top: 12px;
+  right: 12px;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border: 1px solid #d7c6aa;
+  border-radius: 11px;
+  background: rgba(255, 251, 241, .88);
+  color: #29415a;
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(48, 41, 28, .08);
+}
+.jimChartExpandButton:hover { background: #fff; }
+.jimChartExpandButton:focus-visible { outline: 2px solid #b98729; outline-offset: 3px; }
+.raceChart .jimChartExpandButton {
+  color: #e5ebf4;
+  border-color: #495668;
+  background: #202b38;
+}
+.raceChart .jimChartExpandButton:hover { background: #304052; }
+
+/* Modal overlays render through a portal, outside animated app wrappers. */
+.jimChartModalOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 20000;
+  width: 100%;
+  height: 100dvh;
+  box-sizing: border-box;
+  padding: max(10px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
+  background: #0a0e14;
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  overflow: hidden;
+}
+.jimChartModalPanel {
+  flex: 1;
+  min-width: 0;
+  max-width: 1500px;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 17px;
+  background: #151d27;
+  border: 1px solid #354255;
+  box-sizing: border-box;
+}
+.jimChartModalToolbar,
+.jimRaceLandscapeToolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  min-height: 40px;
+  color: #f3f6fa;
+}
+.jimChartModalToolbar strong,
+.jimRaceLandscapeToolbar strong { font-size: clamp(14px, 1.8vw, 20px); }
+.jimChartModalActions { display: flex; align-items: center; gap: 7px; flex-shrink: 0; }
+.jimChartModalActions button {
+  min-width: 36px;
+  min-height: 36px;
+  padding: 4px 10px;
+  border: 1px solid #465365;
+  border-radius: 10px;
+  color: #f3f6fa;
+  background: #253142;
+  font: inherit;
+  font-weight: 750;
+  cursor: pointer;
+}
+.jimChartModalActions button:hover { background: #34445a; }
+.jimChartModalActions button:focus-visible { outline: 2px solid #ecc56b; outline-offset: 2px; }
+.jimChartModalActions button.jimChartModalClose {
+  background: #3a252c;
+  border-color: #6c414c;
+  font-size: 25px;
+  line-height: 1;
+}
+.jimChartZoomAmount { min-width: 46px; text-align: center; color: #cbd5e1; font-size: 13px; font-weight: 800; }
+
+/* Radar: pan within the expanded modal after zooming */
+.jimRadarModalViewport {
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  overflow: auto;
+  border-radius: 12px;
+  background: #f1e8d8;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+.jimRadarZoomStage {
+  min-width: 0;
+  min-height: 100%;
+  box-sizing: border-box;
+}
+.mvpRadarChart.jimRadarExpandedChart {
+  overflow: visible;
+  border-radius: 12px;
+  box-sizing: border-box;
+  padding: 8px;
+  margin: 0;
+}
+.jimRadarZoomControl {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 2px 5px 3px;
+  color: #aebacd;
+  font-size: 12px;
+  font-weight: 800;
+}
+.jimRadarZoomControl input { flex: 1; min-width: 0; accent-color: #e1b45d; }
+
+/* Title Race: landscape-style fullscreen viewer, with local controls. */
+.jimRaceModalOverlay { padding: 0; }
+.jimRaceLandscapeStage {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  box-sizing: border-box;
+  padding: 8px 12px;
+  background: #0e131b;
+}
+.jimRaceFullscreenChart { flex: 1; min-width: 0; min-height: 0; }
+.jimRaceFullscreenChart .raceChart {
+  box-sizing: border-box;
+  height: 100%;
+  min-height: 0;
+  padding: 6px 2px;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.jimRaceLandscapeControls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 35px;
+  padding: 2px 6px 0;
+}
+.jimRaceLandscapeControls input {
+  flex: 1;
+  min-width: 0;
+  accent-color: #e8bd63;
+}
+.jimRaceLandscapeControls span { color: #c0cada; white-space: nowrap; font-size: 12px; font-weight: 800; }
+
+@media (max-width: 700px) and (orientation: portrait) {
+  /* Works even when Android auto-rotate is disabled. */
+  .jimRaceLandscapeStage {
+    position: absolute;
+    top: 0;
+    left: 100vw;
+    width: 100dvh;
+    height: 100vw;
+    flex: none;
+    transform: rotate(90deg);
+    transform-origin: top left;
+    padding: 4px max(8px, env(safe-area-inset-top));
+  }
+  .jimRaceLandscapeToolbar { min-height: 35px; }
+  .jimRaceLandscapeToolbar strong { font-size: 13px; }
+  .jimChartModalActions button { min-height: 31px; min-width: 31px; padding: 3px 8px; }
+  .jimRaceLandscapeControls { min-height: 26px; }
+}
+
+@media (max-width: 600px) {
+  .playerStatsCollapseButton { flex-basis: 36px; width: 36px; height: 36px; }
+  .playerStatsCard > header { gap: 8px; }
+  .jimChartModalPanel { padding: 8px; }
+  .jimChartModalToolbar strong { font-size: 15px; }
+  .jimRadarZoomControl > span:last-child { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .playerStatsCollapseButton,
+  .playerStatsCollapseButton svg { transition: none; }
+}
+
+/* ========================================
+   JIMRAMI — Expanded charts v2
+   Paste at the very end of src/index.css.
+   Overrides the old expanded-chart zoom layout.
+======================================== */
+
+/* Expanded radar: compact player visibility controls, no zoom/scroll. */
+.jimRadarModalPanel {
+  min-width: 0;
+  max-width: 1500px;
+}
+.jimRadarQuickToggles {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 7px;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  padding: 3px 1px 5px;
+}
+.jimRadarQuickToggles::-webkit-scrollbar { display: none; }
+.jimRadarQuickToggle {
+  --radar-color: #d5ae59;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  flex: 0 0 auto;
+  padding: 8px 11px;
+  min-height: 36px;
+  max-width: 170px;
+  border: 1px solid #465363;
+  border-radius: 11px;
+  color: #acb6c4;
+  background: #1c2632;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: pointer;
+  opacity: .67;
+}
+.jimRadarQuickToggle.active {
+  border-color: var(--radar-color);
+  color: var(--radar-color);
+  opacity: 1;
+}
+.jimRadarQuickToggle:focus-visible { outline: 2px solid #f2c878; outline-offset: 2px; }
+.jimRadarQuickDot { flex: 0 0 9px; width: 9px; height: 9px; border-radius: 3px; background: var(--radar-color); }
+.jimRadarQuickToggle > span:last-child { margin-left: auto; font-size: 15px; }
+.jimRadarModalViewport {
+  flex: 1 1 0;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+  border-radius: 12px;
+  background: #f1e8d8;
+}
+.mvpRadarChart.jimRadarExpandedChart {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  padding: 5px 3px;
+  box-sizing: border-box;
+}
+.jimRadarModalPanel .jimChartModalToolbar { flex: 0 0 auto; }
+
+/* Close buttons do not need a separate zoom-toolbar button row. */
+.jimChartModalToolbar > .jimChartModalClose {
+  flex: 0 0 auto;
+  min-width: 38px;
+  min-height: 38px;
+  padding: 2px 11px;
+  border: 1px solid #71434d;
+  border-radius: 11px;
+  color: #f3f5f7;
+  background: #3a252c;
+  font: inherit;
+  font-size: 25px;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+}
+
+/* Use the same controls as the standard Title Race header. */
+.jimRaceExpandedActions { min-width: 0; }
+.jimRaceExpandedActions button.raceSpeed {
+  min-height: 46px;
+  min-width: 62px;
+  border: 1px solid #303844;
+  border-radius: 14px;
+  background: #171c24;
+  color: #f5f7fa;
+  font-weight: 850;
+}
+.jimRaceExpandedActions button.racePlay,
+.jimRaceExpandedActions button.racePlay:hover {
+  min-height: 46px;
+  min-width: 106px;
+  border: 0;
+  border-radius: 14px;
+  background: #f2f4f6;
+  color: #101419;
+  font-weight: 850;
+}
+.jimRaceExpandedActions button.racePlay:disabled { opacity: .35; }
+
+@media (max-width: 700px) {
+  .jimRadarQuickToggle { padding: 6px 9px; min-height: 32px; font-size: 12px; }
+  .jimRaceExpandedActions button.raceSpeed { min-height: 34px; min-width: 48px; padding: 3px 7px; font-size: 12px; }
+  .jimRaceExpandedActions button.racePlay { min-height: 34px; min-width: 78px; padding: 3px 9px; font-size: 13px; }
+  .jimRadarModalPanel { gap: 5px; }
+  .jimRadarModalViewport { min-height: 0; }
+}
+
+/* Browser-only fallback: when physical orientation lock isn't allowed,
+   rotate the full-screen radar view in a portrait mobile viewport.
+   The Android APK rotates physically after installing ScreenOrientation. */
+@media (max-width: 700px) and (orientation: portrait) {
+  .jimRadarModalPanel {
+    position: absolute;
+    top: 0;
+    left: 100vw;
+    width: 100dvh;
+    height: 100vw;
+    flex: none;
+    max-width: none;
+    padding: 4px max(8px, env(safe-area-inset-top));
+    transform: rotate(90deg);
+    transform-origin: top left;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jimRadarQuickToggle { transition: none; }
+}
+
+/* JIMRAMI Title Race landscape fallback (phones and tablets).
+   On a portrait device where native landscape lock is unsupported or ignored,
+   rotate the expanded chart content to use the available landscape-shaped area.
+   When the native orientation lock succeeds this rule no longer applies. */
+@media (orientation: portrait) {
+  .jimRaceModalOverlay .jimRaceLandscapeStage {
+    position: absolute;
+    top: 0;
+    left: 100vw;
+    width: 100dvh;
+    height: 100vw;
+    max-width: none;
+    flex: none;
+    padding: 6px max(8px, env(safe-area-inset-top));
+    box-sizing: border-box;
+    transform: rotate(90deg);
+    transform-origin: top left;
+  }
+}
+
+/* A smaller right-side margin is now chosen from the chart width in TSX.
+   Give the line plot all remaining room and keep the expand/minimize control
+   floating above it, without occupying a layout column. */
+.raceChart { width: 100%; box-sizing: border-box; }
+.jimRaceFullscreenChart { min-width: 0; min-height: 0; }
+.jimRaceFullscreenChart .raceChart { width: 100%; height: 100%; }
