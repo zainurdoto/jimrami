@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="public/Jim_README.png" alt="JIMRAMI" width="300">
+  <img src="public/Jim_README.png" alt="JIMRAMI" width="180">
 </p>
 
 JIMRAMI is a four-player card game derived from "Rummy" or "Gin Rummy", with its own scoring and round rules. This project is a score and session tracker for the game.
