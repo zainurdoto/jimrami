@@ -460,113 +460,112 @@ type GoalpostStanding = {
   failures: JimResult[]
 }
 
-function GoalpostPodium({
+function GoalpostAccolades({ player }: { player: GoalpostStanding }) {
+  if (
+    player.standardWins <= 0 &&
+    player.jimWins.length === 0 &&
+    player.catches.length === 0 &&
+    player.failures.length === 0
+  ) return null
+
+  return (
+    <div className="goalpostRankingAccolades" aria-label={`${player.name}'s achievements`}>
+      {player.standardWins > 0 && <StandardWinTally count={player.standardWins} />}
+      {player.jimWins.length > 0 && <JimWinStars wins={player.jimWins} />}
+      {player.catches.length > 0 && <JimCatchScissors catches={player.catches} />}
+      <JimFailSkulls failures={player.failures} />
+    </div>
+  )
+}
+
+// The winner has a dedicated result banner, rather than another small row.
+
+function GoalpostWinnerFeature({
+  winner,
+  label = 'SESSION WINNER',
+}: {
+  winner: GoalpostStanding
+  label?: string
+}) {
+  return (
+    <section className="goalpostWinnerFeature" aria-label={`${label}: ${winner.name}, ${winner.points} points`}>
+      <div className="goalpostWinnerRankBlock" aria-label="First place">
+        <span>1</span>
+      </div>
+
+      <div className="goalpostWinnerIdentity">
+        <div className="goalpostFeatureHeadline">
+          <span className="goalpostFeatureWinnerTag">{label}</span>
+        </div>
+
+        <div className="goalpostFeatureNameLine">
+          <h2 className="goalpostFeatureName">{winner.name}</h2>
+          <span className="goalpostFeatureCrown" aria-hidden="true">♛</span>
+        </div>
+
+        <div className="goalpostWinnerMeta">
+          <GoalpostAccolades player={winner} />
+        </div>
+      </div>
+
+      <div className="goalpostWinnerScoreBlock" aria-label={`${winner.points} points`}>
+        <strong>{winner.points}</strong>
+        <span>POINTS</span>
+      </div>
+    </section>
+  )
+}
+
+function GoalpostRanking({
   ranking,
   winnerPlayerId,
 }: {
   ranking: GoalpostStanding[]
   winnerPlayerId?: number
 }) {
-  const displayRanking =
-    ranking.length >= 3
-      ? [
-          ranking[1],
-          ranking[0],
-          ranking[2],
-          ...ranking.slice(3),
-        ].filter(
-          (
-            player
-          ): player is GoalpostStanding =>
-            Boolean(player)
-        )
-      : ranking
+  // The sole winner is already shown above in the featured banner.
+  // When first place is tied, include everybody in the ranking instead.
+  const listedPlayers = winnerPlayerId === undefined
+    ? ranking
+    : ranking.filter(player => player.playerId !== winnerPlayerId)
+
+  if (listedPlayers.length === 0) return null
 
   return (
-    <div
-      className={`goalpostPodium goalpostPodiumCount-${ranking.length}`}
-    >
-      {displayRanking.map(
-        (player) => {
-          const rank =
-            ranking.findIndex(
-              (entry) =>
-                entry.playerId ===
-                player.playerId
-            ) + 1
+    <section className="goalpostRanking" aria-label="Player rankings">
+      {winnerPlayerId === undefined && (
+        <div className="goalpostRankingHeader">
+          <span>STANDINGS</span>
+          <span>POINTS</span>
+        </div>
+      )}
+
+      <div className="goalpostRankingList">
+        {listedPlayers.map((player) => {
+          // Tied scores share a rank; missing an outright winner is not hidden.
+          const rank = ranking.findIndex(entry => entry.points === player.points) + 1
+          const tiedFirst = rank === 1 && winnerPlayerId === undefined
 
           return (
             <div
-              className={`goalpostPodiumColumn rank-${rank}`}
-              key={
-                player.playerId
-              }
+              key={player.playerId}
+              className={`goalpostRankingRow${tiedFirst ? ' tiedFirst' : ''}`}
+              aria-label={`${rank}${rank === 1 ? 'st' : rank === 2 ? 'nd' : rank === 3 ? 'rd' : 'th'} place, ${player.name}, ${player.points} points`}
             >
-              <div className="goalpostPodiumName">
-                <strong>
-                  {
-                    player.name
-                  }
-                </strong>
-
-                {player.playerId ===
-                  winnerPlayerId && (
-                  <i
-                    title="Goalpost winner"
-                    aria-label="Goalpost winner"
-                  >
-                    ♛
-                  </i>
-                )}
-              </div>
-
-              <b className="goalpostPodiumScore">
-                {
-                  player.points
-                }
-              </b>
-
-              <div className="goalpostPodiumStage">
-                <span className="goalpostPodiumRank">
-                  {rank}
-                </span>
-
-                <div className="goalpostPodiumAccolades">
-                  {player.standardWins >
-                    0 && (
-                    <StandardWinTally
-                      count={
-                        player.standardWins
-                      }
-                    />
-                  )}
-
-                  {player.jimWins.length >
-                    0 && (
-                    <JimWinStars
-                      wins={
-                        player.jimWins
-                      }
-                    />
-                  )}
-
-                  {player.catches.length >
-                    0 && (
-                    <JimCatchScissors
-                      catches={
-                        player.catches
-                      }
-                    />
-                  )}
-
-                  <JimFailSkulls failures={player.failures} />
+              <span className="goalpostRankingPosition">{rank}</span>
+              <div className="goalpostRankingPlayer">
+                <div className="goalpostRankingNameLine">
+                  <strong>{player.name}</strong>
+                  {tiedFirst && <span className="goalpostRankingTieTag">TIED 1ST</span>}
                 </div>
+                <GoalpostAccolades player={player} />
               </div>
+              <strong className="goalpostRankingPoints">{player.points}</strong>
             </div>
           )
-        }
-      )}
-    </div>
+        })}
+      </div>
+    </section>
   )
 }
 
@@ -581,9 +580,11 @@ function GoalpostDeuceModal({
   tiedPlayers: GoalpostStanding[]
   onContinue: () => void
 }) {
-  return (
-    <div className="goalpostOverlay">
-      <div className="goalpostDialog deuce">
+  useViewportModalLock()
+
+  return createPortal(
+    <div className="goalpostOverlay goalpostViewportOverlay">
+      <div className="goalpostDialog deuce" role="dialog" aria-modal="true" aria-label="Deuce round">
         <span className="goalpostEyebrow">
           DEUCE ROUND
         </span>
@@ -633,7 +634,8 @@ function GoalpostDeuceModal({
           Continue Deuce
         </button>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 
@@ -715,34 +717,25 @@ function GoalpostReachedModal({
     customNumber >
       extensionFloor
 
-  return (
-    <div className="goalpostOverlay">
-      <div className="goalpostDialog reached">
+  useViewportModalLock()
+
+  return createPortal(
+    <div className="goalpostOverlay goalpostViewportOverlay">
+      <div className="goalpostDialog reached" role="dialog" aria-modal="true" aria-label="Goalpost reached">
         <span className="goalpostEyebrow">
           {event.deuceStartedRound !==
           undefined
             ? 'DEUCE RESOLVED'
             : 'GOALPOST REACHED'}
         </span>
+        <div className="goalpostHeaderTarget">GOALPOST <strong>{event.target}</strong></div>
 
-        <div className="goalpostHeroMark crown">
-          ♛
-        </div>
-
-        <h2>
-          {
-            ranking[0]?.name ??
-            'Winner'
-          }
-        </h2>
-
-        <p className="goalpostWinnerPoints">
-          {
-            ranking[0]?.points ??
-            event.winnerPoints
-          }{' '}
-          POINTS
-        </p>
+        {ranking.length > 0 && (
+          <GoalpostWinnerFeature
+            winner={ranking.find(player => player.playerId === event.winnerPlayerId) ?? ranking[0]}
+            label="GOALPOST WINNER"
+          />
+        )}
 
         {event.deuceStartedRound !==
           undefined && (
@@ -760,14 +753,7 @@ function GoalpostReachedModal({
           </p>
         )}
 
-        <div className="goalpostTargetChip">
-          GOALPOST{' '}
-          <strong>
-            {event.target}
-          </strong>
-        </div>
-
-        <GoalpostPodium
+        <GoalpostRanking
           ranking={ranking}
           winnerPlayerId={
             event.winnerPlayerId
@@ -984,19 +970,165 @@ function GoalpostReachedModal({
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   )
+}
+
+// Subtle, one-off gold celebration on the finished-session screen.
+// Runs for about five seconds; no dependencies, audio, or stored data.
+function SessionGoldFireworks() {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    const container = canvas?.parentElement
+    const ctx = canvas?.getContext('2d', { alpha: true })
+    if (!canvas || !container || !ctx) return
+
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+
+    // Keep this celebration light enough for Android WebView and older tablets.
+    // Positions and lifetimes use real elapsed time, so dropped frames do not
+    // stretch five seconds of fireworks into a slow-motion animation.
+    type Spark = {
+      x: number
+      y: number
+      vx: number
+      vy: number
+      size: number
+      bornAt: number
+      lifetime: number
+      color: string
+      phase: number
+    }
+
+    const golds = ['#f8d582', '#f0b84b', '#fff0b8', '#e2aa4f', '#fff8dd']
+    const particles: Spark[] = []
+    const burstTimes = [300, 1700, 3400]
+    const burstLocations = [[0.42, 0.26], [0.72, 0.24], [0.53, 0.09]]
+    let width = 1
+    let height = 1
+    let raf = 0
+    let firstFrame = 0
+    let fired = 0
+    let stopped = false
+
+    const resize = () => {
+      const bounds = container.getBoundingClientRect()
+      const nextWidth = Math.max(1, bounds.width)
+      const nextHeight = Math.max(1, bounds.height)
+      if (nextWidth === width && nextHeight === height) return
+      width = nextWidth
+      height = nextHeight
+      // Rendering at DPR 2 is expensive on mobile for little visual benefit.
+      const maxDpr = window.innerWidth <= 720 ? 1 : 1.5
+      const dpr = Math.min(window.devicePixelRatio || 1, maxDpr)
+      canvas.width = Math.round(width * dpr)
+      canvas.height = Math.round(height * dpr)
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+    }
+
+    const burst = (number: number) => {
+      const [fx, fy] = burstLocations[number]
+      const count = number === 2 ? 28 : 36
+      const bornAt = burstTimes[number]
+      for (let i = 0; i < count; i += 1) {
+        const angle = Math.random() * Math.PI * 2
+        const speed = 1.6 + Math.random() * 2.7
+        particles.push({
+          x: width * fx,
+          y: height * fy,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed - 0.4,
+          size: 1.3 + Math.random() * 1.5,
+          bornAt,
+          lifetime: 1150 + Math.random() * 450,
+          color: golds[Math.floor(Math.random() * golds.length)],
+          phase: Math.random() * Math.PI * 2,
+        })
+      }
+    }
+
+    const render = (now: number) => {
+      if (stopped) return
+      if (firstFrame === 0) firstFrame = now
+      const elapsed = now - firstFrame
+      ctx.clearRect(0, 0, width, height)
+
+      while (fired < burstTimes.length && elapsed >= burstTimes[fired]) {
+        burst(fired)
+        fired += 1
+      }
+
+      ctx.globalCompositeOperation = 'lighter'
+      ctx.lineCap = 'round'
+      ctx.shadowBlur = 0 // Avoid expensive per-particle blurred canvas shadows.
+      for (let i = particles.length - 1; i >= 0; i -= 1) {
+        const p = particles[i]
+        const age = elapsed - p.bornAt
+        const remaining = 1 - age / p.lifetime
+        if (remaining <= 0) {
+          particles.splice(i, 1)
+          continue
+        }
+
+        const t = age / 16.67
+        const travel = t * Math.exp(-t * 0.009)
+        const x = p.x + p.vx * travel
+        const y = p.y + p.vy * travel + 0.012 * t * t
+        const shimmer = 0.80 + 0.20 * Math.sin(t * 0.28 + p.phase)
+        ctx.globalAlpha = Math.min(1, age / 125) * remaining * shimmer
+        ctx.strokeStyle = p.color
+        ctx.lineWidth = p.size
+        ctx.beginPath()
+        ctx.moveTo(x - p.vx * 2.5, y - p.vy * 2.5)
+        ctx.lineTo(x, y)
+        ctx.stroke()
+
+        // A few brighter heads give a sparkling look without costly glow filters.
+        if (i % 5 === 0) {
+          ctx.fillStyle = p.color
+          ctx.fillRect(x - p.size, y - p.size, p.size * 2, p.size * 2)
+        }
+      }
+
+      ctx.globalAlpha = 1
+      ctx.globalCompositeOperation = 'source-over'
+      if (elapsed < 5000 && (fired < burstTimes.length || particles.length > 0)) {
+        raf = window.requestAnimationFrame(render)
+      } else {
+        ctx.clearRect(0, 0, width, height)
+      }
+    }
+
+    resize()
+    const observer = new ResizeObserver(resize)
+    observer.observe(container)
+    raf = window.requestAnimationFrame(render)
+
+    return () => {
+      stopped = true
+      window.cancelAnimationFrame(raf)
+      observer.disconnect()
+      ctx.clearRect(0, 0, width, height)
+    }
+  }, [])
+
+  return <canvas ref={canvasRef} className="goalpostGoldFireworks" aria-hidden="true" />
 }
 
 function GoalpostSessionComplete({
   session,
   ranking,
+  showFireworks,
   onAwards,
   onRace,
   onDone,
 }: {
   session: GameSession
   ranking: GoalpostStanding[]
+  showFireworks: boolean
   onAwards: () => void
   onRace: () => void
   onDone: () => void
@@ -1013,65 +1145,44 @@ function GoalpostSessionComplete({
           'finished'
       )
 
-  return (
-    <main className="app goalpostPostGamePage">
-      <section className="goalpostDialog complete">
+  useViewportModalLock()
+
+  const leadingScore = ranking[0]?.points ?? 0
+  const topPlayers = ranking.filter(player => player.points === leadingScore)
+  const soleWinner = topPlayers.length === 1 ? topPlayers[0] : undefined
+
+  return createPortal(
+    <main className="app goalpostPostGamePage goalpostPostGameViewport">
+      <section className="goalpostDialog complete" role="dialog" aria-modal="true" aria-label="Session complete">
+        {showFireworks && <SessionGoldFireworks />}
         <span className="goalpostEyebrow">
           SESSION COMPLETE
         </span>
-
-        <div className="goalpostHeroMark crown">
-          ♛
+        <div className="goalpostHeaderTarget">
+          {finalEvent ? <>GOALPOST <strong>{finalEvent.target}</strong></> : 'OPEN GOALPOST'}
         </div>
 
-        <h1>
-          {
-            ranking[0]?.name ??
-            'Winner'
-          }
-        </h1>
+        {soleWinner ? (
+          <GoalpostWinnerFeature winner={soleWinner} />
+        ) : (
+          <div className="goalpostTieFeature">
+            <div className="goalpostHeroMark" aria-hidden="true">⚖</div>
+            <span className="goalpostWinnerLabel">TIED FOR FIRST</span>
+            <h1>Joint leaders</h1>
+            <p className="goalpostWinnerPoints">{leadingScore} POINTS EACH</p>
 
-        <p className="goalpostWinnerPoints">
-          {
-            ranking[0]?.points ??
-            0
-          }{' '}
-          POINTS
-        </p>
-
-        {finalEvent && (
-          <>
-            <div className="goalpostTargetChip">
-              GOALPOST{' '}
-              <strong>
-                {
-                  finalEvent.target
-                }
-              </strong>
-            </div>
-
-            {finalEvent.deuceStartedRound !==
-              undefined && (
-              <p className="goalpostDeuceInfo">
-                Deuce Round{' '}
-                {
-                  finalEvent.deuceStartedRound
-                }
-                {' → '}
-                {
-                  finalEvent.deuceResolvedRound ??
-                  finalEvent.roundReached
-                }
-              </p>
-            )}
-          </>
+          </div>
         )}
 
-        <GoalpostPodium
+        {finalEvent?.deuceStartedRound !== undefined && (
+          <p className="goalpostDeuceInfo">
+            Deuce Round {finalEvent.deuceStartedRound} → {finalEvent.deuceResolvedRound ?? finalEvent.roundReached}
+          </p>
+        )}
+
+        <GoalpostRanking
           ranking={ranking}
-          winnerPlayerId={
-            finalEvent?.winnerPlayerId
-          }
+          winnerPlayerId={soleWinner?.playerId}
         />
 
         <div className="goalpostPostGameActions">
@@ -1100,7 +1211,8 @@ function GoalpostSessionComplete({
           </button>
         </div>
       </section>
-    </main>
+    </main>,
+    document.body
   )
 }
 
@@ -1181,7 +1293,7 @@ function EndSessionConfirmModal({
   const [
     secondsLeft,
     setSecondsLeft,
-  ] = useState(5)
+  ] = useState(3)
 
   useEffect(
     () => {
@@ -1927,6 +2039,14 @@ useState<
     'awards'
   >('summary')
 
+  // Fireworks run only on the first view after a session is finished.
+  const [celebrationSessionId, setCelebrationSessionId] = useState<number | null>(null)
+
+  // Returning from Awards/Title Race must not restart the celebration.
+  useEffect(() => {
+    if (postGameView !== 'summary') setCelebrationSessionId(null)
+  }, [postGameView])
+
   const goalpostEvaluationRunning =
     useRef(false)
 
@@ -2617,18 +2737,48 @@ useState<
       return
     }
 
-    await db.sessions.update(
-      activeSession.id,
-      {
-        status: 'ended',
-        endedAt: new Date(),
-      }
-    )
+    // Manual End Session (including an open goalpost)
+    // must display the same final standings page as
+    // finishing through the goalpost prompt.
+    const sessionId = activeSession.id
+    const [fresh, finalPlayers, finalJimResults] =
+      await Promise.all([
+        db.sessions.get(sessionId),
+        db.sessionPlayers
+          .where('sessionId')
+          .equals(sessionId)
+          .toArray(),
+        db.jimResults
+          .where('sessionId')
+          .equals(sessionId)
+          .toArray(),
+      ])
 
-    setShowEndSessionConfirm(
-      false
-    )
+    if (!fresh) {
+      return
+    }
 
+    const endedAt = new Date()
+    const finishedSession: GameSession = {
+      ...fresh,
+      status: 'ended',
+      endedAt,
+    }
+
+    await db.sessions.update(sessionId, {
+      status: 'ended',
+      endedAt,
+    })
+
+    setShowEndSessionConfirm(false)
+    setGoalpostPrompt(null)
+    setCelebrationSessionId(sessionId)
+    setPostGame({
+      session: finishedSession,
+      sessionPlayers: finalPlayers,
+      jimResults: finalJimResults,
+    })
+    setPostGameView('summary')
     setScreen('scoreboard')
   }
 
@@ -3148,6 +3298,7 @@ useState<
           undefined,
       }
 
+    setCelebrationSessionId(fresh.id)
     setPostGame({
       session:
         finishedSession,
@@ -3656,17 +3807,17 @@ useState<
         ranking={
           postGameRanking
         }
-        onAwards={() =>
-          setPostGameView(
-            'awards'
-          )
-        }
-        onRace={() =>
-          setPostGameView(
-            'race'
-          )
-        }
+        showFireworks={celebrationSessionId === postGame.session.id}
+        onAwards={() => {
+          setCelebrationSessionId(null)
+          setPostGameView('awards')
+        }}
+        onRace={() => {
+          setCelebrationSessionId(null)
+          setPostGameView('race')
+        }}
         onDone={() => {
+          setCelebrationSessionId(null)
           setPostGame(null)
           setPostGameView(
             'summary'

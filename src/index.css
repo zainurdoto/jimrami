@@ -101241,3 +101241,1723 @@ body::-webkit-scrollbar,
 .raceChart { width: 100%; box-sizing: border-box; }
 .jimRaceFullscreenChart { min-width: 0; min-height: 0; }
 .jimRaceFullscreenChart .raceChart { width: 100%; height: 100%; }
+
+
+/* =======================================
+   JIMRAMI MVP v2: Five Attributes
+   ======================================= */
+
+@media (min-width: 851px) {
+  .mvpComponents {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
+  .mvpFormula {
+    grid-template-columns: repeat(3, minmax(0, auto));
+  }
+}
+
+/* ==========================================================
+   JIMRAMI MVP — True winners' podium
+   Append to the BOTTOM of src/index.css.
+   Keeps the existing TSX and MVP scoring unchanged.
+   Replaces the boxy three-card presentation with a single
+   connected 2–1–3 stage. No metallic effects or glow.
+   ========================================================== */
+
+.mvpPodiumSection {
+  position: relative;
+  overflow: hidden;
+  padding: 24px clamp(12px, 2.5vw, 28px) 0;
+  border: 1px solid #303844;
+  border-radius: 18px;
+  background: #151a21;
+}
+
+.mvpPodiumHeader {
+  position: relative;
+  text-align: center;
+}
+
+.mvpPodiumHeader h3 {
+  margin-top: 5px;
+  font-size: clamp(22px, 2.4vw, 27px);
+  letter-spacing: -.025em;
+}
+
+/* All three bases touch, forming an actual stepped podium. */
+.mvpPodium {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.12fr) minmax(0, 1fr);
+  align-items: end;
+  gap: 0;
+  width: 100%;
+  max-width: 880px;
+  margin: 30px auto 0;
+}
+
+.mvpPodiumSlot {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-self: end;
+  align-items: stretch;
+  justify-self: stretch;
+  min-width: 0;
+  filter: none;
+  animation: mvpCeremonyEnter .55s ease-out both;
+}
+
+.mvpPodiumSlot.rank1 { z-index: 2; animation-delay: .1s; }
+/* If only one player qualifies, the champion still stands at center. */
+.mvpPodium > .mvpPodiumSlot.rank1:first-child { grid-column: 2; }
+.mvpPodiumSlot.rank2 { z-index: 1; animation-delay: .18s; }
+.mvpPodiumSlot.rank3 { z-index: 1; animation-delay: .26s; }
+
+/* Names and scores now float above the actual steps, not in cards. */
+.mvpPodiumPlayer,
+.mvpPodiumSlot.rank1 .mvpPodiumPlayer {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  min-width: 0;
+  min-height: 102px;
+  padding: 8px 8px 2px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  text-align: center;
+}
+
+.mvpMedal {
+  position: static;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  margin: 0 0 4px;
+  border: 0;
+  border-radius: 50%;
+  box-shadow: none;
+  font-size: 17px;
+  line-height: 1;
+}
+
+.mvpPodiumSlot.rank1 .mvpMedal { width: 40px; height: 40px; font-size: 19px; }
+
+.mvpPodiumPlayer > strong {
+  display: block;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  color: #f0f2f5;
+  font-size: clamp(17px, 2vw, 23px);
+  font-weight: 800;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mvpPodiumPlayer > small {
+  color: #73d49a;
+  font-size: 8px;
+  font-weight: 850;
+  letter-spacing: .085em;
+}
+
+.mvpPodiumScore {
+  display: grid;
+  place-items: center;
+  min-height: 54px;
+  padding: 5px 5px 12px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.mvpPodiumScore::after { content: none; }
+
+.mvpPodiumScore strong {
+  font-size: clamp(29px, 3vw, 39px);
+  font-variant-numeric: tabular-nums;
+  font-weight: 850;
+  line-height: 1;
+  letter-spacing: -.025em;
+}
+
+/* Calm, solid podium colors. A fine top highlight defines each step. */
+.mvpPodiumBlock {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 126px;
+  margin: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: #424e5b;
+}
+
+.mvpPodiumBlock::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: rgba(255,255,255,.19);
+  pointer-events: none;
+}
+
+.mvpPodiumBlock span {
+  color: #d0d8e2;
+  font-size: clamp(32px, 3.8vw, 45px);
+  font-weight: 900;
+  line-height: 1;
+  opacity: .85;
+}
+
+.mvpPodiumSlot.rank1 .mvpPodiumBlock {
+  min-height: 196px;
+  border-radius: 7px 7px 0 0;
+  background: #6a5427;
+}
+.mvpPodiumSlot.rank1 .mvpPodiumBlock span { color: #f5ca6a; }
+
+.mvpPodiumSlot.rank2 .mvpPodiumBlock {
+  min-height: 140px;
+  border-radius: 7px 0 0 0;
+  background: #414e5c;
+}
+
+.mvpPodiumSlot.rank3 .mvpPodiumBlock {
+  min-height: 112px;
+  border-radius: 0 7px 0 0;
+  background: #533d35;
+}
+
+/* Tablet and phone: preserve the connected stage while using less space. */
+@media (max-width: 760px) {
+  .mvpPodiumSection { padding: 20px 10px 0; }
+  .mvpPodium { margin-top: 24px; }
+  .mvpPodiumPlayer,
+  .mvpPodiumSlot.rank1 .mvpPodiumPlayer {
+    min-height: 90px;
+    padding: 6px 4px 2px;
+  }
+  .mvpMedal { width: 31px; height: 31px; margin-bottom: 3px; font-size: 14px; }
+  .mvpPodiumSlot.rank1 .mvpMedal { width: 35px; height: 35px; font-size: 16px; }
+  .mvpPodiumPlayer > strong { font-size: clamp(13px, 2.3vw, 19px); }
+  .mvpPodiumPlayer > small { font-size: 7px; }
+  .mvpPodiumScore { min-height: 47px; padding: 5px 3px 10px; }
+  .mvpPodiumScore strong { font-size: clamp(22px, 3.6vw, 32px); }
+  .mvpPodiumBlock span { font-size: 31px; }
+  .mvpPodiumSlot.rank1 .mvpPodiumBlock { min-height: 165px; }
+  .mvpPodiumSlot.rank2 .mvpPodiumBlock { min-height: 121px; }
+  .mvpPodiumSlot.rank3 .mvpPodiumBlock { min-height: 99px; }
+}
+
+@media (max-width: 420px) {
+  .mvpPodiumSection { padding: 18px 8px 0; }
+  .mvpPodiumHeader h3 { font-size: 21px; }
+  .mvpPodium { margin-top: 21px; }
+  .mvpPodiumPlayer,
+  .mvpPodiumSlot.rank1 .mvpPodiumPlayer { min-height: 84px; padding: 5px 2px 2px; }
+  .mvpPodiumPlayer > strong { font-size: 13px; }
+  .mvpPodiumPlayer > small { font-size: 6.5px; }
+  .mvpMedal { width: 27px; height: 27px; font-size: 12px; }
+  .mvpPodiumSlot.rank1 .mvpMedal { width: 31px; height: 31px; font-size: 14px; }
+  .mvpPodiumScore { min-height: 39px; padding: 4px 2px 8px; }
+  .mvpPodiumScore strong { font-size: 24px; }
+  .mvpPodiumBlock span { font-size: 27px; }
+  .mvpPodiumSlot.rank1 .mvpPodiumBlock { min-height: 126px; }
+  .mvpPodiumSlot.rank2 .mvpPodiumBlock { min-height: 95px; }
+  .mvpPodiumSlot.rank3 .mvpPodiumBlock { min-height: 78px; }
+}
+
+/* Same entrance motion you liked, included for self-contained installs. */
+@keyframes mvpCeremonyEnter {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mvpPodiumSlot { animation: none; }
+}
+
+/* ========================================================
+   JIMRAMI MVP — Podium refinements
+   Append to the bottom of src/index.css AFTER the
+   True Winners' Podium CSS. No other styles are changed.
+   ======================================================== */
+
+/* Fit the new crown SVG inside the existing gold medal. */
+.mvpPodiumSlot.rank1 .mvpMedal svg {
+  display: block;
+  width: 23px;
+  height: 23px;
+}
+
+/* With qualification text removed, keep names and scores compact. */
+.mvpPodiumPlayer {
+  gap: 6px;
+}
+
+/* Neutral MVP requirements note, without the gold highlight. */
+.mvpEligibility {
+  border-color: #303844;
+  background: #151a21;
+}
+
+.mvpEligibility > span {
+  color: #9ca8b6;
+}
+
+.mvpEligibility > p {
+  color: #8f9baa;
+}
+
+@media (max-width: 760px) {
+  .mvpPodiumSlot.rank1 .mvpMedal svg {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+@media (max-width: 420px) {
+  .mvpPodiumSlot.rank1 .mvpMedal svg {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+/* JIMRAMI hybrid MVP: append to the END of src/index.css. */
+.mvpHybridBreakdown {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 9px 18px;
+  margin: 0 0 13px;
+  padding: 10px 14px;
+  border: 1px solid #303844;
+  border-radius: 11px;
+  background: #151b23;
+}
+.mvpHybridBreakdown > div { display: flex; gap: 8px; align-items: baseline; }
+.mvpHybridBreakdown > div > span {
+  font-size: 10px;
+  color: #9ca7b5;
+  font-weight: 800;
+  letter-spacing: .035em;
+}
+.mvpHybridBreakdown > div > strong {
+  font-size: 17px;
+  font-weight: 900;
+  color: #e2e7ef;
+  font-variant-numeric: tabular-nums;
+}
+.mvpHybridBreakdown > small { margin-left: auto; color: #83909e; font-size: 10px; }
+.mvpComponents .mvpComponentSplit {
+  display: block;
+  margin-bottom: 7px;
+  color: #c3a467;
+  font-size: 10px;
+  font-weight: 700;
+}
+@media (max-width: 650px) {
+  .mvpHybridBreakdown { gap: 7px 16px; padding: 10px 11px; }
+  .mvpHybridBreakdown > small { width: 100%; margin-left: 0; }
+}
+
+/* JIMRAMI MVP v3: view buttons and scoring guide only.
+   Existing radar, podium and chart layout rules remain untouched. */
+.mvpRadarHint { margin: 6px 0 0; color: #aebccc; font-size: 13px; line-height: 1.45; }
+.mvpRadarViewControls {
+  display: flex; flex-wrap: wrap; gap: 7px; margin: 0 0 14px;
+}
+.mvpRadarViewButton {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 40px; padding: 8px 12px; border: 1px solid #4a596c;
+  border-radius: 9px; background: #202b3a; color: #bbc9d8;
+  font: inherit; font-size: 13px; font-weight: 750; cursor: pointer;
+  transition: background .15s ease, border-color .15s ease, color .15s ease;
+}
+.mvpRadarViewButton.is-active {
+  color: #f5f7fb; border-color: #d3b777; background: #354052;
+}
+.mvpRadarViewButton:hover { background: #354255; }
+.mvpRadarViewButton:focus-visible,
+.mvpScoringOpenButton:focus-visible,
+.mvpScoringClose:focus-visible,
+.mvpScoringDialogFooter button:focus-visible { outline: 2px solid #f3d08d; outline-offset: 3px; }
+.mvpRadarLineSample { display: block; flex: 0 0 27px; width: 27px; height: 0; border-top: 3px solid currentColor; border-radius: 5px; }
+.mvpRadarLineSample--allTime { border-top-width: 2px; opacity: .75; }
+.mvpRadarLineSample--recent { border-top: 3px dashed currentColor; }
+.mvpScoringOpenButton {
+  display: inline-flex; align-items: center; gap: 8px; margin-top: 12px;
+  border: 1px solid #64748b; border-radius: 9px; padding: 9px 13px;
+  background: #1f2b3c; color: #f0f3f8; font: inherit;
+  font-size: 13px; font-weight: 750; cursor: pointer;
+}
+.mvpScoringOpenButton:hover { background: #314159; }
+.mvpScoringOpenButton > span { font-size: 17px; line-height: 1; }
+.mvpScoringOverlay {
+  position: fixed; z-index: 100050; inset: 0; display: flex;
+  align-items: center; justify-content: center; padding: 14px;
+  background: rgba(5, 10, 18, .78); box-sizing: border-box;
+}
+.mvpScoringDialog {
+  display: flex; flex-direction: column; width: min(730px, 100%);
+  max-height: min(88dvh, 840px); min-height: 0; overflow: hidden;
+  border: 1px solid #4a5a6f; border-radius: 17px;
+  background: #172231; color: #eaf0f7; box-shadow: 0 22px 80px rgba(0,0,0,.46);
+}
+.mvpScoringDialogHeader {
+  flex-shrink: 0; display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 12px; padding: 19px 22px 16px; border-bottom: 1px solid #354354;
+}
+.mvpScoringEyebrow { font-size: 10px; letter-spacing: .15em; font-weight: 900; color: #c6a463; }
+.mvpScoringDialogHeader h2 { margin: 5px 0 0; color: #f4f6f9; font-size: clamp(21px, 4.5vw, 27px); line-height: 1.2; }
+.mvpScoringClose {
+  flex: 0 0 36px; height: 36px; padding: 0; border: 1px solid #526073;
+  border-radius: 9px; background: #273647; color: #eff3f9;
+  font: inherit; font-size: 25px; line-height: 1; cursor: pointer;
+}
+.mvpScoringBody { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 18px 22px 20px; }
+.mvpScoringBody p { margin: 0 0 11px; color: #c5d0df; font-size: 13px; line-height: 1.6; }
+.mvpScoringBody b { color: #edf2f9; }
+.mvpScoringBody .mvpScoringLead { font-size: 14px; color: #e0e7f0; }
+.mvpScoringBody h3 { margin: 22px 0 10px; color: #f6f7fb; font-size: 16px; }
+.mvpScoringBlend { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 18px 0 11px; }
+.mvpScoringBlend > div { display: flex; flex-direction: column; gap: 5px; padding: 13px 15px; border: 1px solid #48576b; border-radius: 10px; background: #233145; }
+.mvpScoringBlend span { color: #b8c6d6; font-size: 10px; font-weight: 850; letter-spacing: .12em; }
+.mvpScoringBlend strong { color: #fff3d7; font-size: 27px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.mvpScoringBlend small { color: #c3cfdd; font-size: 12px; line-height: 1.4; }
+.mvpScoringFormula { border-left: 3px solid #d4b36e; padding: 8px 12px; background: #243143; border-radius: 0 7px 7px 0; }
+.mvpScoringAttributes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+.mvpScoringAttributes article { padding: 12px 13px; border: 1px solid #38495d; background: #1f2d3d; border-radius: 10px; }
+.mvpScoringAttributes article > div { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 5px; margin-bottom: 6px; }
+.mvpScoringAttributes article strong { font-size: 14px; color: #f6f8fb; }
+.mvpScoringAttributes article span { color: #e0bf81; font-size: 11px; font-weight: 800; }
+.mvpScoringAttributes article p { margin: 0; font-size: 12px; }
+.mvpScoringRules { padding: 12px 13px 1px; border: 1px solid #38495d; border-radius: 10px; background: #1e2b39; }
+.mvpScoringDialogFooter { display: flex; flex-shrink: 0; justify-content: flex-end; padding: 12px 22px; border-top: 1px solid #354354; }
+.mvpScoringDialogFooter button { border: 0; border-radius: 9px; padding: 10px 20px; background: #e5b969; color: #192536; font: inherit; font-weight: 850; cursor: pointer; }
+@media (max-width: 650px) {
+  .mvpRadarViewControls { gap: 6px; }
+  .mvpRadarViewButton { min-height: 37px; padding: 7px 9px; font-size: 12px; gap: 6px; }
+  .mvpRadarLineSample { width: 20px; flex-basis: 20px; }
+  .mvpScoringOverlay { padding: 8px; }
+  .mvpScoringDialog { max-height: 94dvh; border-radius: 13px; }
+  .mvpScoringDialogHeader { padding: 16px 15px 12px; }
+  .mvpScoringBody { padding: 14px 15px 16px; }
+  .mvpScoringAttributes { grid-template-columns: 1fr; }
+  .mvpScoringBlend > div { padding: 11px; }
+  .mvpScoringDialogFooter { padding: 10px 15px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mvpRadarViewButton { transition: none; }
+}
+
+/* MVP v3 refinement. Append AFTER the previous radar/modal CSS.
+   Changes only the radar line samples and the scoring guide. */
+.mvpRadarLineSample--allTime {
+  border-top: 0;
+  height: 3px;
+  border-radius: 0;
+  opacity: 1;
+  background: repeating-linear-gradient(to right, currentColor 0 3px, transparent 3px 8px);
+}
+.mvpRadarLineSample--recent { border-top-width: 3px; opacity: 1; }
+
+.mvpScoringDialog.mvpScoringCompact {
+  width: min(530px, 100%);
+  max-height: min(86dvh, 700px);
+  background: #151b24;
+  border: 1px solid #384250;
+  border-radius: 14px;
+  color: #eef0f3;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, .5);
+}
+.mvpScoringCompact .mvpScoringDialogHeader {
+  padding: 17px 21px 14px;
+  border-color: #313b48;
+  align-items: center;
+}
+.mvpScoringCompact .mvpScoringEyebrow { color: #c3a057; }
+.mvpScoringCompact .mvpScoringDialogHeader h2 {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -.025em;
+}
+.mvpScoringCompact .mvpScoringClose {
+  width: 33px; height: 33px; flex-basis: 33px;
+  font-size: 24px;
+  background: #242f3d;
+  border-color: #445061;
+  border-radius: 8px;
+}
+.mvpScoringCompact .mvpScoringBody {
+  padding: 16px 21px 19px;
+}
+.mvpScoringCompact .mvpScoringIntro {
+  margin: 0 0 14px;
+  color: #bbc4d0;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.mvpScoringSplit {
+  display: flex;
+  height: 43px;
+  overflow: hidden;
+  border-radius: 8px;
+  margin: 0 0 19px;
+  color: #f3f1eb;
+  font-size: 11px;
+  font-weight: 750;
+}
+.mvpScoringSplit > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 5px;
+  padding: 0 11px;
+  min-width: 0;
+  white-space: nowrap;
+}
+.mvpScoringSplit strong { font-size: 17px; font-variant-numeric: tabular-nums; }
+.mvpScoringSplitAll { flex: 0 0 40%; box-sizing: border-box; background: #6e5428; }
+.mvpScoringSplitRecent { flex: 1; background: #304d65; }
+.mvpScoringSectionHeading { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 7px; }
+.mvpScoringCompact .mvpScoringSectionHeading h3 { margin: 0; font-size: 14px; font-weight: 800; }
+.mvpScoringSectionHeading small { color: #919da9; font-size: 11px; }
+.mvpScoringAttributeList { border-top: 1px solid #38414b; }
+.mvpScoringAttributeList details { border-bottom: 1px solid #38414b; }
+.mvpScoringAttributeList summary {
+  display: grid;
+  grid-template-columns: minmax(90px, auto) minmax(0,1fr) auto;
+  align-items: center;
+  gap: 11px;
+  padding: 11px 4px;
+  cursor: pointer;
+  list-style: none;
+}
+.mvpScoringAttributeList summary::-webkit-details-marker,
+.mvpScoringMore summary::-webkit-details-marker { display: none; }
+.mvpScoringAttributeList summary strong { color: #f2f3f6; font-size: 13px; }
+.mvpScoringAttributeList .mvpScoringTagline { color: #a6b1bf; font-size: 11px; }
+.mvpScoringAttributeList summary b { color: #dbc086; font-size: 13px; font-weight: 800; }
+.mvpScoringCompact .mvpScoringAttributeList details > p {
+  margin: 0 4px 12px;
+  color: #bec8d3;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.mvpScoringAttributeList details[open] { background: rgba(255,255,255,.025); }
+.mvpScoringMore { margin-top: 13px; border: 1px solid #38414b; border-radius: 8px; }
+.mvpScoringMore > summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 11px 12px;
+  color: #dbe1e9;
+  font-size: 12px;
+  font-weight: 800;
+}
+.mvpScoringMore > summary::after { content: '＋'; float: right; color: #aeb8c4; }
+.mvpScoringMore[open] > summary::after { content: '−'; }
+.mvpScoringMore > div { padding: 0 12px 2px; }
+.mvpScoringCompact .mvpScoringMore p { margin: 0 0 9px; font-size: 12px; line-height: 1.55; color: #b8c3ce; }
+.mvpScoringCompact .mvpScoringRadarNote {
+  margin: 12px 0 0;
+  color: #96a3b3;
+  font-size: 11px;
+}
+.mvpScoringCompact .mvpScoringRadarNote b { color: #b4c0cd; }
+.mvpScoringAttributeList summary:focus-visible,
+.mvpScoringMore summary:focus-visible { outline: 2px solid #d9b86e; outline-offset: -2px; }
+@media (max-width: 650px) {
+  .mvpScoringDialog.mvpScoringCompact { max-height: 90dvh; }
+  .mvpScoringCompact .mvpScoringDialogHeader { padding: 14px 15px 12px; }
+  .mvpScoringCompact .mvpScoringBody { padding: 13px 15px 16px; }
+  .mvpScoringAttributeList summary { grid-template-columns: 78px minmax(0,1fr) auto; gap: 7px; }
+  .mvpScoringAttributeList .mvpScoringTagline { font-size: 10px; }
+}
+
+/* MVP leaderboard compact disclosures - APPEND at bottom of index.css.
+   Scoped to the leaderboard; podium, radar and scoring guide untouched. */
+.mvpLeaderboard .mvpCard.mvpCardCompact {
+  padding: 0;
+  overflow: hidden;
+  border-radius: 14px;
+}
+.mvpCardCompact .mvpCardDisclosure,
+.mvpCardCompact .mvpCardSummary { min-width: 0; }
+.mvpCardCompact .mvpCardSummary {
+  list-style: none;
+  display: block;
+  padding: 15px 19px 13px;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.mvpCardCompact .mvpCardSummary::-webkit-details-marker,
+.mvpCardCompact .mvpCompactAttribute > summary::-webkit-details-marker { display: none; }
+.mvpCardCompact .mvpCardSummary:focus-visible,
+.mvpCardCompact .mvpCompactAttribute > summary:focus-visible {
+  outline: 2px solid #d3a956;
+  outline-offset: -3px;
+  border-radius: 9px;
+}
+.mvpCardCompact .mvpCompactHeader,
+.mvpCardCompact .mvpCompactScoreSide { display: flex; align-items: center; justify-content: space-between; gap: 13px; }
+.mvpCardCompact .mvpIdentity h3 { font-size: 20px; margin: 0 0 2px; }
+.mvpCardCompact .mvpIdentity > span { width: 36px; height: 36px; font-size: 12px; }
+.mvpCardCompact .mvpScore strong { font-size: 29px; }
+.mvpCardCompact .mvpCompactChevron {
+  font-size: 23px;
+  line-height: 1;
+  color: #a5b0bc;
+  transition: transform 0.2s ease;
+}
+.mvpCardCompact .mvpCardDisclosure[open] > .mvpCardSummary .mvpCompactChevron { transform: rotate(180deg); }
+.mvpCardCompact .mvpCompactQuickStats {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 9px 0 0 49px;
+  color: #9ca8b6;
+  font-size: 11px;
+}
+.mvpCardCompact .mvpCompactQuickStats > span:not(.mvpCompactExpandHint) {
+  background: #222a34;
+  padding: 4px 8px;
+  border-radius: 7px;
+}
+.mvpCardCompact .mvpCompactQuickStats b { color: #dbe1e8; font-weight: 800; }
+.mvpCardCompact .mvpCompactExpandHint { margin-left: auto; color: #b9a078; font-weight: 750; }
+.mvpCardCompact .mvpCompactDetails { padding: 12px 19px 16px; border-top: 1px solid #303945; }
+.mvpCardCompact .mvpCompactDetailsHeading {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 6px;
+  color: #e3e8ee;
+  font-size: 12px;
+  font-weight: 850;
+  margin-bottom: 8px;
+}
+.mvpCardCompact .mvpCompactDetailsHeading span { font-size: 10px; color: #8694a4; font-weight: 500; }
+.mvpCardCompact .mvpCompactAttributes { border-top: 1px solid #303944; }
+.mvpCardCompact .mvpCompactAttribute { border-bottom: 1px solid #303944; }
+.mvpCardCompact .mvpCompactAttribute > summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 5px;
+  min-height: 38px;
+}
+.mvpCardCompact .mvpCompactAttributeName { color: #bec8d3; font-size: 12px; font-weight: 750; flex: 1; }
+.mvpCardCompact .mvpCompactAttribute > summary strong { color: #f1f3f6; font-size: 16px; font-variant-numeric: tabular-nums; }
+.mvpCardCompact .mvpCompactAttributeChevron { color: #8c99a6; transition: transform .2s ease; }
+.mvpCardCompact .mvpCompactAttribute[open] .mvpCompactAttributeChevron { transform: rotate(180deg); }
+.mvpCardCompact .mvpCompactAttributeDetail { padding: 0 15px 12px 5px; }
+.mvpCardCompact .mvpCompactAttributeDetail small { display: block; font-size: 11px; color: #9caab9; line-height: 1.65; }
+.mvpCardCompact .mvpCompactQualification .mvpSample { margin-top: 12px; }
+@media (max-width: 600px) {
+  .mvpCardCompact .mvpCardSummary { padding: 13px 13px 11px; }
+  .mvpCardCompact .mvpCompactDetails { padding: 12px 13px 14px; }
+  .mvpCardCompact .mvpCompactQuickStats { margin-left: 0; gap: 5px; font-size: 10px; }
+  .mvpCardCompact .mvpCompactSessionCount { display: none; }
+  .mvpCardCompact .mvpIdentity h3 { font-size: 18px; }
+  .mvpCardCompact .mvpScore strong { font-size: 25px; }
+  .mvpCardCompact .mvpCompactExpandHint { font-size: 10px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mvpCardCompact .mvpCompactChevron,
+  .mvpCardCompact .mvpCompactAttributeChevron { transition: none; }
+}
+
+/* JIMRAMI MVP radar: polished, accessible control hints.
+   Append after existing MVP CSS. No chart or podium layout changes. */
+.mvpRadarViewControls,
+.mvpRadarControls {
+  position: relative;
+  overflow: visible;
+}
+.mvpRadarViewControls { z-index: 15; }
+.mvpRadarControls { z-index: 10; }
+
+.mvpRadarViewButton[data-tooltip],
+.mvpRadarVisibility[data-tooltip],
+.mvpRadarRemove[data-tooltip] {
+  position: relative;
+}
+
+/* A shared dark tooltip. Browser title attributes are removed in TSX. */
+.mvpRadarViewButton[data-tooltip]::after,
+.mvpRadarVisibility[data-tooltip]::after,
+.mvpRadarRemove[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  width: max-content;
+  max-width: min(230px, 72vw);
+  box-sizing: border-box;
+  padding: 8px 11px;
+  border: 1px solid #4a586a;
+  border-left: 3px solid #deb66c;
+  border-radius: 8px;
+  background: #1b2532;
+  color: #f0f3f8;
+  box-shadow: 0 9px 26px rgba(0, 0, 0, .35);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+  text-align: left;
+  white-space: normal;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-4px);
+  transition: opacity .14s ease, transform .14s ease, visibility .14s ease;
+  z-index: 200;
+}
+
+.mvpRadarViewButton[data-tooltip]::before,
+.mvpRadarVisibility[data-tooltip]::before,
+.mvpRadarRemove[data-tooltip]::before {
+  content: '';
+  position: absolute;
+  left: 13px;
+  top: calc(100% + 5px);
+  width: 8px;
+  height: 8px;
+  background: #1b2532;
+  border-top: 1px solid #4a586a;
+  border-left: 1px solid #4a586a;
+  transform: translateY(-4px) rotate(45deg);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  z-index: 201;
+  transition: opacity .14s ease, visibility .14s ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .mvpRadarViewButton[data-tooltip]:hover::after,
+  .mvpRadarVisibility[data-tooltip]:hover::after,
+  .mvpRadarRemove[data-tooltip]:hover::after,
+  .mvpRadarViewButton[data-tooltip]:hover::before,
+  .mvpRadarVisibility[data-tooltip]:hover::before,
+  .mvpRadarRemove[data-tooltip]:hover::before {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+  }
+  .mvpRadarViewButton[data-tooltip]:hover::before,
+  .mvpRadarVisibility[data-tooltip]:hover::before,
+  .mvpRadarRemove[data-tooltip]:hover::before {
+    transform: rotate(45deg);
+  }
+}
+
+.mvpRadarViewButton[data-tooltip]:focus-visible::after,
+.mvpRadarVisibility[data-tooltip]:focus-visible::after,
+.mvpRadarRemove[data-tooltip]:focus-visible::after,
+.mvpRadarViewButton[data-tooltip]:focus-visible::before,
+.mvpRadarVisibility[data-tooltip]:focus-visible::before,
+.mvpRadarRemove[data-tooltip]:focus-visible::before {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+.mvpRadarViewButton[data-tooltip]:focus-visible::before,
+.mvpRadarVisibility[data-tooltip]:focus-visible::before,
+.mvpRadarRemove[data-tooltip]:focus-visible::before {
+  transform: rotate(45deg);
+}
+
+/* Keep right-edge hints inside the phone viewport. */
+.mvpRadarViewButton[data-tooltip]:last-child::after,
+.mvpRadarRemove[data-tooltip]::after {
+  left: auto;
+  right: 0;
+}
+.mvpRadarViewButton[data-tooltip]:last-child::before,
+.mvpRadarRemove[data-tooltip]::before {
+  left: auto;
+  right: 13px;
+}
+
+/* Hidden players are dimmed; the tooltip stays readable. */
+.mvpRadarChip.is-hidden:hover,
+.mvpRadarChip.is-hidden:focus-within { opacity: 1; }
+
+@media (prefers-reduced-motion: reduce) {
+  .mvpRadarViewButton[data-tooltip]::after,
+  .mvpRadarVisibility[data-tooltip]::after,
+  .mvpRadarRemove[data-tooltip]::after,
+  .mvpRadarViewButton[data-tooltip]::before,
+  .mvpRadarVisibility[data-tooltip]::before,
+  .mvpRadarRemove[data-tooltip]::before { transition: none; }
+}
+
+/* JIM WIN MARKERS — purple ring = Hide, gold ring = no Hide.
+   Append to the bottom of src/index.css. */
+
+/* JIM stars in session standings and player details. */
+.jimWinStars > .jimWinStar.hideless {
+  border-color: #e3b64b;
+  background: rgba(227, 182, 75, 0.065);
+  box-shadow: inset 0 0 0 1px rgba(227, 182, 75, 0.06);
+}
+
+/* JIM stars inside the win-streak path. */
+.winStreakJim.hideless {
+  border-color: #e3b64b;
+  background: rgba(227, 182, 75, 0.065);
+}
+
+/* GOALPOST WINNERS: clear and restrained podium hierarchy.
+   Append at the BOTTOM of src/index.css. */
+
+.goalpostDialog.reached .goalpostHeroMark.crown,
+.goalpostDialog.complete .goalpostHeroMark.crown {
+  color: #efb64f;
+  font-size: clamp(34px, 6vw, 48px);
+  filter: drop-shadow(0 2px 9px rgba(218, 157, 53, .18));
+}
+
+.goalpostDialog .goalpostWinnerLabel {
+  display: block;
+  width: fit-content;
+  margin: 0 auto 7px;
+  padding: 5px 12px;
+  border: 1px solid #795c27;
+  border-radius: 99px;
+  background: #272115;
+  color: #e7b64e;
+  font-size: 10px;
+  font-weight: 950;
+  letter-spacing: .15em;
+  line-height: 1.3;
+}
+
+.goalpostDialog.reached > h2,
+.goalpostDialog.complete > h1 {
+  max-width: 100%;
+  margin: 4px 0 5px;
+  color: #f8f2df;
+  font-size: clamp(32px, 6.6vw, 46px);
+  font-weight: 950;
+  line-height: 1.12;
+  letter-spacing: -.035em;
+  text-align: center;
+  overflow-wrap: anywhere;
+  text-shadow: 0 2px 0 rgba(0,0,0,.12);
+}
+
+.goalpostDialog.reached .goalpostWinnerPoints,
+.goalpostDialog.complete .goalpostWinnerPoints {
+  margin-top: 3px;
+  color: #e9b54b;
+  font-size: clamp(15px, 3vw, 19px);
+  font-weight: 950;
+  letter-spacing: .04em;
+}
+
+/* Winner is gold; all other rankings stay visibly secondary. */
+.goalpostDialog .goalpostPodiumColumn.rank-1 .goalpostPodiumName strong {
+  color: #f2c564;
+  font-size: clamp(14px, 2.2vw, 18px);
+  font-weight: 950;
+}
+.goalpostDialog .goalpostPodiumColumn.rank-1 .goalpostPodiumName > i {
+  color: #e4ad45;
+  font-size: 17px;
+}
+.goalpostDialog .goalpostPodiumColumn.rank-1 .goalpostPodiumScore {
+  color: #f4c15b;
+  font-size: clamp(24px, 3vw, 30px);
+  font-weight: 950;
+}
+.goalpostDialog .goalpostPodiumColumn.rank-2 .goalpostPodiumName strong,
+.goalpostDialog .goalpostPodiumColumn.rank-3 .goalpostPodiumName strong {
+  color: #e4e9f0;
+}
+.goalpostDialog .goalpostPodiumColumn:not(.rank-1) .goalpostPodiumScore {
+  color: #c9d2dc;
+}
+.goalpostDialog .goalpostPodiumColumn.rank-1 .goalpostPodiumStage {
+  border-top: 2px solid #c18a35;
+}
+
+.goalpostOpenFinishNote {
+  margin: 12px auto 3px;
+  color: #96a2b0;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .12em;
+  text-align: center;
+}
+
+/* Keep title legible on phone screens and allow long names. */
+@media (max-width: 520px) {
+  .goalpostDialog.reached > h2,
+  .goalpostDialog.complete > h1 { font-size: clamp(27px, 8vw, 35px); }
+  .goalpostDialog .goalpostPodiumColumn.rank-1 .goalpostPodiumName strong {
+    font-size: 14px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .goalpostDialog .goalpostWinnerLabel { animation: none; }
+}
+
+/* JIMRAMI Goalpost: viewport anchored results + ranked standings
+   Append to the VERY BOTTOM of src/index.css, AFTER earlier Goalpost CSS. */
+
+/* Portals keep the overlay relative to the screen, not the scrolled page.
+   Only the result panel scrolls. The underlying page is locked by App.tsx. */
+.goalpostViewportOverlay {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 2000;
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+  overflow: hidden;
+  overscroll-behavior: contain;
+}
+
+.goalpostViewportOverlay .goalpostDialog {
+  box-sizing: border-box;
+  max-height: 100%;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* The completed-session result also occupies the viewport, not document flow. */
+.goalpostPostGameViewport {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 2000;
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: none;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
+  padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+  overflow: hidden;
+  background: #0e1218;
+  overscroll-behavior: contain;
+}
+
+.goalpostPostGameViewport .goalpostDialog.complete {
+  box-sizing: border-box;
+  width: min(100%, 720px);
+  max-height: 100%;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Compact standings list replaces the block podium. */
+.goalpostDialog .goalpostRanking {
+  margin-top: 16px;
+  min-width: 0;
+}
+
+.goalpostRankingHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 0 10px 8px;
+  color: #8797aa;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .12em;
+}
+
+.goalpostRankingList {
+  display: grid;
+  gap: 7px;
+}
+
+.goalpostRankingRow {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  min-height: 66px;
+  padding: 10px 14px;
+  border: 1px solid #364151;
+  border-radius: 13px;
+  background: #202832;
+  min-width: 0;
+}
+
+.goalpostRankingRow.winner {
+  border-color: #946c2d;
+  background: linear-gradient(100deg, #352817 0%, #27241e 65%, #20252c 100%);
+  box-shadow: inset 3px 0 0 #dfad4d;
+}
+
+.goalpostRankingRow.tiedFirst {
+  border-color: #75694b;
+  background: #292820;
+}
+
+.goalpostRankingPosition {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: #2c3541;
+  color: #b7c2cf;
+  font-size: 19px;
+  font-weight: 950;
+}
+
+.goalpostRankingRow.winner .goalpostRankingPosition {
+  background: #634419;
+  color: #f2bf5e;
+}
+
+.goalpostRankingPlayer {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+}
+
+.goalpostRankingNameLine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px 9px;
+  min-width: 0;
+}
+
+.goalpostRankingNameLine > strong {
+  min-width: 0;
+  color: #edf0f5;
+  font-size: 16px;
+  font-weight: 900;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.goalpostRankingRow.winner .goalpostRankingNameLine > strong {
+  color: #f4cd7a;
+  font-size: 18px;
+}
+
+.goalpostRankingWinnerTag,
+.goalpostRankingTieTag {
+  color: #ebba60;
+  font-size: 9px;
+  font-weight: 950;
+  white-space: nowrap;
+  letter-spacing: .08em;
+}
+
+.goalpostRankingTieTag { color: #d7c399; }
+
+.goalpostRankingAccolades {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  min-height: 17px;
+}
+
+.goalpostRankingAccolades .standardWinTally,
+.goalpostRankingAccolades .jimWinStars,
+.goalpostRankingAccolades .jimCatchScissors,
+.goalpostRankingAccolades .jimFailSkulls {
+  max-width: 100%;
+}
+
+.goalpostRankingPoints {
+  color: #e1e7ed;
+  font-size: 25px;
+  font-weight: 950;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.goalpostRankingRow.winner .goalpostRankingPoints {
+  color: #f3c467;
+}
+
+/* A small entrance motion instead of the former tall podium rise. */
+.goalpostDialog.reached .goalpostRankingRow {
+  animation: goalpostRankingEnter 300ms ease-out both;
+}
+.goalpostDialog.reached .goalpostRankingRow:nth-child(1) { animation-delay: 140ms; }
+.goalpostDialog.reached .goalpostRankingRow:nth-child(2) { animation-delay: 200ms; }
+.goalpostDialog.reached .goalpostRankingRow:nth-child(3) { animation-delay: 260ms; }
+.goalpostDialog.reached .goalpostRankingRow:nth-child(n+4) { animation-delay: 320ms; }
+
+@keyframes goalpostRankingEnter {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 520px) {
+  .goalpostViewportOverlay,
+  .goalpostPostGameViewport { padding: 10px; }
+  .goalpostViewportOverlay .goalpostDialog,
+  .goalpostPostGameViewport .goalpostDialog { padding: 18px; border-radius: 18px; }
+  .goalpostRankingRow { grid-template-columns: 32px minmax(0, 1fr) auto; min-height: 59px; gap: 8px; padding: 9px; }
+  .goalpostRankingPosition { width: 30px; height: 30px; font-size: 16px; border-radius: 8px; }
+  .goalpostRankingNameLine > strong { font-size: 14px; }
+  .goalpostRankingRow.winner .goalpostRankingNameLine > strong { font-size: 15px; }
+  .goalpostRankingPoints { font-size: 21px; }
+  .goalpostRankingWinnerTag { font-size: 8px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .goalpostDialog.reached .goalpostRankingRow { animation: none; }
+}
+
+/* JIMRAMI GOALPOST: featured winner + more legible ranking
+   Append to the very END of src/index.css, after the previous goalpost CSS.
+   The viewport scroll lock and backdrop are handled by App.tsx. */
+
+/* Winner gets its own horizontal place / identity / achievements / score banner. */
+.goalpostDialog .goalpostWinnerFeature {
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr) minmax(72px, .62fr) 86px;
+  align-items: stretch;
+  gap: 13px;
+  min-width: 0;
+  min-height: 174px;
+  margin: 16px 0 20px;
+}
+
+.goalpostDialog .goalpostWinnerRankBlock,
+.goalpostDialog .goalpostWinnerScoreBlock {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  border-radius: 13px;
+}
+
+.goalpostDialog .goalpostWinnerRankBlock {
+  border: 1px solid #755324;
+  background: linear-gradient(165deg, #422c14, #312514);
+}
+
+.goalpostDialog .goalpostWinnerRankBlock > span {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  min-height: 72px;
+  border-radius: 13px;
+  background: #6b4518;
+  color: #f1b64a;
+  font-size: 50px;
+  font-weight: 950;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.goalpostDialog .goalpostWinnerIdentity {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  min-width: 0;
+  padding: 4px 0;
+}
+
+.goalpostDialog .goalpostFeatureCrown {
+  color: #e7a947;
+  font-size: 41px;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+
+.goalpostDialog .goalpostFeatureWinnerTag {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 9px;
+  border: 1px solid #72501f;
+  border-radius: 99px;
+  color: #eab34d;
+  background: #281f13;
+  font-size: 9px;
+  font-weight: 950;
+  letter-spacing: .1em;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+/* Override generic Goalpost h2 and older centered-winner rules. */
+.goalpostDialog .goalpostWinnerIdentity .goalpostFeatureName {
+  width: 100%;
+  margin: 7px 0 0;
+  color: #faf4e8;
+  font-size: clamp(26px, 3.6vw, 37px);
+  font-weight: 950;
+  letter-spacing: -.03em;
+  line-height: 1.12;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+
+.goalpostDialog .goalpostFeatureTarget {
+  align-self: flex-start;
+  margin-top: 14px;
+  padding: 6px 10px;
+  border: 1px solid #65491e;
+  border-radius: 99px;
+  background: #231d13;
+  color: #aa8c50;
+  font-size: 9px;
+  font-weight: 950;
+  letter-spacing: .07em;
+  white-space: nowrap;
+}
+
+.goalpostDialog .goalpostFeatureTarget strong {
+  color: #e0b057;
+  font-size: 12px;
+}
+
+.goalpostDialog .goalpostWinnerAchievements {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  min-width: 0;
+}
+
+.goalpostDialog .goalpostWinnerAchievements .goalpostRankingAccolades {
+  justify-content: center;
+  gap: 8px 9px;
+  width: 100%;
+  margin: 0;
+}
+
+.goalpostDialog .goalpostWinnerAchievements .jimWinStars,
+.goalpostDialog .goalpostWinnerAchievements .jimCatchScissors,
+.goalpostDialog .goalpostWinnerAchievements .jimFailSkulls,
+.goalpostDialog .goalpostWinnerAchievements .standardWinTally {
+  max-width: 100%;
+}
+
+.goalpostDialog .goalpostWinnerScoreBlock {
+  border: 1px solid #364455;
+  border-right: 3px solid #bd8938;
+  background: linear-gradient(160deg, #28323d, #202832);
+  color: #eeb853;
+}
+
+.goalpostDialog .goalpostWinnerScoreBlock > strong {
+  font-size: clamp(39px, 5vw, 54px);
+  font-weight: 950;
+  line-height: 1.12;
+  font-variant-numeric: tabular-nums;
+}
+
+.goalpostDialog .goalpostWinnerScoreBlock > span {
+  margin-top: 6px;
+  color: #be9b59;
+  font-size: 10px;
+  font-weight: 950;
+  letter-spacing: .09em;
+}
+
+/* Compact second-place onward list, with names readable at a glance. */
+.goalpostDialog .goalpostRanking { margin-top: 6px; }
+.goalpostDialog .goalpostRankingList { gap: 9px; }
+.goalpostDialog .goalpostRankingRow {
+  grid-template-columns: 43px minmax(0, 1fr) auto;
+  gap: 13px;
+  min-height: 74px;
+  padding: 12px 15px;
+}
+.goalpostDialog .goalpostRankingPosition {
+  width: 41px;
+  height: 41px;
+  font-size: 22px;
+}
+.goalpostDialog .goalpostRankingNameLine > strong {
+  color: #f1f4f8;
+  font-size: clamp(19px, 2.65vw, 23px);
+  line-height: 1.15;
+  font-weight: 950;
+}
+.goalpostDialog .goalpostRankingPoints {
+  font-size: 28px;
+}
+.goalpostDialog .goalpostRankingAccolades { gap: 5px 10px; }
+
+.goalpostDialog .goalpostTieFeature { margin: 0 auto 22px; }
+.goalpostDialog .goalpostTieFeature h1 { overflow-wrap: anywhere; }
+
+/* Animation only when motion is allowed. */
+@media (prefers-reduced-motion: no-preference) {
+  .goalpostDialog.reached .goalpostWinnerFeature {
+    animation: goalpostWinnerFeatureIn 460ms cubic-bezier(.16, 1, .3, 1) 120ms both;
+  }
+  @keyframes goalpostWinnerFeatureIn {
+    from { opacity: 0; transform: translateY(10px) scale(.985); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+}
+
+/* Keep the featured winner horizontal on tablets and phones. */
+@media (max-width: 600px) {
+  .goalpostDialog .goalpostWinnerFeature {
+    grid-template-columns: 56px minmax(0, 1fr) 68px;
+    grid-template-areas:
+      'rank identity score'
+      'awards awards awards';
+    column-gap: 9px;
+    row-gap: 0;
+    min-height: 0;
+    margin: 12px 0 17px;
+  }
+  .goalpostDialog .goalpostWinnerRankBlock { grid-area: rank; }
+  .goalpostDialog .goalpostWinnerIdentity { grid-area: identity; padding: 12px 0; }
+  .goalpostDialog .goalpostWinnerScoreBlock { grid-area: score; }
+  .goalpostDialog .goalpostWinnerAchievements {
+    grid-area: awards;
+    justify-content: center;
+    padding: 8px 4px 0;
+  }
+  .goalpostDialog .goalpostWinnerAchievements:empty { display: none; }
+  .goalpostDialog .goalpostWinnerAchievements .goalpostRankingAccolades {
+    justify-content: center;
+  }
+  .goalpostDialog .goalpostWinnerRankBlock > span {
+    width: 42px;
+    min-height: 57px;
+    font-size: 37px;
+  }
+  .goalpostDialog .goalpostWinnerScoreBlock > strong { font-size: 38px; }
+  .goalpostDialog .goalpostWinnerScoreBlock > span { font-size: 8px; }
+  .goalpostDialog .goalpostFeatureCrown { font-size: 32px; margin-bottom: 5px; }
+  .goalpostDialog .goalpostFeatureWinnerTag { font-size: 8px; padding: 4px 7px; }
+  .goalpostDialog .goalpostWinnerIdentity .goalpostFeatureName {
+    font-size: clamp(22px, 6vw, 30px);
+    margin-top: 6px;
+  }
+  .goalpostDialog .goalpostFeatureTarget { margin-top: 9px; font-size: 8px; padding: 5px 8px; }
+  .goalpostDialog .goalpostRankingRow {
+    grid-template-columns: 37px minmax(0, 1fr) auto;
+    gap: 9px;
+    min-height: 64px;
+    padding: 10px;
+  }
+  .goalpostDialog .goalpostRankingPosition { width: 35px; height: 35px; font-size: 18px; }
+  .goalpostDialog .goalpostRankingNameLine > strong { font-size: 19px; }
+  .goalpostDialog .goalpostRankingPoints { font-size: 25px; }
+}
+
+@media (max-width: 360px) {
+  .goalpostDialog .goalpostWinnerFeature { grid-template-columns: 46px minmax(0, 1fr) 56px; gap: 6px; }
+  .goalpostDialog .goalpostWinnerRankBlock > span { width: 35px; min-height: 48px; font-size: 31px; }
+  .goalpostDialog .goalpostWinnerScoreBlock > strong { font-size: 32px; }
+  .goalpostDialog .goalpostWinnerIdentity .goalpostFeatureName { font-size: 21px; }
+  .goalpostDialog .goalpostRankingNameLine > strong { font-size: 18px; }
+}
+
+/* JIMRAMI — Featured winner layout refinement.
+   Append at the END of src/index.css, after earlier Goalpost CSS.
+   Keep previous snippets: this only refines the existing winner banner. */
+
+/* One cohesive winner row instead of tall rank and score towers. */
+.goalpostDialog .goalpostWinnerFeature {
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: 62px minmax(0, 1fr) 103px;
+  grid-template-areas: none;
+  align-items: center;
+  gap: 17px;
+  min-height: 136px;
+  padding: 18px 19px;
+  margin: 16px 0 19px;
+  border: 1px solid #6d532d;
+  border-radius: 17px;
+  background: linear-gradient(105deg, #30281d 0%, #24252a 43%, #1b232d 100%);
+}
+
+/* A single square number badge, with no surrounding tall rectangle. */
+.goalpostDialog .goalpostWinnerRankBlock {
+  grid-area: auto;
+  display: grid;
+  place-items: center;
+  width: 62px;
+  height: 62px;
+  min-width: 0;
+  border: 0;
+  border-radius: 13px;
+  background: transparent;
+}
+.goalpostDialog .goalpostWinnerRankBlock > span {
+  display: grid;
+  place-items: center;
+  width: 62px;
+  height: 62px;
+  min-height: 0;
+  border: 1px solid #95652c;
+  border-radius: 13px;
+  background: linear-gradient(145deg, #80531d, #5b3c1b);
+  color: #f5c36a;
+  font-size: 43px;
+  font-weight: 950;
+  line-height: 1;
+  box-shadow: inset 0 1px 0 #9b6e32;
+}
+
+.goalpostDialog .goalpostWinnerIdentity {
+  grid-area: auto;
+  min-width: 0;
+  align-self: center;
+  justify-content: center;
+  gap: 0;
+  padding: 0;
+}
+
+/* Crown belongs to the winner label, not above it. */
+.goalpostDialog .goalpostFeatureHeadline {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 9px;
+  min-width: 0;
+}
+.goalpostDialog .goalpostFeatureCrown {
+  display: inline-block;
+  flex: none;
+  margin: 0;
+  color: #edb953;
+  font-size: 26px;
+  line-height: 1;
+}
+.goalpostDialog .goalpostFeatureWinnerTag {
+  padding: 4px 9px;
+  border: 1px solid #765425;
+  border-radius: 99px;
+  color: #e9b754;
+  background: #292216;
+  font-size: 9px;
+  letter-spacing: .1em;
+}
+.goalpostDialog .goalpostWinnerIdentity .goalpostFeatureName {
+  margin: 7px 0 0;
+  color: #fff4df;
+  font-size: clamp(26px, 3.5vw, 36px);
+  font-weight: 950;
+  letter-spacing: -.035em;
+  line-height: 1.13;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+
+/* Achievements remain with the name, never floating at the far right. */
+.goalpostDialog .goalpostWinnerMeta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px 12px;
+  min-width: 0;
+  margin-top: 9px;
+}
+.goalpostDialog .goalpostWinnerMeta .goalpostRankingAccolades {
+  width: auto;
+  margin: 0;
+  min-height: 18px;
+  justify-content: flex-start;
+  gap: 5px 9px;
+}
+.goalpostDialog .goalpostWinnerMeta .goalpostFeatureTarget {
+  display: inline-flex;
+  align-items: center;
+  align-self: center;
+  margin: 0;
+  padding: 5px 9px;
+  border-radius: 99px;
+  font-size: 9px;
+  white-space: nowrap;
+}
+.goalpostDialog .goalpostWinnerMeta .goalpostFeatureTarget strong {
+  margin-left: 4px;
+}
+
+/* Large points are still prominent, without another tall, boxed column. */
+.goalpostDialog .goalpostWinnerScoreBlock {
+  grid-area: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  min-width: 0;
+  height: auto;
+  padding: 8px 0 8px 11px;
+  border: 0;
+  border-left: 1px solid #655133;
+  border-radius: 0;
+  background: transparent;
+  text-align: right;
+}
+.goalpostDialog .goalpostWinnerScoreBlock > strong {
+  color: #f3c166;
+  font-size: clamp(37px, 5vw, 49px);
+  line-height: 1;
+  font-weight: 950;
+  font-variant-numeric: tabular-nums;
+}
+.goalpostDialog .goalpostWinnerScoreBlock > span {
+  margin-top: 8px;
+  color: #cba65d;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .12em;
+}
+
+/* Tablet and phone layouts keep all three elements in a neat row. */
+@media (max-width: 600px) {
+  .goalpostDialog .goalpostWinnerFeature {
+    grid-template-columns: 47px minmax(0, 1fr) 59px;
+    grid-template-areas: none;
+    gap: 10px;
+    min-height: 116px;
+    padding: 13px 10px;
+    margin: 11px 0 15px;
+  }
+  .goalpostDialog .goalpostWinnerRankBlock,
+  .goalpostDialog .goalpostWinnerIdentity,
+  .goalpostDialog .goalpostWinnerScoreBlock { grid-area: auto; }
+  .goalpostDialog .goalpostWinnerRankBlock,
+  .goalpostDialog .goalpostWinnerRankBlock > span {
+    width: 47px;
+    height: 47px;
+  }
+  .goalpostDialog .goalpostWinnerRankBlock > span {
+    min-height: 0;
+    font-size: 33px;
+    border-radius: 10px;
+  }
+  .goalpostDialog .goalpostFeatureCrown { font-size: 22px; }
+  .goalpostDialog .goalpostFeatureHeadline { gap: 5px; }
+  .goalpostDialog .goalpostFeatureWinnerTag { padding: 3px 6px; font-size: 8px; }
+  .goalpostDialog .goalpostWinnerIdentity .goalpostFeatureName {
+    font-size: clamp(21px, 5.5vw, 29px);
+    margin-top: 6px;
+  }
+  .goalpostDialog .goalpostWinnerMeta { gap: 5px 7px; margin-top: 7px; }
+  .goalpostDialog .goalpostWinnerMeta .goalpostFeatureTarget {
+    font-size: 8px;
+    padding: 4px 7px;
+  }
+  .goalpostDialog .goalpostWinnerScoreBlock { padding-left: 7px; }
+  .goalpostDialog .goalpostWinnerScoreBlock > strong { font-size: 34px; }
+  .goalpostDialog .goalpostWinnerScoreBlock > span { font-size: 8px; }
+}
+
+@media (max-width: 360px) {
+  .goalpostDialog .goalpostWinnerFeature {
+    grid-template-columns: 39px minmax(0, 1fr) 50px;
+    gap: 7px;
+    padding: 11px 8px;
+  }
+  .goalpostDialog .goalpostWinnerRankBlock,
+  .goalpostDialog .goalpostWinnerRankBlock > span { width: 39px; height: 39px; }
+  .goalpostDialog .goalpostWinnerRankBlock > span { font-size: 28px; }
+  .goalpostDialog .goalpostWinnerScoreBlock > strong { font-size: 30px; }
+  .goalpostDialog .goalpostWinnerIdentity .goalpostFeatureName { font-size: 21px; }
+}
+
+/* JIMRAMI - Goalpost banner position refinement.
+   APPEND to the bottom of src/index.css (after previous Goalpost CSS). */
+
+/* The result type and target belong together at the top of the screen. */
+.goalpostDialog.reached > .goalpostEyebrow,
+.goalpostDialog.complete > .goalpostEyebrow {
+  display: block;
+  text-align: center;
+}
+.goalpostDialog .goalpostHeaderTarget {
+  display: flex;
+  justify-content: center;
+  align-items: baseline;
+  gap: 5px;
+  width: fit-content;
+  max-width: 100%;
+  margin: 8px auto 18px;
+  padding: 6px 11px;
+  border: 1px solid #6d4e21;
+  border-radius: 999px;
+  background: #292215;
+  color: #ddb35b;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .07em;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+.goalpostDialog .goalpostHeaderTarget strong { color: #f2c466; font-size: inherit; }
+
+/* Tighten the winner card now that the target is above it. */
+.goalpostDialog .goalpostWinnerFeature {
+  margin-top: 0;
+  min-height: 126px;
+}
+.goalpostDialog .goalpostWinnerIdentity { min-width: 0; }
+.goalpostDialog .goalpostFeatureHeadline { margin-bottom: 7px; }
+.goalpostDialog .goalpostFeatureNameLine {
+  width: min(100%, 300px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  min-width: 0;
+}
+.goalpostDialog .goalpostFeatureNameLine .goalpostFeatureName {
+  flex: 0 1 auto;
+  min-width: 0;
+  margin: 0;
+}
+/* Same name line, but visually separated from the lettering. */
+.goalpostDialog .goalpostFeatureNameLine .goalpostFeatureCrown {
+  display: block;
+  flex: 0 0 auto;
+  margin-left: auto;
+  font-size: 27px;
+  line-height: 1;
+}
+.goalpostDialog .goalpostWinnerMeta { margin-top: 9px; }
+
+@media (max-width: 600px) {
+  .goalpostDialog .goalpostHeaderTarget {
+    margin: 7px auto 14px;
+    font-size: 9px;
+  }
+  .goalpostDialog .goalpostWinnerFeature { min-height: 110px; }
+  .goalpostDialog .goalpostFeatureNameLine { gap: 9px; }
+  .goalpostDialog .goalpostFeatureNameLine .goalpostFeatureCrown { font-size: 22px; }
+}
+
+/* JIMRAMI — larger crown beside winner's name */
+.goalpostDialog .goalpostFeatureNameLine .goalpostFeatureCrown {
+  font-size: 50px;
+}
+
+@media (max-width: 600px) {
+  .goalpostDialog .goalpostFeatureNameLine .goalpostFeatureCrown {
+    font-size: 50px;
+  }
+}
+
+/* SCORE TRANSITION — JIM win ring colors
+   Purple ring = JIM won using Hide (existing styling).
+   Gold ring = perfect JIM, won without Hide.
+   Append to the bottom of src/index.css. */
+
+/* JIM stars shown below the player name after score animation. */
+.scoreJimStars > .scoreJimStar.hideless {
+  border: 1px solid #e3b64b;
+  border-radius: 50%;
+  background: rgba(227, 182, 75, 0.065);
+  box-shadow: inset 0 0 0 1px rgba(227, 182, 75, 0.06);
+}
+
+/* JIM star inside the temporary +points reward bubble. */
+.cleanRewardBubble .rewardStar.hideless {
+  border: 1px solid #e3b64b;
+  border-radius: 50%;
+  background: rgba(227, 182, 75, 0.065);
+  box-shadow: inset 0 0 0 1px rgba(227, 182, 75, 0.06);
+}
+
+/* JIMRAMI — one-time gold fireworks on Session Complete only.
+   APPEND to the bottom of src/index.css. */
+.goalpostDialog.complete {
+  position: relative;
+  isolation: isolate;
+}
+
+/* Draw sparks into the dialog background, not on top of the labels or controls. */
+.goalpostDialog.complete > .goalpostGoldFireworks {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  /* Above opaque card surfaces, but below important text and controls. */
+  z-index: 2;
+  pointer-events: none;
+  user-select: none;
+  opacity: 0.92;
+}
+
+.goalpostDialog.complete > :not(.goalpostGoldFireworks) {
+  position: relative;
+  z-index: 3;
+}
+
+/* Let the particles glimmer across the winner card's surface,
+   with the name, crown and points always above the particles. */
+.goalpostDialog.complete > .goalpostWinnerFeature {
+  z-index: auto;
+}
+.goalpostDialog.complete > .goalpostWinnerFeature > * {
+  position: relative;
+  z-index: 3;
+}
+
+/* Put the goalpost winner crown directly next to the player's name. */
+.goalpostDialog .goalpostFeatureNameLine {
+  width: auto;
+  max-width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+}
+
+.goalpostDialog .goalpostFeatureNameLine .goalpostFeatureName {
+  flex: 0 1 auto;
+}
+
+.goalpostDialog .goalpostFeatureNameLine .goalpostFeatureCrown {
+  margin-left: 0 !important;
+  flex: 0 0 auto;
+}
+
+@media (max-width: 600px) {
+  .goalpostDialog .goalpostFeatureNameLine {
+    gap: 8px;
+  }
+}

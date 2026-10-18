@@ -295,6 +295,7 @@ type PlayerSort =
   | 'jimRate'
   | 'jimAttempts'
   | 'jimCatches'
+  | 'penakutSessions'
   | 'jimCaught'
   | 'standardRate'
   | 'sessionRate'
@@ -365,6 +366,10 @@ const PLAYER_SORT_GROUPS:
         {
           value: 'jimCaught',
           label: 'Total Caught',
+        },
+        {
+          value: 'penakutSessions',
+          label: 'Penakut Sessions',
         },
       ],
     },
@@ -625,44 +630,78 @@ type PlayerStat = {
 type MvpStat = {
   playerId: number
   name: string
-
   score: number
   provisional: boolean
+
+  // All-time = all-time scoring; Recent = last 10 completed player sessions.
+  // Overall and radar attributes are the 40% / 60% blend of those two.
+  careerScore: number
+  recentScore: number
+  recentSessions: number
+  careerStandardScore: number
+  careerJimScore: number
+  careerSessionScore: number
+  careerSlayerScore: number
+  careerConsistencyScore: number
+  recentStandardScore: number
+  recentJimScore: number
+  recentSessionScore: number
+  recentSlayerScore: number
+  recentConsistencyScore: number
 
   standardScore: number
   jimScore: number
   sessionScore: number
+  slayerScore: number
   consistencyScore: number
 
   standardWinRate: number
   averageStandardPoints: number
-
+  totalStandardWins: number
+  normalizedStandardWins: number
   jimWinRate: number
-  catchesPerSession: number
-
+  totalJimWins: number
+  normalizedJimWins: number
+  braveryRate: number
+  penakutSessions: number
+  penakutPenalty: number
   sessionWinRate: number
-  zeroPointRate: number
-  disciplineScore: number
+  totalSessionWins: number
+  normalizedSessionWins: number
+  totalCatches: number
+  normalizedCatchScore: number
+  slayerFrequency: number
+  nonZeroRate: number
+  strongRoundRate: number
+  averageSessionStreak: number
+  streakScore: number
 
   sessions: number
   standardRounds: number
   jimAttempts: number
 }
 
-// The radar breaks down the SAME measures as MVP v1. All axes are
-// normalized to 0–100, without modifying the actual MVP formula.
+// Five radar axes match the five weighted MVP v2 attributes.
+// The radar shares the same 0-100 category scores as the leaderboard.
 const MVP_RADAR_COLORS = ['#b98421', '#378aaf', '#cc695d', '#8f76ca'] as const
+type MvpRadarView = 'hybrid' | 'allTime' | 'recent'
+const MVP_RADAR_VIEWS: { key: MvpRadarView; label: string; description: string }[] = [
+  { key: 'hybrid', label: 'MVP', description: '40% All-time + 60% Recent' },
+  { key: 'allTime', label: 'All-time', description: 'Complete playing history' },
+  { key: 'recent', label: 'Recent 10', description: 'Last 10 completed sessions' },
+]
 
 const MVP_RADAR_AXES: {
   label: string
   value: (player: MvpStat) => number
+  allTime: (player: MvpStat) => number
+  recent: (player: MvpStat) => number
 }[] = [
-  { label: 'Standard wins', value: player => player.standardWinRate },
-  { label: 'Avg points', value: player => (player.averageStandardPoints / 3) * 100 },
-  { label: 'JIM success', value: player => player.jimWinRate },
-  { label: 'JIM catch', value: player => player.catchesPerSession * 100 },
-  { label: 'Session wins', value: player => player.sessionWinRate },
-  { label: 'Consistency', value: player => player.consistencyScore },
+  { label: 'Standard', value: p => p.standardScore, allTime: p => p.careerStandardScore, recent: p => p.recentStandardScore },
+  { label: 'Jim', value: p => p.jimScore, allTime: p => p.careerJimScore, recent: p => p.recentJimScore },
+  { label: 'Session', value: p => p.sessionScore, allTime: p => p.careerSessionScore, recent: p => p.recentSessionScore },
+  { label: 'Slayer', value: p => p.slayerScore, allTime: p => p.careerSlayerScore, recent: p => p.recentSlayerScore },
+  { label: 'Consistency', value: p => p.consistencyScore, allTime: p => p.careerConsistencyScore, recent: p => p.recentConsistencyScore },
 ]
 
 type WinStreakPathEvent = {
@@ -1290,7 +1329,7 @@ function buildCountAwards(
 
     makeAward(
       'Penakut',
-      'Most completed sessions with zero Jim attempts while at least one Jim round was played',
+      'Most completed sessions with zero Jim attempts',
       (player) =>
         player.penakutSessions,
       (value) =>
@@ -1624,6 +1663,43 @@ export default function HistoryStats({
   const [radarSelection, setRadarSelection] =
     useState<Array<{ playerId: number; visible: boolean }> | null>(null)
   const [radarPickerOpen, setRadarPickerOpen] = useState(false)
+  const [radarSingleViews, setRadarSingleViews] = useState<MvpRadarView[]>(['hybrid'])
+  const [radarComparisonView, setRadarComparisonView] = useState<MvpRadarView>('hybrid')
+  const [mvpScoringOpen, setMvpScoringOpen] = useState(false)
+  const scoringCloseRef = useRef<HTMLButtonElement>(null)
+
+  useEffect(() => {
+    if (!mvpScoringOpen) return
+    const scrollX = window.scrollX
+    const scrollY = window.scrollY
+    const body = document.body
+    const previous = {
+      position: body.style.position,
+      top: body.style.top,
+      left: body.style.left,
+      width: body.style.width,
+      overflow: body.style.overflow,
+    }
+    body.style.position = 'fixed'
+    body.style.top = `-${scrollY}px`
+    body.style.left = `-${scrollX}px`
+    body.style.width = '100%'
+    body.style.overflow = 'hidden'
+    scoringCloseRef.current?.focus()
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setMvpScoringOpen(false)
+    }
+    document.addEventListener('keydown', handleEscape)
+    return () => {
+      document.removeEventListener('keydown', handleEscape)
+      body.style.position = previous.position
+      body.style.top = previous.top
+      body.style.left = previous.left
+      body.style.width = previous.width
+      body.style.overflow = previous.overflow
+      window.scrollTo(scrollX, scrollY)
+    }
+  }, [mvpScoringOpen])
   const radarPickerRef = useRef<HTMLDivElement>(null)
   const [radarIsMobile, setRadarIsMobile] = useState(
     () => typeof window !== 'undefined' && window.matchMedia('(max-width: 650px)').matches
@@ -1822,6 +1898,12 @@ export default function HistoryStats({
         /*
           Modal / temporary UI first.
         */
+        if (mvpScoringOpen) {
+          setMvpScoringOpen(false)
+          event.preventDefault()
+          return
+        }
+
         if (
           sessionPlayerDetail !== null
         ) {
@@ -1936,6 +2018,7 @@ export default function HistoryStats({
     },
     [
       awardSessionId,
+      mvpScoringOpen,
       deleteSessionId,
       deletingSession,
       editingRoundId,
@@ -2518,31 +2601,15 @@ export default function HistoryStats({
                   )
             ).length
 
-          /*
-            Penakut only counts a completed
-            session if at least one Jim round
-            happened in that session, but this
-            player never took Jim.
-          */
+          /* Penakut = zero Jim attempts in a completed session. */
           const penakutSessions =
             completedParticipations.filter(
-              (entry) => {
-                const sessionJim =
-                  jimResults.filter(
-                    (result) =>
-                      result.sessionId ===
-                      entry.sessionId
-                  )
-
-                return (
-                  sessionJim.length > 0 &&
-                  !sessionJim.some(
-                    (result) =>
-                      result.jimPlayerId ===
-                      player.id
-                  )
+              (entry) =>
+                !jimResults.some(
+                  (result) =>
+                    result.sessionId === entry.sessionId &&
+                    result.jimPlayerId === player.id
                 )
-              }
             ).length
 
           const standard =
@@ -2829,6 +2896,13 @@ export default function HistoryStats({
 
         if (
           playerSort ===
+          'penakutSessions'
+        ) {
+          return player.penakutSessions
+        }
+
+        if (
+          playerSort ===
           'standardRate'
         ) {
           return (
@@ -2870,247 +2944,337 @@ export default function HistoryStats({
       playerSort,
     ])
 
-  const mvpStats =
-    useMemo<MvpStat[]>(() => {
-      if (
-        !sessionPlayers ||
-        !roundResults
-      ) {
-        return []
+  // Hybrid MVP: 40% career achievement + 60% last 10 completed sessions.
+  // Individual attribute weights and provisional eligibility remain unchanged.
+  const mvpStats = useMemo<MvpStat[]>(() => {
+    if (!sessions || !sessionPlayers || !rounds || !roundResults || !jimResults) {
+      return []
+    }
+
+    const completed = new Set(
+      sessions.filter(session => session.status === 'ended').map(session => session.id)
+    )
+    const highestCatchCount = Math.max(0, ...playerStats.map(player => player.jimCatches))
+    const highestJimWins = Math.max(0, ...playerStats.map(player => player.jimWins))
+    const highestStandardWins = Math.max(0, ...playerStats.map(player => player.standardWins))
+    const highestSessionWins = Math.max(0, ...playerStats.map(player => player.sessionWins))
+
+    // Capture the loaded arrays so TypeScript can safely use them
+    // inside longestSessionStreak (a nested function).
+    const allRounds = rounds
+    const allRoundResults = roundResults
+    const allJimResults = jimResults
+
+    // Match Awards streak rules: Standard 1st, Jim victory, Jim catch = win.
+    // Recorded non-wins break; waiting and unrecorded rounds pause the streak.
+    function longestSessionStreak(sessionId: number, playerId: number): number {
+      const ordered = allRounds
+        .filter(round => round.sessionId === sessionId)
+        .sort((a, b) => a.roundNumber - b.roundNumber || a.id - b.id)
+      let current = 0
+      let longest = 0
+      const won = () => {
+        current += 1
+        longest = Math.max(longest, current)
       }
 
-      return playerStats
-        .map(
-          (player) => {
-            const standardResults =
-              roundResults.filter(
-                (result) =>
-                  result.playerId ===
-                  player.id
-              )
+      for (const round of ordered) {
+        if (round.type === 'standard') {
+          const result = allRoundResults.find(
+            entry => entry.roundId === round.id && entry.playerId === playerId
+          )
+          if (!result) continue // Not playing: pause.
+          if (result.position === 1) won()
+          else current = 0
+          continue
+        }
 
-            const standardPoints =
-              standardResults.reduce(
-                (total, result) =>
-                  total +
-                  result.pointsAwarded,
-                0
-              )
+        const jim = allJimResults.find(entry => entry.roundId === round.id)
+        if (!jim) continue // Penalties and other unrecorded rounds: pause.
+        if (jim.jimPlayerId === playerId) {
+          if (jim.won) won()
+          else current = 0
+        } else if (jim.caughtByPlayerId === playerId) {
+          won()
+        } else if (jim.won && jim.outPlayerId === playerId) {
+          current = 0
+        }
+        // Other Jim defenders: pause (not enough recorded information).
+      }
+      return longest
+    }
 
-            const averageStandardPoints =
-              player.standardRounds > 0
-                ? standardPoints /
-                  player.standardRounds
-                : 0
-
-            const standardWinRate =
-              player.standardWinRate ===
-              null
-                ? 0
-                : player.standardWinRate /
-                  100
-
-            const standardScore =
-              0.5 *
-                standardWinRate +
-              0.5 *
-                clamp01(
-                  averageStandardPoints /
-                    3
-                )
-
-            const jimWinRate =
-              player.jimSuccessRate ===
-              null
-                ? 0
-                : player.jimSuccessRate /
-                  100
-
-            /*
-              Exact historical "catch
-              opportunities" are not
-              stored for every Jim round,
-              because the DB records the
-              Jim player and catcher but
-              not the other three active
-              players.
-
-              For MVP v1, catches are
-              therefore normalized by
-              sessions played. One catch
-              per session reaches the
-              full catcher sub-score.
-            */
-            const catchesPerSession =
-              player.sessions > 0
-                ? player.jimCatches /
-                  player.sessions
-                : 0
-
-            const jimScore =
-              0.8 *
-                jimWinRate +
-              0.2 *
-                clamp01(
-                  catchesPerSession
-                )
-
-            const sessionWinRate =
-              player.sessionWinRate ===
-              null
-                ? 0
-                : player.sessionWinRate /
-                  100
-
-            const sessionScore =
-              clamp01(
-                sessionWinRate
-              )
-
-            const zeroPointRate =
-              player.zeroPointRate ===
-              null
-                ? 0
-                : player.zeroPointRate /
-                  100
-
-            const disciplineScore =
-              player.sessions > 0
-                ? clamp01(
-                    1 -
-                      player.penalties /
-                        (
-                          2 *
-                          player.sessions
-                        )
-                  )
-                : 0
-
-            const consistencyScore =
-              0.8 *
-                (
-                  1 -
-                  clamp01(
-                    zeroPointRate
-                  )
-                ) +
-              0.2 *
-                disciplineScore
-
-            const score =
-              100 *
-              (
-                0.4 *
-                  standardScore +
-                0.3 *
-                  jimScore +
-                0.2 *
-                  sessionScore +
-                0.1 *
-                  consistencyScore
-              )
-
-            const provisional =
-              player.completedSessions <
-                5 ||
-              player.standardRounds <
-                20 ||
-              player.jimAttempts <
-                5
-
-            return {
-              playerId:
-                player.id,
-
-              name:
-                player.name,
-
-              score,
-
-              provisional,
-
-              standardScore:
-                standardScore *
-                100,
-
-              jimScore:
-                jimScore *
-                100,
-
-              sessionScore:
-                sessionScore *
-                100,
-
-              consistencyScore:
-                consistencyScore *
-                100,
-
-              standardWinRate:
-                standardWinRate *
-                100,
-
-              averageStandardPoints,
-
-              jimWinRate:
-                jimWinRate *
-                100,
-
-              catchesPerSession,
-
-              sessionWinRate:
-                sessionWinRate *
-                100,
-
-              zeroPointRate:
-                zeroPointRate *
-                100,
-
-              disciplineScore:
-                disciplineScore *
-                100,
-
-              sessions:
-                player.completedSessions,
-
-              standardRounds:
-                player.standardRounds,
-
-              jimAttempts:
-                player.jimAttempts,
-            }
-          }
-        )
-        .sort(
-          (a, b) =>
-            Number(
-              a.provisional
-            ) -
-              Number(
-                b.provisional
-              ) ||
-            b.score -
-              a.score ||
-            a.name.localeCompare(
-              b.name
-            )
-        )
-    }, [
-      playerStats,
-      sessionPlayers,
-      roundResults,
-    ])
-
-  const podiumPlayers =
-    [
-      mvpStats[1],
-      mvpStats[0],
-      mvpStats[2],
-    ].filter(
-      (
-        player
-      ): player is MvpStat =>
-        Boolean(player)
+    // Keep each player's own latest completed sessions, regardless of whether
+    // they were playing or waiting for a particular round in that session.
+    // Recent normalization uses wins/catches per completed session rather than
+    // the total number of victories in windows of unequal size.
+    const completedSessionsById = new Map(
+      sessions.filter(session => session.status === 'ended')
+        .map(session => [session.id, session] as const)
     )
+    const standardRoundSession = new Map(
+      rounds.filter(round => round.type === 'standard')
+        .map(round => [round.id, round.sessionId] as const)
+    )
+
+    const recentSamples = playerStats.map(player => {
+      const sessionIds = Array.from(new Set(
+        sessionPlayers.filter(entry =>
+          entry.playerId === player.id && completedSessionsById.has(entry.sessionId)
+        ).map(entry => entry.sessionId)
+      )).sort((a, b) =>
+        (completedSessionsById.get(b)?.startedAt.getTime() ?? 0) -
+        (completedSessionsById.get(a)?.startedAt.getTime() ?? 0) || b - a
+      ).slice(0, 10)
+      const sessionIdSet = new Set(sessionIds)
+      const sessionCount = sessionIds.length
+      const standard = roundResults.filter(result =>
+        result.playerId === player.id &&
+        sessionIdSet.has(standardRoundSession.get(result.roundId) ?? -1)
+      )
+      const standardWins = standard.filter(result => result.position === 1).length
+      const standardPoints = standard.reduce((sum, result) => sum + result.pointsAwarded, 0)
+      const nonZeroStandard = standard.filter(result => result.pointsAwarded > 0).length
+      const strongStandard = standard.filter(result => result.pointsAwarded >= 2).length
+      const jimAttempts = jimResults.filter(result =>
+        result.jimPlayerId === player.id && sessionIdSet.has(result.sessionId)
+      )
+      const jimWins = jimAttempts.filter(result => result.won).length
+      const catches = jimResults.filter(result =>
+        result.caughtByPlayerId === player.id && sessionIdSet.has(result.sessionId)
+      ).length
+      const jimSessions = sessionIds.filter(id =>
+        jimAttempts.some(result => result.sessionId === id)
+      ).length
+      const catchSessions = sessionIds.filter(id => jimResults.some(result =>
+        result.sessionId === id && result.caughtByPlayerId === player.id
+      )).length
+      const sessionWins = sessionIds.filter(id =>
+        completedSessionWinnerIds.get(id)?.has(player.id)
+      ).length
+      const averageSessionStreak = sessionCount > 0
+        ? sessionIds.reduce((sum, id) => sum + longestSessionStreak(id, player.id), 0) / sessionCount
+        : 0
+
+      return {
+        playerId: player.id,
+        sessionCount,
+        standardWinsPerSession: sessionCount ? standardWins / sessionCount : 0,
+        jimWinsPerSession: sessionCount ? jimWins / sessionCount : 0,
+        sessionWinsPerSession: sessionCount ? sessionWins / sessionCount : 0,
+        catchesPerSession: sessionCount ? catches / sessionCount : 0,
+        standardWinRate: standard.length ? standardWins / standard.length : 0,
+        averageStandardPoints: standard.length ? standardPoints / standard.length : 0,
+        jimSuccessRate: jimAttempts.length ? jimWins / jimAttempts.length : 0,
+        braveryRate: sessionCount ? jimSessions / sessionCount : 0,
+        penakutRate: sessionCount ? (sessionCount - jimSessions) / sessionCount : 0,
+        slayerFrequency: sessionCount ? catchSessions / sessionCount : 0,
+        nonZeroRate: standard.length ? nonZeroStandard / standard.length : 0,
+        strongRoundRate: standard.length ? strongStandard / standard.length : 0,
+        streakScore: clamp01(averageSessionStreak / 5),
+      }
+    })
+
+    // Very small samples (e.g. a newcomer's only completed session) must not
+    // set the benchmark for everybody else's Recent rating. The existing MVP
+    // minimum of five completed sessions is used for benchmark eligibility.
+    const recentBenchmarks = recentSamples.filter(player => player.sessionCount >= 5)
+    const benchmarkPool = recentBenchmarks.length > 0 ? recentBenchmarks : recentSamples
+    const highestRecentStandardWinsRate = Math.max(0,
+      ...benchmarkPool.map(player => player.standardWinsPerSession))
+    const highestRecentJimWinsRate = Math.max(0,
+      ...benchmarkPool.map(player => player.jimWinsPerSession))
+    const highestRecentSessionWinsRate = Math.max(0,
+      ...benchmarkPool.map(player => player.sessionWinsPerSession))
+    const highestRecentCatchesRate = Math.max(0,
+      ...benchmarkPool.map(player => player.catchesPerSession))
+
+    const recentScoresByPlayer = new Map(recentSamples.map(player => {
+      const ratio = (value: number, maximum: number) =>
+        maximum > 0 ? clamp01(value / maximum) : 0
+      const standard = clamp01(
+        0.50 * ratio(player.standardWinsPerSession, highestRecentStandardWinsRate) +
+        0.30 * player.standardWinRate +
+        0.20 * clamp01(player.averageStandardPoints / 3)
+      )
+      const jim = clamp01(
+        0.65 * ratio(player.jimWinsPerSession, highestRecentJimWinsRate) +
+        0.25 * player.jimSuccessRate +
+        0.10 * player.braveryRate - 0.10 * player.penakutRate
+      )
+      const session = clamp01(
+        0.60 * ratio(player.sessionWinsPerSession, highestRecentSessionWinsRate) +
+        0.40 * player.sessionWinsPerSession
+      )
+      const slayer = clamp01(
+        0.70 * ratio(player.catchesPerSession, highestRecentCatchesRate) +
+        0.30 * player.slayerFrequency
+      )
+      const consistency = clamp01(
+        0.40 * player.nonZeroRate +
+        0.35 * player.strongRoundRate +
+        0.25 * player.streakScore
+      )
+      const score = 100 * (
+        0.25 * standard + 0.30 * jim + 0.15 * session +
+        0.20 * slayer + 0.10 * consistency
+      )
+      return [player.playerId, {
+        sessions: player.sessionCount, score,
+        standard, jim, session, slayer, consistency,
+      }] as const
+    }))
+
+    return playerStats.map(player => {
+      const standardResults = roundResults.filter(result => result.playerId === player.id)
+      const standardPoints = standardResults.reduce(
+        (total, result) => total + result.pointsAwarded, 0
+      )
+      const averageStandardPoints = player.standardRounds > 0
+        ? standardPoints / player.standardRounds : 0
+      const standardWinRate = (player.standardWinRate ?? 0) / 100
+      // All-time Standard victories are measured relative to the current leader.
+      // A zero-win player pool contributes 0 rather than treating 0/0 as a perfect score.
+      const normalizedStandardWins = highestStandardWins > 0
+        ? player.standardWins / highestStandardWins : 0
+      const standardScore = clamp01(
+        0.50 * normalizedStandardWins +
+        0.30 * standardWinRate +
+        0.20 * clamp01(averageStandardPoints / 3)
+      )
+
+      // No 'opportunity' concept: any completed zero-Jim session is Penakut.
+      const sessionIds = Array.from(new Set(
+        sessionPlayers
+          .filter(entry => entry.playerId === player.id && completed.has(entry.sessionId))
+          .map(entry => entry.sessionId)
+      ))
+      const sessionCount = sessionIds.length
+      const jimSessions = sessionIds.filter(id => jimResults.some(
+        result => result.sessionId === id && result.jimPlayerId === player.id
+      )).length
+      const braveryRate = sessionCount > 0 ? jimSessions / sessionCount : 0
+      const penakutSessions = sessionCount - jimSessions
+      const penakutRate = sessionCount > 0 ? penakutSessions / sessionCount : 0
+      const jimWinRate = (player.jimSuccessRate ?? 0) / 100
+      // Normalize total Jim wins against the all-time leader, same as Slayer.
+      const normalizedJimWins = highestJimWins > 0
+        ? player.jimWins / highestJimWins : 0
+      // Penakut is deliberately counted both through low bravery and as a
+      // separate negative. Cap the resulting Jim component at 0..100.
+      const penakutPenalty = 0.10 * penakutRate
+      const jimScore = clamp01(
+        0.65 * normalizedJimWins + 0.25 * jimWinRate +
+        0.10 * braveryRate - penakutPenalty
+      )
+
+      const sessionWinRate = (player.sessionWinRate ?? 0) / 100
+      // All-time completed-session victories are relative to the current leader.
+      const normalizedSessionWins = highestSessionWins > 0
+        ? player.sessionWins / highestSessionWins : 0
+      const sessionScore = clamp01(
+        0.60 * normalizedSessionWins + 0.40 * sessionWinRate
+      )
+
+      const normalizedCatchScore = highestCatchCount > 0
+        ? player.jimCatches / highestCatchCount : 0
+      const caughtSessions = sessionIds.filter(id => jimResults.some(
+        result => result.sessionId === id && result.caughtByPlayerId === player.id
+      )).length
+      const slayerFrequency = sessionCount > 0 ? caughtSessions / sessionCount : 0
+      const slayerScore = 0.70 * normalizedCatchScore + 0.30 * slayerFrequency
+
+      const zeroPointRate = (player.zeroPointRate ?? 0) / 100
+      const nonZeroRate = player.standardRounds > 0 ? 1 - clamp01(zeroPointRate) : 0
+      // A strong Standard result is +2 or +3 points. Count it against ALL
+      // played Standard rounds, including +0 and +1 results.
+      const strongRoundRate = player.standardRounds > 0
+        ? standardResults.filter(result => result.pointsAwarded >= 2).length / player.standardRounds
+        : 0
+      const averageSessionStreak = sessionCount > 0
+        ? sessionIds.reduce((sum, id) => sum + longestSessionStreak(id, player.id), 0) / sessionCount
+        : 0
+      const streakScore = clamp01(averageSessionStreak / 5)
+      const consistencyScore = 0.40 * nonZeroRate +
+        0.35 * strongRoundRate + 0.25 * streakScore
+
+      const careerScore = 100 * (
+        0.25 * standardScore +
+        0.30 * jimScore +
+        0.15 * sessionScore +
+        0.20 * slayerScore +
+        0.10 * consistencyScore
+      )
+      const recent = recentScoresByPlayer.get(player.id)
+      const recentScore = recent?.score ?? 0
+      const score = 0.40 * careerScore + 0.60 * recentScore
+      const blend = (career: number, current: number) =>
+        100 * (0.40 * career + 0.60 * current)
+
+      // Qualification affects podium eligibility, not the earned numeric score.
+      const provisional = player.completedSessions < 5 ||
+        player.standardRounds < 20 || player.jimAttempts < 5
+
+      return {
+        playerId: player.id,
+        name: player.name,
+        score,
+        provisional,
+        careerScore,
+        recentScore,
+        recentSessions: recent?.sessions ?? 0,
+        careerStandardScore: standardScore * 100,
+        careerJimScore: jimScore * 100,
+        careerSessionScore: sessionScore * 100,
+        careerSlayerScore: slayerScore * 100,
+        careerConsistencyScore: consistencyScore * 100,
+        recentStandardScore: (recent?.standard ?? 0) * 100,
+        recentJimScore: (recent?.jim ?? 0) * 100,
+        recentSessionScore: (recent?.session ?? 0) * 100,
+        recentSlayerScore: (recent?.slayer ?? 0) * 100,
+        recentConsistencyScore: (recent?.consistency ?? 0) * 100,
+        standardScore: blend(standardScore, recent?.standard ?? 0),
+        jimScore: blend(jimScore, recent?.jim ?? 0),
+        sessionScore: blend(sessionScore, recent?.session ?? 0),
+        slayerScore: blend(slayerScore, recent?.slayer ?? 0),
+        consistencyScore: blend(consistencyScore, recent?.consistency ?? 0),
+        standardWinRate: standardWinRate * 100,
+        averageStandardPoints,
+        totalStandardWins: player.standardWins,
+        normalizedStandardWins: normalizedStandardWins * 100,
+        jimWinRate: jimWinRate * 100,
+        totalJimWins: player.jimWins,
+        normalizedJimWins: normalizedJimWins * 100,
+        braveryRate: braveryRate * 100,
+        penakutSessions,
+        penakutPenalty: penakutPenalty * 100,
+        sessionWinRate: sessionWinRate * 100,
+        totalSessionWins: player.sessionWins,
+        normalizedSessionWins: normalizedSessionWins * 100,
+        totalCatches: player.jimCatches,
+        normalizedCatchScore: normalizedCatchScore * 100,
+        slayerFrequency: slayerFrequency * 100,
+        nonZeroRate: nonZeroRate * 100,
+        strongRoundRate: strongRoundRate * 100,
+        averageSessionStreak,
+        streakScore: streakScore * 100,
+        sessions: player.completedSessions,
+        standardRounds: player.standardRounds,
+        jimAttempts: player.jimAttempts,
+      }
+    }).sort((a, b) =>
+      Number(a.provisional) - Number(b.provisional) ||
+      b.score - a.score ||
+      a.name.localeCompare(b.name)
+    )
+  }, [playerStats, sessions, sessionPlayers, rounds, roundResults, jimResults, completedSessionWinnerIds])
+
+  const qualifiedMvpPlayers = mvpStats.filter(player => !player.provisional)
+  const podiumPlayers = [
+    qualifiedMvpPlayers[1],
+    qualifiedMvpPlayers[0],
+    qualifiedMvpPlayers[2],
+  ].filter((player): player is MvpStat => Boolean(player))
 
   const radarSelected = (radarSelection ?? [
     ...(mvpStats[0] ? [{ playerId: mvpStats[0].playerId, visible: true }] : []),
@@ -3145,57 +3309,81 @@ export default function HistoryStats({
     !radarSelected.some(item => item.playerId === player.playerId)
   )
 
+  // Base the viewing mode on players actually shown, not saved selections.
+  // One visible player can overlay timeframes even with other players hidden.
+  // Two or more visible players share a single timeframe for clarity.
+  const radarComparison = visibleRadarPlayers.length > 1
+  // Draw the bold Hybrid outline last so it stays visible above the other lines.
+  const radarActiveViews: MvpRadarView[] = radarComparison
+    ? [radarComparisonView]
+    : (['allTime', 'recent', 'hybrid'] as MvpRadarView[]).filter(view => radarSingleViews.includes(view))
+  const radarValue = (axis: (typeof MVP_RADAR_AXES)[number], player: MvpStat, view: MvpRadarView) =>
+    view === 'allTime' ? axis.allTime(player) : view === 'recent' ? axis.recent(player) : axis.value(player)
   const radarData = MVP_RADAR_AXES.map(axis => {
     const row: Record<string, string | number> = { metric: axis.label }
     radarPlayers.forEach((player, slot) => {
-      row[`p${slot}`] = player
-        ? Math.round(Math.max(0, Math.min(100, axis.value(player))) * 10) / 10
-        : 0
+      for (const view of MVP_RADAR_VIEWS) {
+        const score = player ? radarValue(axis, player, view.key) : 0
+        row[`p${slot}_${view.key}`] = Math.round(Math.max(0, Math.min(100, score)) * 10) / 10
+      }
     })
     return row
   })
+  function toggleRadarSingleView(view: MvpRadarView) {
+    setRadarSingleViews(previous => previous.includes(view)
+      ? previous.length > 1 ? previous.filter(item => item !== view) : previous
+      : [...previous, view])
+  }
 
 
-  // Keep the original clear one-line desktop ticks. Only phones use
-  // compact two-line labels so the chart fits without clipping.
+  // Position the phone labels individually so the pentagon can be larger
+  // without chopping off Consistency at the left or Standard at the top.
   function renderRadarMobileTick(props: any) {
     const label = String(props?.payload?.value ?? '')
     const x = Number(props?.x ?? 0)
     const y = Number(props?.y ?? 0)
-    const anchor = props?.textAnchor === 'start' || props?.textAnchor === 'end'
-      ? props.textAnchor
-      : 'middle'
-    const parts: Record<string, string[]> = {
-      'Standard wins': ['Standard', 'wins'],
-      'Avg points': ['Avg', 'points'],
-      'JIM success': ['JIM', 'success'],
-      'JIM catch': ['JIM', 'catch'],
-      'Session wins': ['Session', 'wins'],
+    let labelX = x
+    let labelY = y
+    let anchor: 'start' | 'middle' | 'end' = 'middle'
+
+    switch (label) {
+      case 'Standard':
+        labelY -= 7
+        break
+      case 'Jim':
+        labelX += 5
+        anchor = 'start'
+        break
+      case 'Session':
+        labelX += 1
+        labelY += 7
+        anchor = 'start'
+        break
+      case 'Slayer':
+        labelX -= 1
+        labelY += 7
+        anchor = 'end'
+        break
+      case 'Consistency':
+        // Full label stays in the beige panel instead of overflowing left.
+        labelX = Math.max(12, x - 3)
+        labelY -= 19
+        anchor = 'start'
+        break
     }
-    const lines = parts[label] ?? [label]
+
     return (
       <text
-        x={x}
-        y={y}
+        x={labelX}
+        y={labelY}
         fill="#2b3744"
         textAnchor={anchor}
-        fontSize={12}
+        fontSize={11.5}
         fontWeight={700}
         stroke="none"
         strokeWidth={0}
-        style={{
-          stroke: 'none',
-          strokeWidth: 0,
-          WebkitTextStroke: '0px transparent',
-          textShadow: 'none',
-          paintOrder: 'normal',
-        }}
       >
-        {lines.map((line, index) => (
-          <tspan key={`${label}-${index}`} x={x} dy={index === 0 ? 0 : 15}>
-            {line}
-          </tspan>
-        ))}
+        {label}
       </text>
     )
   }
@@ -3243,7 +3431,7 @@ export default function HistoryStats({
         award ?? {
           title: 'Penakut',
           description:
-            'Most completed sessions with zero Jim attempts while at least one Jim round was played',
+            'Most completed sessions with zero Jim attempts',
           winners: '—',
           value: 'No Penakut session yet',
           hasData: false,
@@ -5308,14 +5496,8 @@ export default function HistoryStats({
       )
     }
 
-    /*
-      Penakut = completed the whole
-      session without taking Jim at all.
-      We only award it when the session
-      actually contained at least one
-      Jim round.
-    */
-    if (jim.length > 0) {
+    // Everyone with zero Jim attempts in this completed session is Penakut.
+    {
       const penakutWinners =
         stats.filter(
           (entry) =>
@@ -6067,6 +6249,42 @@ export default function HistoryStats({
           }
         })()
 
+  // Keep the 0–100 scale horizontal and clear of the Standard spoke.
+  // (The built-in Recharts radial ticks crowded the axis on small screens.)
+  function renderRadarRadiusTick(props: any) {
+    const x = Number(props?.x)
+    const y = Number(props?.y)
+    const value = Number(props?.payload?.value)
+    if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(value)) {
+      return null
+    }
+
+    return (
+      <text
+        x={x + (radarIsMobile ? 22 : 11)}
+        y={radarIsMobile ? y + (value === 100 ? 6 : -1) : y - 3}
+        textAnchor="start"
+        dominantBaseline="central"
+        fill="#887e71"
+        fontSize={radarIsMobile ? 9 : 12}
+        fontWeight={500}
+        fontStyle="normal"
+        style={radarIsMobile
+          ? { pointerEvents: 'none', textShadow: 'none' }
+          : {
+              pointerEvents: 'none',
+              paintOrder: 'stroke',
+              stroke: '#f2e9d9',
+              strokeWidth: 3,
+              strokeLinejoin: 'round',
+              textShadow: 'none',
+            }}
+      >
+        {value}
+      </text>
+    )
+  }
+
   const radarPlot = (
                 <ResponsiveContainer width="100%" height="100%">
                   <RadarChart
@@ -6074,10 +6292,10 @@ export default function HistoryStats({
                     data={radarData}
                     cx="50%"
                     cy="50%"
-                    outerRadius={radarIsMobile ? '80%' : '96%'}
+                    outerRadius={radarIsMobile ? '94%' : '86%'}
                     margin={radarIsMobile
-                      ? { top: 48, bottom: 48, left: 52, right: 52 }
-                      : { top: 42, bottom: 42, left: 56, right: 56 }}
+                      ? { top: 32, bottom: 36, left: 14, right: 14 }
+                      : { top: 56, bottom: 26, left: 108, right: 108 }}
                   >
                     <PolarGrid gridType="polygon" stroke="#bbae9a" strokeWidth={1.1} />
                     <PolarAngleAxis
@@ -6085,33 +6303,40 @@ export default function HistoryStats({
                       axisLine={false}
                       tick={radarIsMobile
                         ? renderRadarMobileTick
-                        : { fill: '#2b3744', stroke: 'none', strokeWidth: 0, fontSize: 16, fontWeight: 700 }}
-                      tickSize={radarIsMobile ? 12 : 20}
+                        : { fill: '#2b3744', stroke: 'none', strokeWidth: 0, fontSize: 15, fontWeight: 700 }}
+                      tickSize={radarIsMobile ? 10 : 15}
                       tickLine={false}
                     />
                     <PolarRadiusAxis
-                      angle={70}
+                      angle={90}
                       domain={[0, 100]}
                       tickCount={6}
-                      tick={{ fill: '#5d6874', stroke: 'none', strokeWidth: 0, fontSize: 12, fontWeight: 650 }}
+                      tick={renderRadarRadiusTick}
                       axisLine={false}
                       tickLine={false}
                     />
-                    {radarPlayers.map((player, slot) => player && radarSelected[slot]?.visible ? (
-                      <Radar
-                        key={player.playerId}
-                        name={player.name}
-                        dataKey={`p${slot}`}
-                        stroke={MVP_RADAR_COLORS[slot]}
-                        fill={MVP_RADAR_COLORS[slot]}
-                        fillOpacity={0.07}
-                        strokeWidth={3.6}
-                        dot={{ r: 4.1, fill: MVP_RADAR_COLORS[slot], stroke: '#f4ecdd', strokeWidth: 1.3 }}
-                        isAnimationActive={false}
-                      />
-                    ) : null)}
+                    {radarPlayers.flatMap((player, slot) =>
+                      player && radarSelected[slot]?.visible
+                        ? radarActiveViews.map(view => (
+                          <Radar
+                            key={`${player.playerId}-${view}`}
+                            name={radarComparison ? player.name : `${player.name} · ${MVP_RADAR_VIEWS.find(item => item.key === view)?.label}`}
+                            dataKey={`p${slot}_${view}`}
+                            stroke={MVP_RADAR_COLORS[slot]}
+                            strokeOpacity={1}
+                            strokeDasharray={view === 'allTime' ? '1 7' : view === 'recent' ? '9 6' : undefined}
+                            strokeLinecap="round"
+                            fill={MVP_RADAR_COLORS[slot]}
+                            fillOpacity={view === 'hybrid' ? 0.065 : 0}
+                            strokeWidth={view === 'hybrid' ? 3.6 : 3}
+                            dot={false}
+                            isAnimationActive={false}
+                          />
+                        ))
+                        : []
+                    )}
                     <Tooltip
-                      formatter={(value, name) => [`${Number(value ?? 0).toFixed(1)} / 100`, name]}
+                      formatter={(value, name) => [Number(value ?? 0).toFixed(1), name]}
                       contentStyle={{
                         background: '#fffaf1',
                         border: '1px solid #d6c9b5',
@@ -7432,6 +7657,23 @@ export default function HistoryStats({
                       </strong>
                     </div>
 
+                    <div
+                      className={
+                        playerSort ===
+                        'penakutSessions'
+                          ? 'sortStatHighlight'
+                          : ''
+                      }
+                    >
+                      <span>
+                        PENAKUT SESSIONS
+                      </span>
+
+                      <strong>
+                        {player.penakutSessions}
+                      </strong>
+                    </div>
+
                     <div>
                       <span>
                         AVG SURVIVED
@@ -7562,7 +7804,7 @@ export default function HistoryStats({
           <div className="mvpIntro">
             <div>
               <span>
-                ALL-TIME MVP
+                JIMRAMI MVP
               </span>
 
               <h2>
@@ -7570,38 +7812,24 @@ export default function HistoryStats({
               </h2>
 
               <p>
-                MVP combines Standard
-                performance, Jim
-                performance, session wins
-                and consistency into one
-                0–100 score.
+                40% All-time + 60% Recent (last 10 completed sessions). Each attribute is scored from 0 to 100.
               </p>
+              <button type="button" className="mvpScoringOpenButton" onClick={() => setMvpScoringOpen(true)}>
+                <span aria-hidden="true">ⓘ</span> How MVP scoring works
+              </button>
             </div>
 
             <div className="mvpFormula">
-              <span>
-                WEIGHTING
-              </span>
-
-              <strong>
-                40% Standard
-              </strong>
-
-              <strong>
-                30% Jim
-              </strong>
-
-              <strong>
-                20% Session
-              </strong>
-
-              <strong>
-                10% Consistency
-              </strong>
+              <span>WEIGHTING</span>
+              <strong>25% Standard</strong>
+              <strong>30% Jim</strong>
+              <strong>15% Session</strong>
+              <strong>20% Slayer</strong>
+              <strong>10% Consistency</strong>
             </div>
           </div>
 
-          {mvpStats.length > 0 && (
+          {qualifiedMvpPlayers.length > 0 && (
             <section className="mvpPodiumSection">
               <div className="mvpPodiumHeader">
                 <span>
@@ -7609,7 +7837,7 @@ export default function HistoryStats({
                 </span>
 
                 <h3>
-                  Top 3 all-time
+                  Top 3 overall
                 </h3>
               </div>
 
@@ -7617,7 +7845,7 @@ export default function HistoryStats({
                 {podiumPlayers.map(
                   (player) => {
                     const rank =
-                      mvpStats.findIndex(
+                      qualifiedMvpPlayers.findIndex(
                         (entry) =>
                           entry.playerId ===
                           player.playerId
@@ -7631,31 +7859,25 @@ export default function HistoryStats({
                         }
                       >
                         <div className="mvpPodiumPlayer">
-                          <span className="mvpMedal">
-                            {rank === 1
-                              ? '★'
-                              : rank === 2
-                                ? 'Ⅱ'
-                                : 'Ⅲ'}
+                          <span
+                            className="mvpMedal"
+                            role="img"
+                            aria-label={rank === 1 ? 'Gold crown' : rank === 2 ? 'Silver medal' : 'Bronze medal'}
+                          >
+                            {rank === 1 ? (
+                              <svg
+                                viewBox="0 0 24 24"
+                                fill="currentColor"
+                                aria-hidden="true"
+                                focusable="false"
+                              >
+                                <path d="M2.5 8.2 7.1 11l4.9-7 4.9 7 4.6-2.8-1.7 10.2H4.2L2.5 8.2Z" />
+                                <path d="M4.3 20h15.4v1.5H4.3z" />
+                              </svg>
+                            ) : rank === 2 ? 'Ⅱ' : 'Ⅲ'}
                           </span>
 
-                          <strong>
-                            {
-                              player.name
-                            }
-                          </strong>
-
-                          <small
-                            className={
-                              player.provisional
-                                ? 'mvpProvisional'
-                                : 'mvpQualified'
-                            }
-                          >
-                            {player.provisional
-                              ? 'PROVISIONAL'
-                              : 'QUALIFIED'}
-                          </small>
+                          <strong>{player.name}</strong>
                         </div>
 
                         <div className="mvpPodiumScore">
@@ -7679,6 +7901,13 @@ export default function HistoryStats({
             </section>
           )}
 
+          {mvpStats.length > 0 && qualifiedMvpPlayers.length === 0 && (
+            <div className="mvpMethodNote">
+              <strong>NO QUALIFIED MVP YET</strong>
+              <p>Players are still scored provisionally. The official podium opens once someone meets all three requirements.</p>
+            </div>
+          )}
+
           <div className="mvpEligibility">
             <span>
               FULL MVP STATUS
@@ -7690,7 +7919,8 @@ export default function HistoryStats({
               20 Standard rounds and
               5 Jim attempts.
               Players below that are
-              marked provisional.
+              marked provisional and
+              stay off the official podium.
             </p>
           </div>
 
@@ -7698,6 +7928,32 @@ export default function HistoryStats({
             <section className="mvpRadarSection" aria-labelledby="mvp-radar-title">
               <div className="mvpRadarHeader">
                 <h3 id="mvp-radar-title">Performance radar</h3>
+                <p className="mvpRadarHint">{radarComparison
+                  ? 'Compare players using the same scoring view.'
+                  : 'Select multiple views to see how this player has changed.'}</p>
+              </div>
+
+              <div className="mvpRadarViewControls" role="group" aria-label={radarComparison ? 'Shared radar scoring view' : 'Radar scoring views'}>
+                {MVP_RADAR_VIEWS.map(view => {
+                  const active = radarComparison
+                    ? radarComparisonView === view.key
+                    : radarSingleViews.includes(view.key)
+                  return (
+                    <button
+                      key={view.key}
+                      type="button"
+                      className={`mvpRadarViewButton${active ? ' is-active' : ''}`}
+                      aria-pressed={active}
+                      data-tooltip={view.description}
+                      onClick={() => radarComparison
+                        ? setRadarComparisonView(view.key)
+                        : toggleRadarSingleView(view.key)}
+                    >
+                      <span className={`mvpRadarLineSample mvpRadarLineSample--${view.key}`} aria-hidden="true" />
+                      {view.label}
+                    </button>
+                  )
+                })}
               </div>
 
               <div className="mvpRadarControls" aria-label="Players in radar comparison">
@@ -7718,7 +7974,7 @@ export default function HistoryStats({
                           onClick={() => toggleRadarPlayer(selection.playerId)}
                           aria-label={`${selection.visible ? 'Hide' : 'Show'} ${player.name} on radar`}
                           aria-pressed={selection.visible}
-                          title={selection.visible ? 'Hide from chart' : 'Show on chart'}
+                          data-tooltip={selection.visible ? 'Hide from radar' : 'Show on radar'}
                           style={{ color }}
                         >
                           <span className="mvpRadarChipDot" aria-hidden="true" style={{ backgroundColor: color }} />
@@ -7743,7 +7999,7 @@ export default function HistoryStats({
                             className="mvpRadarRemove"
                             onClick={() => removeRadarPlayer(selection.playerId)}
                             aria-label={`Remove ${player.name} from comparison`}
-                            title="Remove player"
+                            data-tooltip="Remove player"
                           >×</button>
                         )}
                       </div>
@@ -7802,14 +8058,14 @@ export default function HistoryStats({
                 }}
                 style={{
                   width: '100%',
-                  height: radarIsMobile ? 'clamp(360px, 108vw, 520px)' : 'clamp(440px, 78vw, 760px)',
+                  height: radarIsMobile ? 'clamp(270px, 83vw, 350px)' : 'clamp(410px, 68vw, 660px)',
                   minWidth: 0,
                   background: 'linear-gradient(160deg, #f7f1e4, #ece3d1)',
                   border: '1px solid #d6c9b5',
                   boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, .6)',
                 }}
                 role="img"
-                aria-label={`Radar comparison of ${visibleRadarPlayers.map(player => player!.name).join(', ') || 'no visible players'}. Axes are Standard wins, average points, JIM success, JIM catch, session wins and consistency. Values range from 0 to 100.`}
+                aria-label={`Radar of ${visibleRadarPlayers.map(player => player!.name).join(', ') || 'no visible players'}. ${radarComparison ? `Shared ${radarComparisonView} view` : `Views: ${radarActiveViews.join(', ')}`}. Axes are Standard, Jim, Session, Slayer and Consistency. Values range from 0 to 100.`}
               >
                 {radarPlot}
                 {visibleRadarPlayers.length === 0 && (
@@ -7837,145 +8093,99 @@ export default function HistoryStats({
                   index
                 ) => (
                   <article
-                    className={`mvpCard ${
-                      index === 0
-                        ? 'mvpLeader'
-                        : ''
-                    }`}
-                    key={
-                      player.playerId
-                    }
+                    className={`mvpCard mvpCardCompact ${index === 0 ? 'mvpLeader' : ''}`}
+                    key={player.playerId}
                   >
-                    <header>
-                      <div className="mvpIdentity">
-                        <span>
-                          #{index + 1}
-                        </span>
-
-                        <div>
-                          <h3>
-                            {
-                              player.name
-                            }
-                          </h3>
-
-                          {player.provisional ? (
-                            <small className="mvpProvisional">
-                              PROVISIONAL
-                            </small>
-                          ) : (
-                            <small className="mvpQualified">
-                              QUALIFIED
-                            </small>
-                          )}
+                    <details className="mvpCardDisclosure">
+                      <summary className="mvpCardSummary">
+                        <div className="mvpCompactHeader">
+                          <div className="mvpIdentity">
+                            <span>#{index + 1}</span>
+                            <div>
+                              <h3>{player.name}</h3>
+                              <small className={player.provisional ? 'mvpProvisional' : 'mvpQualified'}>
+                                {player.provisional ? 'PROVISIONAL' : 'QUALIFIED'}
+                              </small>
+                            </div>
+                          </div>
+                          <div className="mvpCompactScoreSide">
+                            <div className="mvpScore">
+                              <strong>{player.score.toFixed(1)}</strong>
+                              <span>MVP</span>
+                            </div>
+                            <span className="mvpCompactChevron" aria-hidden="true">⌄</span>
+                          </div>
                         </div>
-                      </div>
+                        <div className="mvpCompactQuickStats">
+                          <span>All-time <b>{player.careerScore.toFixed(1)}</b></span>
+                          <span>Recent 10 <b>{player.recentScore.toFixed(1)}</b></span>
+                          <span className="mvpCompactSessionCount">{player.recentSessions}/10 sessions</span>
+                          <span className="mvpCompactExpandHint">Details</span>
+                        </div>
+                      </summary>
 
-                      <div className="mvpScore">
-                        <strong>
-                          {
-                            player.score.toFixed(
-                              1
-                            )
-                          }
-                        </strong>
-
-                        <span>
-                          MVP
-                        </span>
-                      </div>
-                    </header>
-
-                    <div className="mvpComponents">
-                      <div>
-                        <span>
-                          STANDARD
-                        </span>
-
-                        <strong>
-                          {player.standardScore.toFixed(
-                            1
-                          )}
-                        </strong>
-
-                        <small>
-                          {player.standardWinRate.toFixed(
-                            1
-                          )}
-                          % wins •{' '}
-                          {player.averageStandardPoints.toFixed(
-                            2
-                          )}{' '}
-                          avg pts
-                        </small>
-                      </div>
-
-                      <div>
-                        <span>
-                          JIM
-                        </span>
-
-                        <strong>
-                          {player.jimScore.toFixed(
-                            1
-                          )}
-                        </strong>
-
-                        <small>
-                          {player.jimWinRate.toFixed(
-                            1
-                          )}
-                          % wins •{' '}
-                          {player.catchesPerSession.toFixed(
-                            2
-                          )}{' '}
-                          catches/session
-                        </small>
-                      </div>
-
-                      <div>
-                        <span>
-                          SESSION
-                        </span>
-
-                        <strong>
-                          {player.sessionScore.toFixed(
-                            1
-                          )}
-                        </strong>
-
-                        <small>
-                          {player.sessionWinRate.toFixed(
-                            1
-                          )}
-                          % session wins
-                        </small>
-                      </div>
-
-                      <div>
-                        <span>
-                          CONSISTENCY
-                        </span>
-
-                        <strong>
-                          {player.consistencyScore.toFixed(
-                            1
-                          )}
-                        </strong>
-
-                        <small>
-                          {player.zeroPointRate.toFixed(
-                            1
-                          )}
-                          % zero-point •{' '}
-                          {player.disciplineScore.toFixed(
-                            1
-                          )}
-                          % discipline
-                        </small>
-                      </div>
-                    </div>
-
+                      <div className="mvpCompactDetails">
+                        <div className="mvpCompactDetailsHeading">Attribute breakdown <span>Tap an attribute for details</span></div>
+                        <div className="mvpCompactAttributes">
+                          <details className="mvpCompactAttribute">
+                            <summary>
+                              <span className="mvpCompactAttributeName">Standard</span>
+                              <strong>{player.standardScore.toFixed(1)}</strong>
+                              <span className="mvpCompactAttributeChevron" aria-hidden="true">⌄</span>
+                            </summary>
+                            <div className="mvpCompactAttributeDetail"><small>All-time {player.careerStandardScore.toFixed(1)} · Recent {player.recentStandardScore.toFixed(1)}
+                          {' • '}
+                          Lifetime: {player.totalStandardWins} Standard wins ({player.normalizedStandardWins.toFixed(1)}% of leader)
+                          {' • '}{player.standardWinRate.toFixed(1)}% win rate
+                          {' • '}{player.averageStandardPoints.toFixed(2)} avg pts</small></div>
+                          </details>
+                          <details className="mvpCompactAttribute">
+                            <summary>
+                              <span className="mvpCompactAttributeName">Jim</span>
+                              <strong>{player.jimScore.toFixed(1)}</strong>
+                              <span className="mvpCompactAttributeChevron" aria-hidden="true">⌄</span>
+                            </summary>
+                            <div className="mvpCompactAttributeDetail"><small>All-time {player.careerJimScore.toFixed(1)} · Recent {player.recentJimScore.toFixed(1)}
+                          {' • '}
+                          Lifetime: {player.totalJimWins} Jim wins ({player.normalizedJimWins.toFixed(1)}% of leader)
+                          {' • '}{player.jimWinRate.toFixed(1)}% success
+                          {' • '}{player.braveryRate.toFixed(1)}% bravery
+                          {' • '}{player.penakutSessions} Penakut (−{player.penakutPenalty.toFixed(1)})</small></div>
+                          </details>
+                          <details className="mvpCompactAttribute">
+                            <summary>
+                              <span className="mvpCompactAttributeName">Session</span>
+                              <strong>{player.sessionScore.toFixed(1)}</strong>
+                              <span className="mvpCompactAttributeChevron" aria-hidden="true">⌄</span>
+                            </summary>
+                            <div className="mvpCompactAttributeDetail"><small>All-time {player.careerSessionScore.toFixed(1)} · Recent {player.recentSessionScore.toFixed(1)}
+                          {' • '}
+                          Lifetime: {player.totalSessionWins} session wins ({player.normalizedSessionWins.toFixed(1)}% of leader)
+                          {' • '}{player.sessionWinRate.toFixed(1)}% win rate</small></div>
+                          </details>
+                          <details className="mvpCompactAttribute">
+                            <summary>
+                              <span className="mvpCompactAttributeName">Slayer</span>
+                              <strong>{player.slayerScore.toFixed(1)}</strong>
+                              <span className="mvpCompactAttributeChevron" aria-hidden="true">⌄</span>
+                            </summary>
+                            <div className="mvpCompactAttributeDetail"><small>All-time {player.careerSlayerScore.toFixed(1)} · Recent {player.recentSlayerScore.toFixed(1)}
+                          {' • '}Lifetime: {player.totalCatches} catches • {player.slayerFrequency.toFixed(1)}% catch sessions</small></div>
+                          </details>
+                          <details className="mvpCompactAttribute">
+                            <summary>
+                              <span className="mvpCompactAttributeName">Consistency</span>
+                              <strong>{player.consistencyScore.toFixed(1)}</strong>
+                              <span className="mvpCompactAttributeChevron" aria-hidden="true">⌄</span>
+                            </summary>
+                            <div className="mvpCompactAttributeDetail"><small>All-time {player.careerConsistencyScore.toFixed(1)} · Recent {player.recentConsistencyScore.toFixed(1)}
+                          {' • '}
+                          All-time: {player.nonZeroRate.toFixed(1)}% non-zero
+                          {' • '}{player.strongRoundRate.toFixed(1)}% +2/+3 rounds
+                          {' • '}{player.averageSessionStreak.toFixed(2)} avg streak (cap 5)</small></div>
+                          </details>
+                        </div>
+                        <div className="mvpCompactQualification">
                     <div className="mvpSample">
                       <span
                         className={
@@ -8013,11 +8223,16 @@ export default function HistoryStats({
                           : `${player.jimAttempts}/5 Jim`}
                       </span>
                     </div>
+                        </div>
+                      </div>
+                    </details>
                   </article>
                 )
               )}
             </div>
           </section>
+
+
         </section>
       )}
 
@@ -8841,6 +9056,68 @@ export default function HistoryStats({
             </button>
           </div>
         </div>
+      )}
+
+
+      {mvpScoringOpen && createPortal(
+        <div className="mvpScoringOverlay" onMouseDown={event => {
+          if (event.target === event.currentTarget) setMvpScoringOpen(false)
+        }}>
+          <section className="mvpScoringDialog mvpScoringCompact" role="dialog" aria-modal="true" aria-labelledby="mvp-scoring-title" aria-describedby="mvp-scoring-intro">
+            <header className="mvpScoringDialogHeader">
+              <div>
+                <span className="mvpScoringEyebrow">JIMRAMI MVP</span>
+                <h2 id="mvp-scoring-title">Scoring guide</h2>
+              </div>
+              <button ref={scoringCloseRef} type="button" className="mvpScoringClose" aria-label="Close scoring guide" onClick={() => setMvpScoringOpen(false)}>×</button>
+            </header>
+            <div className="mvpScoringBody">
+              <p id="mvp-scoring-intro" className="mvpScoringIntro">Your MVP rating combines your all-time results with your last 10 completed sessions.</p>
+              <div className="mvpScoringSplit" aria-label="40 percent all-time, 60 percent recent 10 sessions">
+                <div className="mvpScoringSplitAll">ALL-TIME <strong>40%</strong></div>
+                <div className="mvpScoringSplitRecent">RECENT 10 <strong>60%</strong></div>
+              </div>
+              <div className="mvpScoringSectionHeading">
+                <h3>Five attributes</h3>
+                <small>Tap for formulas</small>
+              </div>
+              <div className="mvpScoringAttributeList">
+                <details>
+                  <summary><strong>Standard</strong><span className="mvpScoringTagline">Wins · win rate · points</span><b>25%</b></summary>
+                  <p>50% relative Standard wins + 30% win rate + 20% average points ÷ 3.</p>
+                </details>
+                <details>
+                  <summary><strong>Jim</strong><span className="mvpScoringTagline">Wins · success · bravery</span><b>30%</b></summary>
+                  <p>65% relative Jim wins + 25% success rate + 10% bravery, minus up to 10 points for Penakut sessions.</p>
+                </details>
+                <details>
+                  <summary><strong>Session</strong><span className="mvpScoringTagline">Wins · win rate</span><b>15%</b></summary>
+                  <p>60% relative session wins + 40% session win rate.</p>
+                </details>
+                <details>
+                  <summary><strong>Slayer</strong><span className="mvpScoringTagline">Catches · catch frequency</span><b>20%</b></summary>
+                  <p>70% relative Jim catches + 30% of sessions with at least one catch.</p>
+                </details>
+                <details>
+                  <summary><strong>Consistency</strong><span className="mvpScoringTagline">Non-zero · strong rounds · streak</span><b>10%</b></summary>
+                  <p>40% non-zero Standard rounds + 35% rounds with +2 or +3 + 25% average session-best streak, capped at 5.</p>
+                </details>
+              </div>
+              <details className="mvpScoringMore">
+                <summary>Rules &amp; eligibility</summary>
+                <div>
+                  <p><b>Relative scores:</b> All-time wins and catches are compared with the all-time leader. Recent wins and catches are compared per session against the best recent rate, using players with at least 5 sessions as the reference where available.</p>
+                  <p><b>Recent 10:</b> Uses a player's last 10 completed sessions, or however many they have played.</p>
+                  <p><b>Penakut:</b> A session without any Jim attempt. Every Penakut session reduces the Jim rating by up to 10 points across the period.</p>
+                  <p><b>Win streak:</b> Standard first places, successful Jim attempts and Jim catches count as wins. Recorded losses break the streak; unplayed rounds pause it.</p>
+                  <p><b>Podium:</b> Requires 5 completed sessions, 20 Standard rounds and 5 Jim attempts. Others appear provisionally. Game penalties do not affect the MVP.</p>
+                </div>
+              </details>
+              <p className="mvpScoringRadarNote">Radar: <b>solid</b> MVP · <b>dotted</b> All-time · <b>dashed</b> Recent 10</p>
+            </div>
+          </section>
+        </div>,
+        document.body
       )}
 
       {deleteSession &&
