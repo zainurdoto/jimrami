@@ -102961,3 +102961,21 @@ body::-webkit-scrollbar,
     gap: 8px;
   }
 }
+
+
+/* PREVIOUS WINNER — Gold ring for JIM without Hide */
+
+.previousWinnerIcon.jim:not(.usedHide):not(.caught) {
+  position: relative;
+}
+
+.previousWinnerIcon.jim:not(.usedHide):not(.caught)::after {
+  content: '';
+  position: absolute;
+  inset: 5px;
+  border: 1px solid #e3b64b;
+  border-radius: 50%;
+  background: rgba(227, 182, 75, 0.035);
+  box-shadow: inset 0 0 0 1px rgba(227, 182, 75, 0.06);
+  pointer-events: none;
+}
